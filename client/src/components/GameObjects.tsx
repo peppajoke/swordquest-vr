@@ -6,23 +6,7 @@ import { useVRGame } from '../lib/stores/useVRGame';
 export default function GameObjects() {
   const { pillars } = useVRGame();
   
-  // Generate 40 ammo pickups scattered around the level
-  const ammoPickups = useMemo(() => {
-    const pickups: Array<{ id: string; x: number; y: number; z: number }> = [];
-    
-    for (let i = 0; i < 40; i++) {
-      const x = (Math.random() - 0.5) * 140; // -70 to +70 (wider area)
-      const z = -10 + Math.random() * -120;   // -10 to -130 (wider area)
-      const y = 0.3; // Slightly above ground
-      
-      pickups.push({
-        id: `ammo-${i}`,
-        x, y, z
-      });
-    }
-    
-    return pickups;
-  }, []);
+  // No more ammo pickups - removed for auto-recharge system
   
   // Generate 12 turret towers scattered around the level
   const turrets = useMemo(() => {
@@ -53,13 +37,7 @@ export default function GameObjects() {
         />
       ))}
       
-      {/* Ammo Pickups */}
-      {ammoPickups.map((pickup) => (
-        <AmmoPickup
-          key={pickup.id}
-          position={[pickup.x, pickup.y, pickup.z]}
-        />
-      ))}
+      {/* Ammo pickups removed - using auto-recharge system */}
       
       {/* Turret Towers */}
       {turrets.map((turret) => (
@@ -99,37 +77,7 @@ function RedPillar({ position, destroyed }: { position: [number, number, number]
   );
 }
 
-function AmmoPickup({ position }: { position: [number, number, number] }) {
-  const meshRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (meshRef.current) {
-      // Add rotation animation
-      meshRef.current.rotation.y += 0.02;
-      // Add floating animation
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.1;
-      
-      // Mark for collision detection
-      meshRef.current.userData.isAmmoPickup = true;
-    }
-  });
-
-  return (
-    <group ref={meshRef} position={position}>
-      {/* Ammo box */}
-      <mesh castShadow>
-        <boxGeometry args={[0.15, 0.1, 0.25]} />
-        <meshLambertMaterial color="#ffd700" />
-      </mesh>
-      
-      {/* Ammo label */}
-      <mesh position={[0, 0.08, 0]}>
-        <boxGeometry args={[0.12, 0.02, 0.2]} />
-        <meshLambertMaterial color="#333333" />
-      </mesh>
-    </group>
-  );
-}
+// AmmoPickup component removed - using auto-recharge system instead
 
 function TurretTower({ position }: { position: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null);

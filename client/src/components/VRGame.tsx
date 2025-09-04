@@ -30,6 +30,7 @@ export default function VRGame() {
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     initializeGame();
@@ -87,6 +88,10 @@ export default function VRGame() {
     } catch { /* Use fallback */ }
 
   }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
+
+  if (isLoading) {
+    return <LoadingScreen onComplete={() => setIsLoading(false)} />;
+  }
 
   return (
     <>

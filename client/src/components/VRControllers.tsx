@@ -266,14 +266,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     grip.position.y = -0.04;
     gun.add(grip);
     
-    // Barrel (shorter, rotated and positioned closer to player)
-    const barrelGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.125); // Halved length from 0.25 to 0.125
+    // Barrel (shorter, thicker, rotated and positioned closer to player)
+    const barrelGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.125); // Made thicker: 0.008 -> 0.015
     const barrelMaterial = new THREE.MeshLambertMaterial({ color: '#1a1a1a' });
     const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
     barrel.userData.isCustomModel = true; // Mark as custom
     barrel.rotation.x = Math.PI / 2; // Rotate 90 degrees to point forward
     barrel.position.y = 0.02;
-    barrel.position.z = 0.0; // Move even closer to player - right at handle level
+    barrel.position.z = -0.05; // Move further back toward player
     gun.add(barrel);
     
     // Body
@@ -542,48 +542,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       onAmmoChange(ammo.current);
     }
     
-    // Check for ammo pickups
-    [controller0Obj, controller1Obj].forEach(controller => {
-      if (!controller) return;
-      
-      const controllerPos = new THREE.Vector3();
-      controller.getWorldPosition(controllerPos);
-      
-      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
-      if (worldGroup) {
-        worldGroup.traverse((child) => {
-          if (child.userData.isAmmoPickup && !child.userData.collected) {
-            const ammoPos = new THREE.Vector3();
-            child.getWorldPosition(ammoPos);
-            
-            const distance = controllerPos.distanceTo(ammoPos);
-            if (distance < 1.0) { // Pickup range
-              child.userData.collected = true;
-              const ammoAmount = 10;
-              ammo.current = Math.min(maxAmmo.current, ammo.current + ammoAmount);
-              console.log(`Picked up ammo! +${ammoAmount} (${ammo.current}/${maxAmmo.current})`);
-              
-              // Play ammo pickup sound
-              import('../lib/stores/useAudio').then(({ useAudio }) => {
-                useAudio.getState().playGunAmmo();
-              });
-              
-              // Remove pickup with animation
-              const animatePickup = () => {
-                child.scale.multiplyScalar(1.1);
-                child.rotation.y += 0.3;
-                if (child.scale.x < 3) {
-                  requestAnimationFrame(animatePickup);
-                } else {
-                  child.parent?.remove(child);
-                }
-              };
-              animatePickup();
-            }
-          }
-        });
+    // Auto-recharge ammo slowly
+    if (ammo.current < maxAmmo.current) {
+      ammo.current += 15 * deltaTime; // Recharge 15 ammo per second
+      if (ammo.current > maxAmmo.current) {
+        ammo.current = maxAmmo.current;
       }
-    });
+    }
 
     // Handle direction locking
     if (swordsHeld > lastSwordsHeld.current) {
