@@ -178,15 +178,23 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     if (!controller0 || !controller1) return;
 
-    // Store controller refs and hide ALL controller models
+    // Store controller refs and COMPLETELY hide ALL controller models
     if (!controller0Ref.current) {
       controller0Ref.current = gl.xr.getController(0);
       controller0Ref.current.visible = false; // Hide ray controller
+      // Hide all children of the controller
+      controller0Ref.current.traverse((child) => {
+        child.visible = false;
+      });
       scene.add(controller0Ref.current);
     }
     if (!controller1Ref.current) {
       controller1Ref.current = gl.xr.getController(1);
       controller1Ref.current.visible = false; // Hide ray controller
+      // Hide all children of the controller
+      controller1Ref.current.traverse((child) => {
+        child.visible = false;
+      });
       scene.add(controller1Ref.current);
     }
     
@@ -194,12 +202,52 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     if (!controllerGrip0Ref.current) {
       controllerGrip0Ref.current = gl.xr.getControllerGrip(0);
       controllerGrip0Ref.current.visible = false; // Hide grip model
+      // Hide all children and sub-children of grip controller
+      controllerGrip0Ref.current.traverse((child) => {
+        child.visible = false;
+        if (child.type === 'Mesh' || child.type === 'Group') {
+          child.visible = false;
+        }
+      });
       scene.add(controllerGrip0Ref.current);
     }
     if (!controllerGrip1Ref.current) {
       controllerGrip1Ref.current = gl.xr.getControllerGrip(1);
       controllerGrip1Ref.current.visible = false; // Hide grip model
+      // Hide all children and sub-children of grip controller
+      controllerGrip1Ref.current.traverse((child) => {
+        child.visible = false;
+        if (child.type === 'Mesh' || child.type === 'Group') {
+          child.visible = false;
+        }
+      });
       scene.add(controllerGrip1Ref.current);
+    }
+    
+    // Continuously ensure controllers stay invisible
+    if (controller0Ref.current) {
+      controller0Ref.current.visible = false;
+      controller0Ref.current.traverse((child) => {
+        child.visible = false;
+      });
+    }
+    if (controller1Ref.current) {
+      controller1Ref.current.visible = false;
+      controller1Ref.current.traverse((child) => {
+        child.visible = false;
+      });
+    }
+    if (controllerGrip0Ref.current) {
+      controllerGrip0Ref.current.visible = false;
+      controllerGrip0Ref.current.traverse((child) => {
+        child.visible = false;
+      });
+    }
+    if (controllerGrip1Ref.current) {
+      controllerGrip1Ref.current.visible = false;
+      controllerGrip1Ref.current.traverse((child) => {
+        child.visible = false;
+      });
     }
 
     // Handle controller input
