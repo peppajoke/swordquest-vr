@@ -563,24 +563,33 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       
       // Removed momentum logging
     } else {
-      // Exponential speed decay - maintains high speeds, drops low speeds quickly
-      const currentSpeed = velocity.current.length();
-      const speedThreshold = 1.0; // Speed below which decay accelerates
+      // Check if we're in the boost timing window - if so, maintain momentum!
+      const inBoostTimingWindow = lastStoppedAccelerating.current > 0 && 
+                                 (currentTime - lastStoppedAccelerating.current) <= 600; // 600ms window
       
-      if (currentSpeed > speedThreshold) {
-        // High speeds: gentle decay (maintain momentum)
-        const highSpeedDecay = 0.98; // Very gentle decay for high speeds
-        velocity.current.multiplyScalar(Math.pow(highSpeedDecay, deltaTime * 60));
+      if (inBoostTimingWindow) {
+        // Maintain current velocity during timing window - no friction!
+        // Player coasts on momentum until they grab swords again or miss the window
       } else {
-        // Low speeds: exponential decay (quick drop-off)
-        const normalizedSpeed = currentSpeed / speedThreshold; // 0 to 1
-        const exponentialFactor = Math.pow(normalizedSpeed, 2); // Square makes it more exponential
-        const decayRate = 0.1 + (0.9 * exponentialFactor); // 0.1 to 1.0 decay rate
-        velocity.current.multiplyScalar(Math.pow(decayRate, deltaTime * 60));
+        // Exponential speed decay - maintains high speeds, drops low speeds quickly
+        const currentSpeed = velocity.current.length();
+        const speedThreshold = 1.0; // Speed below which decay accelerates
+        
+        if (currentSpeed > speedThreshold) {
+          // High speeds: gentle decay (maintain momentum)
+          const highSpeedDecay = 0.98; // Very gentle decay for high speeds
+          velocity.current.multiplyScalar(Math.pow(highSpeedDecay, deltaTime * 60));
+        } else {
+          // Low speeds: exponential decay (quick drop-off)
+          const normalizedSpeed = currentSpeed / speedThreshold; // 0 to 1
+          const exponentialFactor = Math.pow(normalizedSpeed, 2); // Square makes it more exponential
+          const decayRate = 0.1 + (0.9 * exponentialFactor); // 0.1 to 1.0 decay rate
+          velocity.current.multiplyScalar(Math.pow(decayRate, deltaTime * 60));
+        }
+        
+        // Gentle acceleration decay
+        acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
       }
-      
-      // Gentle acceleration decay
-      acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
       
       // Check for momentum transfer opportunities
       if (!wasAccelerating.current) {

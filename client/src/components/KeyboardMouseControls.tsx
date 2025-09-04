@@ -208,18 +208,27 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         velocity.current.normalize().multiplyScalar(desiredSpeed);
       }
     } else {
-      // Apply exponential decay when not accelerating (same as VR)
-      const decayFactor = Math.pow(0.15, deltaTime);
-      const currentSpeed = velocity.current.length();
+      // Check if we're in the boost timing window - if so, maintain momentum!
+      const inBoostTimingWindow = lastStoppedAccelerating.current > 0 && 
+                                 (currentTime - lastStoppedAccelerating.current) <= 600; // 600ms window
       
-      if (currentSpeed > 0.05) {
-        velocity.current.multiplyScalar(decayFactor);
+      if (inBoostTimingWindow) {
+        // Maintain current velocity during timing window - no friction!
+        // Player coasts on momentum until they grab swords again or miss the window
       } else {
-        velocity.current.multiplyScalar(Math.pow(decelerationRate.current, deltaTime * 60));
+        // Apply exponential decay when not accelerating (same as VR)
+        const decayFactor = Math.pow(0.15, deltaTime);
+        const currentSpeed = velocity.current.length();
+        
+        if (currentSpeed > 0.05) {
+          velocity.current.multiplyScalar(decayFactor);
+        } else {
+          velocity.current.multiplyScalar(Math.pow(decelerationRate.current, deltaTime * 60));
+        }
+        
+        // Gentle acceleration decay
+        acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
       }
-      
-      // Gentle acceleration decay
-      acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
     }
     
     // Apply velocity to camera position
