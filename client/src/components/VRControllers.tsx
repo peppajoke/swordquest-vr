@@ -29,6 +29,15 @@ export default function VRControllers() {
   const lastSwordClashTime = useRef(0);
   const lastAButtonTime = useRef<{ [key: string]: number }>({});
   
+  // Fuel system
+  const fuel = useRef(100); // 0-100 fuel
+  const maxFuel = useRef(100);
+  const fuelDrainRate = useRef(25); // fuel per second when accelerating
+  const fuelRechargeRate = useRef(15); // fuel per second when not holding swords
+  const fuelPenaltyRecovery = useRef(5); // slow recovery after running empty
+  const wasEmpty = useRef(false); // track if fuel was completely empty
+  const emptyPenaltyTime = useRef(0); // time since fuel was empty
+  
   // Momentum-based movement system
   const velocity = useRef(new THREE.Vector3(0, 0, 0));
   const acceleration = useRef(new THREE.Vector3(0, 0, 0));
@@ -36,6 +45,11 @@ export default function VRControllers() {
   const accelerationRate = useRef(3.0);
   const decelerationRate = useRef(0.05); // MUCH SLOWER: Extremely slow deceleration to maintain momentum much longer
   const turnRate = useRef(0.1);
+  
+  // Advanced turning mechanics
+  const lastDirection = useRef(new THREE.Vector3(0, 0, -1));
+  const wasAccelerating = useRef(false);
+  const momentumTransferBonus = useRef(0); // temporary speed boost
   
   // Removed sword scaling variables
 
@@ -381,7 +395,10 @@ export default function VRControllers() {
     // Debug controller detection and send to Quest 3 display
     if (Math.random() < 0.01) { // Log 1% of frames
       const isVRActive = !!gl.xr.getSession();
-      // Removed controller detection logging
+      // Display fuel status occasionally
+    if (Math.random() < 0.01) { // 1% of frames
+      console.log(`⛽ FUEL: ${fuel.current.toFixed(1)}/${maxFuel.current} | ${wasEmpty.current ? 'PENALTY MODE' : 'NORMAL'} | Boost: ${momentumTransferBonus.current.toFixed(2)}`);
+    }
       
       // Send debug data to Quest 3 display
       if (typeof window !== 'undefined') {
@@ -416,22 +433,72 @@ export default function VRControllers() {
     cameraDirection.y = 0; // Lock to ground level - no up/down movement
     cameraDirection.normalize(); // Renormalize after removing Y component
     
-    // Calculate desired direction based on grip state and head direction
-    if (swordsHeld > 0) {
+    // Update fuel system
+    if (swordsHeld > 0 && fuel.current > 0) {
+      // Drain fuel when accelerating
+      fuel.current -= fuelDrainRate.current * deltaTime;
+      if (fuel.current <= 0) {
+        fuel.current = 0;
+        wasEmpty.current = true;
+        emptyPenaltyTime.current = 0;
+        console.log('⛽ FUEL EMPTY! Penalty recovery activated.');
+      }
+      wasAccelerating.current = true;
+    } else {
+      // Recharge fuel when not holding swords
+      if (swordsHeld === 0) {
+        const rechargeRate = wasEmpty.current && emptyPenaltyTime.current < 3.0 
+          ? fuelPenaltyRecovery.current // slow recovery for 3 seconds after empty
+          : fuelRechargeRate.current; // normal recovery
+        
+        fuel.current += rechargeRate * deltaTime;
+        if (fuel.current >= maxFuel.current) {
+          fuel.current = maxFuel.current;
+          wasEmpty.current = false; // reset penalty
+        }
+        
+        if (wasEmpty.current) {
+          emptyPenaltyTime.current += deltaTime;
+          if (emptyPenaltyTime.current >= 3.0) {
+            wasEmpty.current = false;
+            console.log('⛽ Fuel penalty recovery complete!');
+          }
+        }
+      }
+      wasAccelerating.current = false;
+    }
+    
+    // Calculate desired direction based on grip state, head direction, and fuel
+    if (swordsHeld > 0 && fuel.current > 0) {
       const speedMultiplier = swordsHeld; // 1x for one sword, 2x for both
-      const desiredSpeed = maxSpeed.current * speedMultiplier;
+      const fuelMultiplier = Math.max(0.3, fuel.current / maxFuel.current); // 30% minimum speed when low fuel
+      const desiredSpeed = maxSpeed.current * speedMultiplier * fuelMultiplier + momentumTransferBonus.current;
+      
+      // Advanced turning mechanics
+      const directionChange = cameraDirection.angleTo(lastDirection.current);
+      const isHarshTurn = directionChange > Math.PI / 6; // 30 degrees or more
+      
+      if (wasAccelerating.current && isHarshTurn) {
+        // Harsh turn while accelerating: reduce momentum
+        const momentumLoss = 0.7; // lose 30% momentum
+        velocity.current.multiplyScalar(momentumLoss);
+        console.log('🔄 Harsh turn while accelerating - momentum reduced!');
+      }
+      
       const targetDirection = cameraDirection.clone().multiplyScalar(desiredSpeed);
       
-      // Smoothly interpolate acceleration toward target direction (prevents harsh turns)
+      // Smoothly interpolate acceleration toward target direction
       acceleration.current.lerp(targetDirection, turnRate.current);
       
       // Apply acceleration to velocity
       velocity.current.add(acceleration.current.clone().multiplyScalar(deltaTime * accelerationRate.current));
       
-      // Clamp velocity to max speed
+      // Clamp velocity to max speed (including bonus)
       if (velocity.current.length() > desiredSpeed) {
         velocity.current.normalize().multiplyScalar(desiredSpeed);
       }
+      
+      lastDirection.current.copy(cameraDirection);
       
       // Removed momentum logging
     } else {
@@ -453,6 +520,35 @@ export default function VRControllers() {
       
       // Gentle acceleration decay
       acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
+      
+      // Check for momentum transfer opportunities
+      if (!wasAccelerating.current) {
+        const directionChange = cameraDirection.angleTo(lastDirection.current);
+        const isSignificantTurn = directionChange > Math.PI / 8; // 22.5 degrees
+        
+        if (isSignificantTurn && velocity.current.length() > 1.0) {
+          // Good turning technique: released acceleration then turned
+          const currentSpeed = velocity.current.length();
+          const transferEfficiency = 1.0 + (currentSpeed / maxSpeed.current) * 0.3; // up to 30% bonus
+          
+          // Transfer momentum to new direction with bonus
+          const newDirection = cameraDirection.clone().normalize();
+          velocity.current = newDirection.multiplyScalar(currentSpeed * transferEfficiency);
+          
+          // Temporary speed boost
+          momentumTransferBonus.current = Math.min(2.0, currentSpeed * 0.2);
+          
+          console.log(`🚀 Momentum transfer! Speed boost: ${momentumTransferBonus.current.toFixed(2)}`);
+        }
+        
+        lastDirection.current.copy(cameraDirection);
+      }
+      
+      // Decay momentum transfer bonus
+      if (momentumTransferBonus.current > 0) {
+        momentumTransferBonus.current -= deltaTime * 2.0; // decay over 1 second
+        if (momentumTransferBonus.current < 0) momentumTransferBonus.current = 0;
+      }
       
       // Removed decay logging
     }
