@@ -58,6 +58,15 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const lockedDirection = useRef<THREE.Vector3 | null>(null);
   const lastSwordsHeld = useRef(0);
   
+  // Burst speed system
+  const lastStoppedAccelerating = useRef<number>(0);
+  const burstSpeedMultiplier = useRef<number>(1.0);
+  const burstSpeedDecay = useRef<number>(0);
+  const BURST_SPEED_MULTIPLIER = 2.5; // 2.5x speed boost
+  const BURST_SPEED_DURATION = 1000; // 1 second duration
+  const MIN_STOP_TIME = 400; // minimum 400ms stop
+  const MAX_STOP_TIME = 600; // maximum 600ms stop
+  
 
   // Create static level with floor and destructible objects
   const initializeStaticLevel = (worldGroup: THREE.Group) => {
@@ -415,15 +424,42 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     cameraDirection.y = 0; // Lock to ground level - no up/down movement
     cameraDirection.normalize(); // Renormalize after removing Y component
     
+    // Burst speed system - track acceleration state changes
+    const isAccelerating = swordsHeld > 0 && fuel.current > 0;
+    const currentTime = Date.now();
+    
+    if (isAccelerating && !wasAccelerating.current) {
+      // Just started accelerating - check if we stopped for the right duration
+      const stopDuration = currentTime - lastStoppedAccelerating.current;
+      if (lastStoppedAccelerating.current > 0 && stopDuration >= MIN_STOP_TIME && stopDuration <= MAX_STOP_TIME) {
+        // Grant burst speed!
+        burstSpeedMultiplier.current = BURST_SPEED_MULTIPLIER;
+        burstSpeedDecay.current = currentTime + BURST_SPEED_DURATION;
+      }
+    } else if (!isAccelerating && wasAccelerating.current) {
+      // Just stopped accelerating
+      lastStoppedAccelerating.current = currentTime;
+    }
+    
+    // Update burst speed decay
+    if (burstSpeedDecay.current > 0 && currentTime > burstSpeedDecay.current) {
+      burstSpeedMultiplier.current = 1.0;
+      burstSpeedDecay.current = 0;
+    } else if (burstSpeedDecay.current > 0) {
+      // Smoothly decay burst speed
+      const timeRemaining = burstSpeedDecay.current - currentTime;
+      const decayProgress = timeRemaining / BURST_SPEED_DURATION;
+      burstSpeedMultiplier.current = 1.0 + (BURST_SPEED_MULTIPLIER - 1.0) * decayProgress;
+    }
+    
     // Update fuel system
-    if (swordsHeld > 0 && fuel.current > 0) {
+    if (isAccelerating) {
       // Drain fuel when accelerating
       fuel.current -= fuelDrainRate.current * deltaTime;
       if (fuel.current <= 0) {
         fuel.current = 0;
         wasEmpty.current = true;
         emptyPenaltyTime.current = 0;
-        // Fuel empty
       }
       wasAccelerating.current = true;
     } else {
@@ -443,7 +479,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           emptyPenaltyTime.current += deltaTime;
           if (emptyPenaltyTime.current >= 3.0) {
             wasEmpty.current = false;
-            // Fuel penalty recovery complete
           }
         }
       }
@@ -469,7 +504,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     if (swordsHeld > 0 && fuel.current > 0) {
       const speedMultiplier = swordsHeld; // 1x for one sword, 2x for both
       const fuelMultiplier = Math.max(0.3, fuel.current / maxFuel.current); // 30% minimum speed when low fuel
-      const desiredSpeed = maxSpeed.current * speedMultiplier * fuelMultiplier + momentumTransferBonus.current;
+      const burstMultiplier = burstSpeedMultiplier.current; // Apply burst speed if active
+      const desiredSpeed = maxSpeed.current * speedMultiplier * fuelMultiplier * burstMultiplier + momentumTransferBonus.current;
       
       // Use locked direction instead of current camera direction
       const currentMovementDirection = lockedDirection.current || cameraDirection;
