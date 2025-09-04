@@ -120,27 +120,23 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         }
       }
     } else if (!isAccelerating && wasAcceleratingPreviously.current) {
-      // Just stopped accelerating - record the time, but only start decay after 600ms window
+      // Just stopped accelerating - record the time
       lastStoppedAccelerating.current = currentTime;
-      // Set decay to start after the 600ms timing window
-      burstSpeedDecay.current = currentTime + 600;
     }
     
     wasAcceleratingPreviously.current = isAccelerating;
     
-    // Update burst speed decay - only after 600ms window
-    if (burstSpeedDecay.current > 0 && currentTime > burstSpeedDecay.current) {
-      // Check if we're in the decay phase (more than 600ms since stopping)
+    // Update burst speed decay - only start after 600ms grace period
+    if (burstSpeedDecay.current > 0) {
       const timeSinceStopped = currentTime - lastStoppedAccelerating.current;
       if (timeSinceStopped > 600) {
-        // Start decaying after 600ms window
-        const decayTime = timeSinceStopped - 600; // Time spent decaying
-        const decayDuration = 3000; // 3 second decay
+        // Grace period over, start decaying
+        const decayTime = timeSinceStopped - 600;
+        const decayDuration = 3000;
         if (decayTime >= decayDuration) {
           burstSpeedMultiplier.current = 1.0;
           burstSpeedDecay.current = 0;
         } else {
-          // Smoothly decay burst speed
           const decayProgress = (decayDuration - decayTime) / decayDuration;
           const originalBoost = burstSpeedMultiplier.current;
           const decayCurve = Math.sqrt(decayProgress);
