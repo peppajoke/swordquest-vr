@@ -8,6 +8,12 @@ interface Target {
   destroyed: boolean;
 }
 
+interface Pillar {
+  id: string;
+  position: [number, number, number];
+  destroyed: boolean;
+}
+
 interface HitEffect {
   id: string;
   position: { x: number, y: number, z: number };
@@ -23,6 +29,7 @@ interface SwordCollider {
 interface VRGameState {
   score: number;
   targets: Target[];
+  pillars: Pillar[];
   hitEffects: HitEffect[];
   swordColliders: SwordCollider[];
   targetMeshes: { [key: string]: THREE.Mesh };
@@ -43,6 +50,7 @@ interface VRGameState {
   // Actions
   initializeGame: () => void;
   destroyTarget: (id: string) => void;
+  explodePillar: (id: string) => void;
   addHitEffect: (position: [number, number, number], direction?: THREE.Vector3) => void;
   addSwordCollider: (id: string, mesh: THREE.Group) => void;
   removeSwordCollider: (id: string) => void;
@@ -58,19 +66,33 @@ interface VRGameState {
   heal: (amount: number) => void;
 }
 
-const createInitialTargets = (): Target[] => [
-  { id: 'target_1', position: [-2, 1.5, -2], destroyed: false },
-  { id: 'target_2', position: [2, 1.5, -2], destroyed: false },
-  { id: 'target_3', position: [0, 2, -3], destroyed: false },
-  { id: 'target_4', position: [-1, 1, -1], destroyed: false },
-  { id: 'target_5', position: [1, 1, -1], destroyed: false },
-  { id: 'target_6', position: [0, 0.5, -2.5], destroyed: false },
+const createInitialTargets = (): Target[] => [];
+
+const createInitialPillars = (): Pillar[] => [
+  // Scattered red pillars throughout the level
+  { id: 'pillar_1', position: [-5, 1, -3], destroyed: false },
+  { id: 'pillar_2', position: [5, 1, -3], destroyed: false },
+  { id: 'pillar_3', position: [-2, 1, -6], destroyed: false },
+  { id: 'pillar_4', position: [2, 1, -6], destroyed: false },
+  { id: 'pillar_5', position: [0, 1, -8], destroyed: false },
+  { id: 'pillar_6', position: [-7, 1, -10], destroyed: false },
+  { id: 'pillar_7', position: [7, 1, -10], destroyed: false },
+  { id: 'pillar_8', position: [-3, 1, -12], destroyed: false },
+  { id: 'pillar_9', position: [3, 1, -12], destroyed: false },
+  { id: 'pillar_10', position: [0, 1, -15], destroyed: false },
+  { id: 'pillar_11', position: [-6, 1, -18], destroyed: false },
+  { id: 'pillar_12', position: [6, 1, -18], destroyed: false },
+  { id: 'pillar_13', position: [-1, 1, -20], destroyed: false },
+  { id: 'pillar_14', position: [1, 1, -20], destroyed: false },
+  { id: 'pillar_15', position: [-8, 1, -25], destroyed: false },
+  { id: 'pillar_16', position: [8, 1, -25], destroyed: false },
 ];
 
 export const useVRGame = create<VRGameState>()(
   subscribeWithSelector((set, get) => ({
     score: 0,
     targets: createInitialTargets(),
+    pillars: createInitialPillars(),
     hitEffects: [],
     swordColliders: [],
     targetMeshes: {},
@@ -92,6 +114,7 @@ export const useVRGame = create<VRGameState>()(
       set({
         score: 0,
         targets: createInitialTargets(),
+        pillars: createInitialPillars(),
         hitEffects: [],
         swordColliders: [],
         targetMeshes: {},
@@ -136,6 +159,34 @@ export const useVRGame = create<VRGameState>()(
         if (remainingTargets.length === 0) {
           set(state => ({ score: state.score + 50 })); // Bonus points
         }
+      }
+    },
+
+    explodePillar: (id: string) => {
+      const { pillars, score } = get();
+      const pillar = pillars.find(p => p.id === id);
+      
+      if (pillar && !pillar.destroyed) {
+        set({
+          pillars: pillars.map(p => 
+            p.id === id ? { ...p, destroyed: true } : p
+          ),
+          score: score + 20 // More points for pillars
+        });
+
+        // Play explosion sound
+        import('../stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playHit();
+        });
+
+        // Respawn pillar after 10 seconds
+        setTimeout(() => {
+          set(state => ({
+            pillars: state.pillars.map(p => 
+              p.id === id ? { ...p, destroyed: false } : p
+            )
+          }));
+        }, 10000);
       }
     },
 
