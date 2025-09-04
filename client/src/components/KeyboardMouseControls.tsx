@@ -103,9 +103,9 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         const maxError = 100; // 100ms is max error (400ms or 600ms from perfect)
         const timingAccuracy = 1.0 - (timingError / maxError); // 1.0 = perfect, 0.0 = worst
         
-        // Scale boost from 15.0x (worst) to 40.0x (perfect)
-        const minBoost = 15.0;
-        const maxBoost = 40.0;
+        // Scale boost from 7.5x (worst) to 20.0x (perfect)
+        const minBoost = 7.5;
+        const maxBoost = 20.0;
         const boostStrength = minBoost + (maxBoost - minBoost) * timingAccuracy;
         
         console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = ${boostStrength.toFixed(1)}x BOOST!`);
