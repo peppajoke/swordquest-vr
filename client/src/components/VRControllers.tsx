@@ -30,9 +30,9 @@ export default function VRControllers() {
   // Momentum-based movement system
   const velocity = useRef(new THREE.Vector3(0, 0, 0));
   const acceleration = useRef(new THREE.Vector3(0, 0, 0));
-  const maxSpeed = useRef(2.0);
+  const maxSpeed = useRef(5.0); // INCREASED: Much higher max speed
   const accelerationRate = useRef(3.0);
-  const decelerationRate = useRef(6.0);
+  const decelerationRate = useRef(1.5); // SLOWER: Much slower deceleration to maintain momentum
   const turnRate = useRef(0.1);
   
   // Sword animation tracking
