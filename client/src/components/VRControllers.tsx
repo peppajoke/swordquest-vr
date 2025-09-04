@@ -45,6 +45,10 @@ export default function VRControllers() {
     guard.castShadow = true;
     swordGroup.add(guard);
 
+    // Rotate sword to point forward at a more natural angle
+    swordGroup.rotation.x = -Math.PI / 4; // 45 degrees downward
+    swordGroup.rotation.z = Math.PI / 8;   // Slight twist for natural grip
+
     return swordGroup;
   };
 
