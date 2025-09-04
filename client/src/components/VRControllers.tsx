@@ -10,7 +10,7 @@ const SWORD_MATERIAL = new THREE.MeshLambertMaterial({ color: '#c0392b' });
 const HANDLE_MATERIAL = new THREE.MeshLambertMaterial({ color: '#8b4513' });
 
 export default function VRControllers() {
-  const { gl, scene } = useThree();
+  const { gl, scene, camera } = useThree();
   const leftSwordRef = useRef<THREE.Group>();
   const rightSwordRef = useRef<THREE.Group>();
   const leftGrabbing = useRef(false);
@@ -156,9 +156,43 @@ export default function VRControllers() {
     
     if (!controller0 || !controller1) return;
     
-    // Get controller gamepads for trigger input
+    // Get controller gamepads for input
     const gamepad0 = controller0.userData.gamepad;
     const gamepad1 = controller1.userData.gamepad;
+    
+    // Handle movement with left controller's left joystick
+    if (gamepad0?.axes) {
+      const joystickX = gamepad0.axes[2]; // Left joystick X axis
+      const joystickY = gamepad0.axes[3]; // Left joystick Y axis
+      
+      if (Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) { // Dead zone
+        const moveSpeed = 0.05; // Movement speed
+        
+        // Get camera's forward and right vectors
+        const forward = new THREE.Vector3(0, 0, -1);
+        const right = new THREE.Vector3(1, 0, 0);
+        
+        // Apply camera rotation to movement vectors (for head-relative movement)
+        forward.applyQuaternion(camera.quaternion);
+        right.applyQuaternion(camera.quaternion);
+        
+        // Flatten movement vectors to prevent flying
+        forward.y = 0;
+        right.y = 0;
+        forward.normalize();
+        right.normalize();
+        
+        // Calculate movement direction
+        const moveDirection = new THREE.Vector3();
+        moveDirection.add(forward.multiplyScalar(-joystickY)); // Forward/backward
+        moveDirection.add(right.multiplyScalar(joystickX));    // Left/right
+        
+        // Apply movement to camera position
+        camera.position.add(moveDirection.multiplyScalar(moveSpeed));
+        
+        console.log(`VRControllers: Moving - X: ${joystickX.toFixed(2)}, Y: ${joystickY.toFixed(2)}`);
+      }
+    }
     
     // Handle trigger input for bullet firing
     if (gamepad0?.buttons?.[0]?.pressed) { // Left trigger pressed
