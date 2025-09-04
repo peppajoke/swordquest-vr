@@ -395,10 +395,7 @@ export default function VRControllers() {
     // Debug controller detection and send to Quest 3 display
     if (Math.random() < 0.01) { // Log 1% of frames
       const isVRActive = !!gl.xr.getSession();
-      // Display fuel status occasionally
-    if (Math.random() < 0.01) { // 1% of frames
-      console.log(`⛽ FUEL: ${fuel.current.toFixed(1)}/${maxFuel.current} | ${wasEmpty.current ? 'PENALTY MODE' : 'NORMAL'} | Boost: ${momentumTransferBonus.current.toFixed(2)}`);
-    }
+      // Removed fuel debug logging
       
       // Send debug data to Quest 3 display
       if (typeof window !== 'undefined') {
@@ -441,7 +438,7 @@ export default function VRControllers() {
         fuel.current = 0;
         wasEmpty.current = true;
         emptyPenaltyTime.current = 0;
-        console.log('⛽ FUEL EMPTY! Penalty recovery activated.');
+        // Fuel empty
       }
       wasAccelerating.current = true;
     } else {
@@ -461,7 +458,7 @@ export default function VRControllers() {
           emptyPenaltyTime.current += deltaTime;
           if (emptyPenaltyTime.current >= 3.0) {
             wasEmpty.current = false;
-            console.log('⛽ Fuel penalty recovery complete!');
+            // Fuel penalty recovery complete
           }
         }
       }
@@ -482,7 +479,7 @@ export default function VRControllers() {
         // Harsh turn while accelerating: reduce momentum
         const momentumLoss = 0.7; // lose 30% momentum
         velocity.current.multiplyScalar(momentumLoss);
-        console.log('🔄 Harsh turn while accelerating - momentum reduced!');
+        // Harsh turn while accelerating
       }
       
       const targetDirection = cameraDirection.clone().multiplyScalar(desiredSpeed);
@@ -538,7 +535,7 @@ export default function VRControllers() {
           // Temporary speed boost
           momentumTransferBonus.current = Math.min(2.0, currentSpeed * 0.2);
           
-          console.log(`🚀 Momentum transfer! Speed boost: ${momentumTransferBonus.current.toFixed(2)}`);
+          // Momentum transfer speed boost
         }
         
         lastDirection.current.copy(cameraDirection);
@@ -681,27 +678,11 @@ export default function VRControllers() {
         // Apply movement to camera position
         camera.position.add(moveDirection.multiplyScalar(moveSpeed));
         
-        console.log(`\ud83c\udfae MOVING! X: ${joystickX.toFixed(2)}, Y: ${joystickY.toFixed(2)}`);
       }
     }
     
     // Handle trigger input for bullet firing
-    // Debug: Log gamepad state
-    if (gamepad0?.buttons) {
-      gamepad0.buttons.forEach((button: any, index: number) => {
-        if (button.pressed) {
-          console.log(`Left controller button ${index} pressed:`, button.value);
-        }
-      });
-    }
-    
-    if (gamepad1?.buttons) {
-      gamepad1.buttons.forEach((button: any, index: number) => {
-        if (button.pressed) {
-          console.log(`Right controller button ${index} pressed:`, button.value);
-        }
-      });
-    }
+    // Removed gamepad debug logging
     
     // Handle A button for 180-degree flip
     const handleAButton = (controllerId: string) => {
@@ -713,7 +694,7 @@ export default function VRControllers() {
       
       lastAButtonTime.current[controllerId] = now;
       
-      console.log(`🔄 A BUTTON: Flipping view 180 degrees (${controllerId})`);
+      // A button flip
       
       // Rotate camera 180 degrees around Y axis (horizontal flip)
       camera.rotateY(Math.PI);
