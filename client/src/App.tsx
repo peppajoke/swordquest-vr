@@ -2,6 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import { VRButton, XR, createXRStore } from "@react-three/xr";
 import VRGame from "./components/VRGame";
+import { ControlsInstructions } from "./components/ControlsInstructions";
 import "@fontsource/inter";
 import "./index.css";
 
@@ -27,6 +28,9 @@ function App() {
         <p style={{ margin: '0 0 15px 0', fontSize: '14px' }}>Squeeze controllers to spawn swords!</p>
         <VRButton store={store} />
       </div>
+
+      {/* Controls Instructions */}
+      <ControlsInstructions />
 
       {/* Main Canvas */}
       <Canvas

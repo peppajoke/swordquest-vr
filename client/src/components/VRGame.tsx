@@ -6,6 +6,8 @@ import GameObjects from './GameObjects';
 import SwordEffects from './SwordEffects';
 import { VRDebugDisplay } from './VRDebugDisplay';
 import { VROverlay } from './VROverlay';
+import { KeyboardMouseControls } from './KeyboardMouseControls';
+import { ControlsInstructions } from './ControlsInstructions';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
@@ -70,6 +72,9 @@ export default function VRGame() {
 
       {/* VR Components - Stay in VR space, don't move with world */}
       <VRControllers onFuelChange={setFuel} />
+      
+      {/* Keyboard/Mouse Controls - Alternative to VR */}
+      <KeyboardMouseControls onFuelChange={setFuel} />
       
       {/* VR Overlay with health and fuel meters */}
       <VROverlay 
