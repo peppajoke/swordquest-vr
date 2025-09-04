@@ -168,6 +168,9 @@ function TurretTower({ position }: { position: [number, number, number] }) {
     if (canShootPlayer) {
       // Shoot every 2 seconds
       if (currentTime - lastShotTime.current > 2000) {
+        // Calculate shooting direction
+        const direction = playerPos.clone().sub(turretPos).normalize();
+        
         // Create turret bullet group
         const bulletGroup = new THREE.Group();
         
