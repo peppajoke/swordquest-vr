@@ -323,14 +323,17 @@ export default function VRControllers() {
       const speedMultiplier = swordsHeld; // 1x speed for one sword, 2x for both
       const actualSpeed = gameSpeed * speedMultiplier;
       
-      // FIX: Move the XR rig (VR space) not just camera
+      // FIX: WebXR movement - need to move the world, not the camera
       if (gl.xr.getSession()) {
-        // In VR - move the camera group/rig
-        const xrRig = camera.parent;
-        if (xrRig) {
-          xrRig.position.z += actualSpeed;
-        } else {
-          camera.position.z += actualSpeed;
+        // In VR - move the entire scene towards the player instead
+        // This creates the illusion of forward movement
+        scene.position.z -= actualSpeed; // Move world backward = player moves forward
+        
+        // Also move the camera for consistency with target cleanup
+        camera.position.z += actualSpeed;
+        
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`VR MOVEMENT: ${actualSpeed.toFixed(3)} speed`);
         }
       } else {
         // In 2D preview - move camera directly
