@@ -437,9 +437,9 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         const maxError = 100; // 100ms is max error (400ms or 600ms from perfect)
         const timingAccuracy = 1.0 - (timingError / maxError); // 1.0 = perfect, 0.0 = worst
         
-        // Scale boost from 1.5x (worst) to 4.0x (perfect)
-        const minBoost = 1.5;
-        const maxBoost = 4.0;
+        // Scale boost from 3.0x (worst) to 8.0x (perfect)
+        const minBoost = 3.0;
+        const maxBoost = 8.0;
         const boostStrength = minBoost + (maxBoost - minBoost) * timingAccuracy;
         
         console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = ${boostStrength.toFixed(1)}x BOOST!`);
