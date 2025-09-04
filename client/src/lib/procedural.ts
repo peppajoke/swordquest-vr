@@ -6,6 +6,7 @@ export interface WorldChunk {
   generated: boolean;
   meshes: THREE.Object3D[];
   obstacles: THREE.Object3D[];
+  destroyables: THREE.Object3D[];
 }
 
 export interface TerrainConfig {
@@ -73,6 +74,59 @@ export class ProceduralWorldGenerator {
     return terrains;
   }
 
+  private generateDestroyableObjects(chunkPos: THREE.Vector3): THREE.Object3D[] {
+    const destroyables: THREE.Object3D[] = [];
+    
+    // Generate 8-12 destroyable objects per chunk
+    const count = 8 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+      const x = chunkPos.x + Math.random() * this.config.chunkSize;
+      const z = chunkPos.z + Math.random() * this.config.chunkSize;
+      
+      // Random destroyable type
+      const type = Math.floor(Math.random() * 4);
+      let object: THREE.Object3D;
+      
+      switch (type) {
+        case 0: // Wooden Crates
+          object = new THREE.Mesh(
+            new THREE.BoxGeometry(0.6 + Math.random() * 0.4, 0.6 + Math.random() * 0.4, 0.6 + Math.random() * 0.4),
+            new THREE.MeshLambertMaterial({ color: 0x8B4513 + Math.random() * 0x333333 })
+          );
+          break;
+        case 1: // Crystal Formations
+          object = new THREE.Mesh(
+            new THREE.ConeGeometry(0.2 + Math.random() * 0.3, 0.8 + Math.random() * 0.6, 6),
+            new THREE.MeshLambertMaterial({ color: 0x00FFFF + Math.random() * 0x004444, transparent: true, opacity: 0.8 })
+          );
+          break;
+        case 2: // Pottery/Vases
+          object = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2 + Math.random() * 0.2, 0.3 + Math.random() * 0.2, 0.8 + Math.random() * 0.4, 8),
+            new THREE.MeshLambertMaterial({ color: 0xCD853F + Math.random() * 0x222222 })
+          );
+          break;
+        default: // Ice Blocks
+          object = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4 + Math.random() * 0.6, 0.4 + Math.random() * 0.6, 0.4 + Math.random() * 0.6),
+            new THREE.MeshLambertMaterial({ color: 0x87CEEB + Math.random() * 0x111111, transparent: true, opacity: 0.7 })
+          );
+          break;
+      }
+      
+      // Set position
+      object.position.set(x, 0.5, z);
+      object.castShadow = true;
+      
+      // Mark as destroyable
+      (object as any).userData = { destroyable: true, health: 1 };
+      
+      destroyables.push(object);
+    }
+    
+    return destroyables;
+  }
+
   private generateObstacles(chunkPos: THREE.Vector3): THREE.Object3D[] {
     const obstacles: THREE.Object3D[] = [];
     
@@ -124,24 +178,26 @@ export class ProceduralWorldGenerator {
   private generateChunk(chunkPos: THREE.Vector3): WorldChunk {
     const chunkId = this.getChunkKey(chunkPos.x, chunkPos.z);
     
-    // Generate terrain and obstacles
+    // Generate terrain, obstacles, and destroyable objects
     const terrains = this.generateTerrain(chunkPos);
     const obstacles = this.generateObstacles(chunkPos);
+    const destroyables = this.generateDestroyableObjects(chunkPos);
     
     const chunk: WorldChunk = {
       id: chunkId,
       position: chunkPos,
       generated: true,
       meshes: terrains,
-      obstacles: obstacles
+      obstacles: obstacles,
+      destroyables: destroyables
     };
     
     // Add to world group
-    [...terrains, ...obstacles].forEach(obj => {
+    [...terrains, ...obstacles, ...destroyables].forEach(obj => {
       this.worldGroup.add(obj);
     });
     
-    console.log(`🌍 Generated chunk ${chunkId} at (${chunkPos.x}, ${chunkPos.z})`);
+    console.log(`🌍 Generated chunk ${chunkId} at (${chunkPos.x}, ${chunkPos.z}) with ${destroyables.length} destroyables`);
     return chunk;
   }
 
@@ -180,7 +236,7 @@ export class ProceduralWorldGenerator {
       
       if (distance > maxDistance) {
         // Remove from world group
-        [...chunk.meshes, ...chunk.obstacles].forEach(obj => {
+        [...chunk.meshes, ...chunk.obstacles, ...chunk.destroyables].forEach(obj => {
           this.worldGroup.remove(obj);
           // Dispose geometry and material to prevent memory leaks
           if (obj instanceof THREE.Mesh) {
@@ -208,7 +264,7 @@ export class ProceduralWorldGenerator {
   public destroy(): void {
     // Cleanup all chunks
     this.chunks.forEach((chunk) => {
-      [...chunk.meshes, ...chunk.obstacles].forEach(obj => {
+      [...chunk.meshes, ...chunk.obstacles, ...chunk.destroyables].forEach(obj => {
         this.worldGroup.remove(obj);
         if (obj instanceof THREE.Mesh) {
           obj.geometry?.dispose();

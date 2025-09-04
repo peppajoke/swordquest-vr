@@ -27,6 +27,14 @@ export default function VRControllers() {
   const worldGenerator = useRef<ProceduralWorldGenerator | null>(null);
   const lastSwordClashTime = useRef(0);
   
+  // Momentum-based movement system
+  const velocity = useRef(new THREE.Vector3(0, 0, 0));
+  const acceleration = useRef(new THREE.Vector3(0, 0, 0));
+  const maxSpeed = useRef(2.0);
+  const accelerationRate = useRef(3.0);
+  const decelerationRate = useRef(6.0);
+  const turnRate = useRef(0.1);
+  
   // Sword animation tracking
   const leftSwordScale = useRef(0.5); // Start smaller
   const rightSwordScale = useRef(0.5);
@@ -325,7 +333,7 @@ export default function VRControllers() {
     // Update endless runner movement
     updateMovement(deltaTime);
     
-    // Move camera forward only when gripping swords
+    // Momentum-based movement system with acceleration
     const leftGripping = leftGrabbing.current;
     const rightGripping = rightGrabbing.current;
     let swordsHeld = 0;
@@ -333,45 +341,63 @@ export default function VRControllers() {
     if (leftGripping) swordsHeld++;
     if (rightGripping) swordsHeld++;
     
-    // Only move when holding at least one sword, speed increases with both swords
+    // Get the direction the player is facing - constrained to ground level (no vertical movement)
+    const cameraDirection = new THREE.Vector3();
+    camera.getWorldDirection(cameraDirection);
+    cameraDirection.y = 0; // Lock to ground level - no up/down movement
+    cameraDirection.normalize(); // Renormalize after removing Y component
+    
+    // Calculate desired direction based on grip state and head direction
     if (swordsHeld > 0) {
-      const speedMultiplier = swordsHeld; // 1x speed for one sword, 2x for both
-      const baseSpeed = gameSpeed * 0.6; // FASTER: Increase speed to 60% for better gameplay
-      const actualSpeed = baseSpeed * speedMultiplier;
+      const speedMultiplier = swordsHeld; // 1x for one sword, 2x for both
+      const desiredSpeed = maxSpeed.current * speedMultiplier;
+      const targetDirection = cameraDirection.clone().multiplyScalar(desiredSpeed);
       
-      // Get the direction the player is facing - constrained to ground level (no vertical movement)
-      const cameraDirection = new THREE.Vector3();
-      camera.getWorldDirection(cameraDirection);
-      cameraDirection.y = 0; // Lock to ground level - no up/down movement
-      cameraDirection.normalize(); // Renormalize after removing Y component
+      // Smoothly interpolate acceleration toward target direction (prevents harsh turns)
+      acceleration.current.lerp(targetDirection, turnRate.current);
+      
+      // Apply acceleration to velocity
+      velocity.current.add(acceleration.current.clone().multiplyScalar(deltaTime * accelerationRate.current));
+      
+      // Clamp velocity to max speed
+      if (velocity.current.length() > desiredSpeed) {
+        velocity.current.normalize().multiplyScalar(desiredSpeed);
+      }
+      
+      if (Math.random() < 0.005) {
+        console.log(`⚔️ Momentum: ${velocity.current.length().toFixed(3)} - Accel: ${acceleration.current.length().toFixed(3)}`);
+      }
+    } else {
+      // Decelerate when not gripping
+      velocity.current.multiplyScalar(Math.pow(0.1, deltaTime * decelerationRate.current));
+      acceleration.current.multiplyScalar(Math.pow(0.05, deltaTime));
+      
+      if (Math.random() < 0.005 && velocity.current.length() > 0.01) {
+        console.log(`🛑 Decelerating: ${velocity.current.length().toFixed(3)}`);
+      }
+    }
+    
+    // Apply velocity to movement
+    if (velocity.current.length() > 0.01) {
+      const moveVector = velocity.current.clone().multiplyScalar(deltaTime);
       
       // FIX: WebXR movement - move world group, not entire scene
       if (gl.xr.getSession()) {
         // In VR - move only the world group (environment/targets), not controllers
         const worldGroup = scene.getObjectByName('worldGroup');
         if (worldGroup) {
-          const moveVector = cameraDirection.clone().multiplyScalar(-actualSpeed);
-          worldGroup.position.add(moveVector);
+          worldGroup.position.add(moveVector.clone().negate());
         }
         
         // Also move the camera position for consistency with target cleanup
-        const cameraMove = cameraDirection.clone().multiplyScalar(actualSpeed);
-        camera.position.add(cameraMove);
+        camera.position.add(moveVector);
         
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`VR MOVE: ${actualSpeed.toFixed(3)} speed`);
+          (window as any).vrDebugLog(`VR MOMENTUM: ${velocity.current.length().toFixed(3)} speed`);
         }
       } else {
-        // In 2D preview - move camera directly forward
-        camera.position.z += actualSpeed;
-      }
-      
-      if (Math.random() < 0.005) { // Occasionally log grip status
-        console.log(`⚔️ Gripping ${swordsHeld} sword(s) - Speed: ${actualSpeed.toFixed(3)}`);
-      }
-    } else {
-      if (Math.random() < 0.005) { // Log when stopped
-        console.log('✋ Not gripping swords - STOPPED');
+        // In 2D preview - move camera directly
+        camera.position.add(moveVector);
       }
     }
     
@@ -648,6 +674,7 @@ export default function VRControllers() {
         
         // Only check collisions if sword is moving fast enough (slashing)
         if (speed > 0.01) {
+          // Check collisions with game targets
           targets.forEach(target => {
             if (target.destroyed) return;
 
@@ -661,6 +688,64 @@ export default function VRControllers() {
               addHitEffect(target.position);
             }
           });
+          
+          // Check collisions with destroyable objects from procedural world
+          if (worldGenerator.current) {
+            const chunks = worldGenerator.current.getGeneratedChunks();
+            chunks.forEach(chunk => {
+              chunk.destroyables.forEach(obj => {
+                if (!obj.userData || obj.userData.destroyed) return;
+                
+                const distance = currentPos.distanceTo(obj.position);
+                if (distance < 0.8) {
+                  console.log(`⚔️ Sword ${id} destroyed ${obj.userData.type || 'object'}!`);
+                  
+                  // Mark as destroyed
+                  obj.userData.destroyed = true;
+                  
+                  // Add hit effect
+                  addHitEffect([obj.position.x, obj.position.y, obj.position.z]);
+                  
+                  // Animate destruction - scale down and fade out
+                  const originalScale = obj.scale.clone();
+                  const tl = { progress: 0 };
+                  
+                  const animate = () => {
+                    tl.progress += 0.05;
+                    if (tl.progress >= 1) {
+                      // Remove from scene
+                      obj.parent?.remove(obj);
+                      if (obj instanceof THREE.Mesh) {
+                        obj.geometry?.dispose();
+                        if (Array.isArray(obj.material)) {
+                          obj.material.forEach(mat => mat.dispose());
+                        } else {
+                          obj.material?.dispose();
+                        }
+                      }
+                      return;
+                    }
+                    
+                    // Scale down and fade
+                    const scale = 1 - tl.progress;
+                    obj.scale.copy(originalScale.clone().multiplyScalar(scale));
+                    
+                    if (obj instanceof THREE.Mesh && obj.material) {
+                      const material = Array.isArray(obj.material) ? obj.material[0] : obj.material;
+                      if ('opacity' in material) {
+                        material.opacity = scale;
+                        material.transparent = true;
+                      }
+                    }
+                    
+                    requestAnimationFrame(animate);
+                  };
+                  
+                  animate();
+                }
+              });
+            });
+          }
         }
       }
       
