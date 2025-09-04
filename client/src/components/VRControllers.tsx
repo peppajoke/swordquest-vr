@@ -5,9 +5,10 @@ import { useVRGame } from '../lib/stores/useVRGame';
 
 interface VRControllersProps {
   onFuelChange?: (fuel: number) => void;
+  onAmmoChange?: (ammo: number) => void;
 }
 
-export default function VRControllers({ onFuelChange }: VRControllersProps) {
+export default function VRControllers({ onFuelChange, onAmmoChange }: VRControllersProps) {
   const { 
     addHitEffect, 
     explodePillar 
@@ -46,6 +47,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     velocity: THREE.Vector3;
     startTime: number;
   }>>([]);
+  const ammo = useRef(30); // Start with 30 bullets
+  const maxAmmo = useRef(100);
 
   // Fuel system
   const fuel = useRef(100.0);
@@ -82,7 +85,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   }
   
   function fireBullet(controller: THREE.XRTargetRaySpace, hand: 'left' | 'right', scene: THREE.Scene) {
-    if (!controller) return;
+    if (!controller || ammo.current <= 0) return; // Check ammo
     
     const controllerPos = new THREE.Vector3();
     const controllerDir = new THREE.Vector3();
@@ -96,6 +99,10 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     const bullet = createBullet(controllerPos, controllerDir);
     bullets.current.push(bullet);
     scene.add(bullet.mesh);
+    
+    // Consume ammo
+    ammo.current--;
+    console.log(`Ammo: ${ammo.current}/${maxAmmo.current}`);
   }
   
   function createSword() {
@@ -346,6 +353,48 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     if (onFuelChange) {
       onFuelChange(fuel.current);
     }
+    
+    if (onAmmoChange) {
+      onAmmoChange(ammo.current);
+    }
+    
+    // Check for ammo pickups
+    [controller0Obj, controller1Obj].forEach(controller => {
+      if (!controller) return;
+      
+      const controllerPos = new THREE.Vector3();
+      controller.getWorldPosition(controllerPos);
+      
+      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+      if (worldGroup) {
+        worldGroup.traverse((child) => {
+          if (child.userData.isAmmoPickup && !child.userData.collected) {
+            const ammoPos = new THREE.Vector3();
+            child.getWorldPosition(ammoPos);
+            
+            const distance = controllerPos.distanceTo(ammoPos);
+            if (distance < 1.0) { // Pickup range
+              child.userData.collected = true;
+              const ammoAmount = 10;
+              ammo.current = Math.min(maxAmmo.current, ammo.current + ammoAmount);
+              console.log(`Picked up ammo! +${ammoAmount} (${ammo.current}/${maxAmmo.current})`);
+              
+              // Remove pickup with animation
+              const animatePickup = () => {
+                child.scale.multiplyScalar(1.1);
+                child.rotation.y += 0.3;
+                if (child.scale.x < 3) {
+                  requestAnimationFrame(animatePickup);
+                } else {
+                  child.parent?.remove(child);
+                }
+              };
+              animatePickup();
+            }
+          }
+        });
+      }
+    });
 
     // Handle direction locking
     if (swordsHeld > lastSwordsHeld.current) {

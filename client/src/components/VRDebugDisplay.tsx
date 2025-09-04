@@ -17,9 +17,10 @@ interface VRDebugData {
 interface VRDebugDisplayProps {
   fuel: number;
   maxFuel: number;
+  ammo: number;
 }
 
-export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
+export function VRDebugDisplay({ fuel, maxFuel, ammo }: VRDebugDisplayProps) {
   const { health, maxHealth } = useVRGame();
   const groupRef = useRef<THREE.Group>(null);
   const [debugData, setDebugData] = useState<VRDebugData>({
@@ -76,6 +77,7 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
   
   const fuelPercentage = Math.max(0, Math.min(100, (fuel / maxFuel) * 100));
   const healthPercentage = Math.max(0, Math.min(100, (health / maxHealth) * 100));
+  const ammoPercentage = Math.max(0, Math.min(100, (ammo / 100) * 100)); // Max ammo is 100
   
   const getFuelColor = () => {
     if (fuelPercentage > 60) return '#00ff00';
@@ -92,28 +94,51 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
   return (
     <group ref={groupRef}>
       {/* Health Bar Background */}
-      <mesh position={[0, 0.1, 0]}>
-        <boxGeometry args={[1, 0.08, 0.01]} />
+      <mesh position={[0, 0.15, 0]}>
+        <boxGeometry args={[1, 0.06, 0.01]} />
         <meshLambertMaterial color="#333333" />
       </mesh>
       
       {/* Health Bar Fill - Always Green */}
-      <mesh position={[-0.5 + (healthPercentage / 100) * 0.5, 0.1, 0.005]}>
-        <boxGeometry args={[(healthPercentage / 100), 0.07, 0.01]} />
+      <mesh position={[-0.5 + (healthPercentage / 100) * 0.5, 0.15, 0.005]}>
+        <boxGeometry args={[(healthPercentage / 100), 0.05, 0.01]} />
         <meshLambertMaterial color="#00ff00" />
       </mesh>
       
       {/* Fuel Bar Background */}
-      <mesh position={[0, -0.1, 0]}>
-        <boxGeometry args={[1, 0.08, 0.01]} />
+      <mesh position={[0, 0.05, 0]}>
+        <boxGeometry args={[1, 0.06, 0.01]} />
         <meshLambertMaterial color="#333333" />
       </mesh>
       
       {/* Fuel Bar Fill - Always Yellow */}
-      <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, -0.1, 0.005]}>
-        <boxGeometry args={[(fuelPercentage / 100), 0.07, 0.01]} />
+      <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, 0.05, 0.005]}>
+        <boxGeometry args={[(fuelPercentage / 100), 0.05, 0.01]} />
         <meshLambertMaterial color="#ffff00" />
       </mesh>
+      
+      {/* Ammo Bar Background */}
+      <mesh position={[0, -0.05, 0]}>
+        <boxGeometry args={[1, 0.06, 0.01]} />
+        <meshLambertMaterial color="#333333" />
+      </mesh>
+      
+      {/* Ammo Bar Fill - Always Orange */}
+      <mesh position={[-0.5 + (ammoPercentage / 100) * 0.5, -0.05, 0.005]}>
+        <boxGeometry args={[(ammoPercentage / 100), 0.05, 0.01]} />
+        <meshLambertMaterial color="#ff8800" />
+      </mesh>
+      
+      {/* Ammo Count Text */}
+      <Text
+        position={[0, -0.15, 0]}
+        fontSize={0.08}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+      >
+        {ammo}
+      </Text>
     </group>
   );
 }

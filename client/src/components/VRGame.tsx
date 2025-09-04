@@ -16,6 +16,7 @@ export default function VRGame() {
   const { setBackgroundMusic, setHitSound, setSuccessSound } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
+  const [ammo, setAmmo] = useState(30);
 
   useEffect(() => {
     initializeGame();
@@ -68,13 +69,13 @@ export default function VRGame() {
       </group>
 
       {/* VR Components - Stay in VR space, don't move with world */}
-      <VRControllers onFuelChange={setFuel} />
+      <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} />
       
       {/* Keyboard/Mouse Controls - Alternative to VR */}
       <KeyboardMouseControls onFuelChange={setFuel} />
       
-      {/* VR Debug Display with HP/Fuel - Visible in Quest 3 */}
-      <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} />
+      {/* VR Debug Display with HP/Fuel/Ammo - Visible in Quest 3 */}
+      <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} />
     </>
   );
 }
