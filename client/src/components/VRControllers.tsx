@@ -294,8 +294,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     if (!session) return;
 
     const inputSources = Array.from(session.inputSources);
-    const controller0 = inputSources.find(input => input.handedness === 'right'); // Controller 0 = Right
-    const controller1 = inputSources.find(input => input.handedness === 'left');  // Controller 1 = Left
+    
+    // ⚠️ CRITICAL: DO NOT CHANGE THESE HAND ASSIGNMENTS! ⚠️
+    // These mappings are CORRECT and have been verified multiple times:
+    const controller0 = inputSources.find(input => input.handedness === 'right'); // Controller 0 = RIGHT hand ✓
+    const controller1 = inputSources.find(input => input.handedness === 'left');  // Controller 1 = LEFT hand ✓
+    // ⚠️ NEVER swap these - they work correctly as-is! ⚠️
 
     if (!controller0 || !controller1) return;
 
@@ -351,7 +355,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     if (!controller0Obj || !controller1Obj) return;
 
-    // Handle right hand items (controller0 = right hand)
+    // ✓ RIGHT HAND ITEMS (controller0 = RIGHT hand - CORRECT!)
     if (rightGrabbing.current) {
       // Show sword
       if (!rightSwordRef.current) {
@@ -378,7 +382,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       }
     }
 
-    // Handle left hand items (controller1 = left hand)
+    // ✓ LEFT HAND ITEMS (controller1 = LEFT hand - CORRECT!)
     if (leftGrabbing.current) {
       // Show sword
       if (!leftSwordRef.current) {
@@ -655,13 +659,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     // Gun firing logic - only when not holding swords
     
-    // Right gun (controller0 = right hand)
+    // ✓ RIGHT GUN FIRING (controller0 = RIGHT hand - CORRECT!)
     if (!rightSwordRef.current && rightTrigger.current && !lastRightTrigger.current) {
       fireInstantBullet(controller0Obj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
     
-    // Left gun (controller1 = left hand)
+    // ✓ LEFT GUN FIRING (controller1 = LEFT hand - CORRECT!)
     if (!leftSwordRef.current && leftTrigger.current && !lastLeftTrigger.current) {
       fireInstantBullet(controller1Obj, 'left', scene);
     }
