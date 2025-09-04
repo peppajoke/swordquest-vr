@@ -89,7 +89,6 @@ export const useVRGame = create<VRGameState>()(
     nextTargetId: 7, // Continue from existing targets
 
     initializeGame: () => {
-      console.log('VRGame: Initializing endless runner game');
       set({
         score: 0,
         targets: createInitialTargets(),
@@ -110,7 +109,6 @@ export const useVRGame = create<VRGameState>()(
       const target = targets.find(t => t.id === id);
       
       if (target && !target.destroyed) {
-        console.log(`VRGame: Destroying target ${id}, score: ${score + 10}`);
         
         set({
           targets: targets.map(t => 
@@ -131,13 +129,11 @@ export const useVRGame = create<VRGameState>()(
               t.id === id ? { ...t, destroyed: false } : t
             )
           }));
-          console.log(`VRGame: Target ${id} respawned`);
         }, 3000);
         
         // Check if all targets destroyed for bonus score
         const remainingTargets = targets.filter(t => t.id !== id && !t.destroyed);
         if (remainingTargets.length === 0) {
-          console.log('VRGame: All targets destroyed! Bonus score!');
           set(state => ({ score: state.score + 50 })); // Bonus points
         }
       }
@@ -188,7 +184,6 @@ export const useVRGame = create<VRGameState>()(
     },
 
     resetGame: () => {
-      console.log('VRGame: Resetting game');
       set({
         score: 0,
         targets: createInitialTargets(),
@@ -210,11 +205,9 @@ export const useVRGame = create<VRGameState>()(
       const { canSwordClash } = get();
       
       if (!canSwordClash()) {
-        console.log('⚔️ Sword clash on cooldown');
         return;
       }
 
-      console.log('⚔️ SWORDS CLASHED! Firing projectile from user viewpoint');
       
       // Update last clash time
       set({ lastClashTime: Date.now() });
@@ -264,7 +257,6 @@ export const useVRGame = create<VRGameState>()(
         { id: `target_${nextTargetId + 4}`, position: [1, 1, newSpawnZ - 8], destroyed: false },
       ];
       
-      console.log(`🎯 Spawning ${newTargets.length} new targets at Z: ${newSpawnZ}`);
       
       set({ 
         targets: [...targets, ...newTargets],
@@ -283,7 +275,6 @@ export const useVRGame = create<VRGameState>()(
       );
       
       if (cleanedTargets.length !== targets.length) {
-        console.log(`🧹 Cleaned up ${targets.length - cleanedTargets.length} old targets`);
         set({ targets: cleanedTargets });
       }
     },

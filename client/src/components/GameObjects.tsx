@@ -81,7 +81,6 @@ function TargetBox({ target, onRef }: { target: any, onRef: (mesh: THREE.Mesh | 
       castShadow
       receiveShadow
       onClick={() => {
-        console.log(`Target ${target.id} clicked (fallback)`);
       }}
     >
       <boxGeometry args={[0.8, 0.8, 0.8]} />

@@ -41,9 +41,5 @@ export function getWorldPosition(object: THREE.Object3D): THREE.Vector3 {
 }
 
 export function logCollision(object1: string, object2: string, position: THREE.Vector3) {
-  console.log(`Collision detected: ${object1} -> ${object2} at position:`, {
-    x: position.x.toFixed(2),
-    y: position.y.toFixed(2),
-    z: position.z.toFixed(2)
-  });
+  // Collision logging removed for clean production code
 }

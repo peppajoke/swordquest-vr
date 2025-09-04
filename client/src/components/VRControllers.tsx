@@ -3,7 +3,6 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
-// Removed procedural generation import
 
 const SWORD_GEOMETRY = new THREE.CylinderGeometry(0.01, 0.01, 0.6, 8);
 const SWORD_HANDLE_GEOMETRY = new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8);
@@ -59,7 +58,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const lockedDirection = useRef<THREE.Vector3 | null>(null);
   const lastSwordsHeld = useRef(0);
   
-  // Removed sword scaling variables
 
   // Create static level with floor and destructible objects
   const initializeStaticLevel = (worldGroup: THREE.Group) => {
@@ -135,7 +133,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     worldGroup.add(object);
   }
   
-    console.log(`🏗️ Created static level with ${objects.length} destructible objects`);
     staticObjects.current = objects;
     return objects;
   };
@@ -184,7 +181,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       controllerId
     });
     
-    console.log(`VRControllers: Bullet fired from ${controllerId}`);
   };
 
   // Create sword mesh
@@ -221,7 +217,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   useEffect(() => {
     if (!gl.xr) return;
     
-    console.log('VRControllers: Setting up grip-based movement system');
     
     // Get controllers from renderer
     const controller0 = gl.xr.getController(0);
@@ -236,60 +231,49 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       // Mark as initialized to prevent re-creation
       worldGenerator.current = { initialized: true } as any;
       initializeStaticLevel(worldGroup);
-      console.log('🏗️ Static level initialized');
     }
     
     // Setup event handlers
     const handleSqueezeStart0 = () => {
-      console.log('Left controller squeeze start');
       leftGrabbing.current = true;
     };
     
     const handleSqueezeEnd0 = () => {
-      console.log('Left controller squeeze end');
       leftGrabbing.current = false;
     };
     
     const handleSqueezeStart1 = () => {
-      console.log('Right controller squeeze start');
       rightGrabbing.current = true;
     };
     
     const handleSqueezeEnd1 = () => {
-      console.log('Right controller squeeze end');
       rightGrabbing.current = false;
     };
     
     // Comprehensive trigger event handlers for different event types
     const handleSelectStart0 = () => {
-      console.log('🔫 LEFT TRIGGER FIRED - selectstart');
       leftTriggerPressed.current = true;
     };
     
     const handleSelectEnd0 = () => {
-      console.log('🔫 LEFT TRIGGER RELEASED - selectend');
       leftTriggerPressed.current = false;
     };
     
     const handleSelectStart1 = () => {
-      console.log('🔫 RIGHT TRIGGER FIRED - selectstart');
       rightTriggerPressed.current = true;
     };
     
     const handleSelectEnd1 = () => {
-      console.log('🔫 RIGHT TRIGGER RELEASED - selectend');
       rightTriggerPressed.current = false;
     };
     
     // Alternative event handlers for different button types
     const handleClick0 = () => {
-      console.log('🔫 LEFT CLICK EVENT');
       leftTriggerPressed.current = true;
       setTimeout(() => { leftTriggerPressed.current = false; }, 100);
     };
     
     const handleClick1 = () => {
-      console.log('🔫 RIGHT CLICK EVENT');
       rightTriggerPressed.current = true;
       setTimeout(() => { rightTriggerPressed.current = false; }, 100);
     };
@@ -303,7 +287,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     const handleSqueezeStart0Extended = () => {
       originalSqueezeStart0();
       leftGrabbing.current = true;
-      console.log('⚔️ LEFT SWORD GRIPPED - Movement enabled!');
       // Send to Quest 3 debug display
       if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
         (window as any).vrDebugLog('LEFT SWORD GRIPPED!');
@@ -313,13 +296,11 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     const handleSqueezeEnd0Extended = () => {
       originalSqueezeEnd0();
       leftGrabbing.current = false;
-      console.log('✋ Left sword released - Movement may stop');
     };
     
     const handleSqueezeStart1Extended = () => {
       originalSqueezeStart1();
       rightGrabbing.current = true;
-      console.log('⚔️ RIGHT SWORD GRIPPED - Movement enabled!');
       // Send to Quest 3 debug display
       if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
         (window as any).vrDebugLog('RIGHT SWORD GRIPPED!');
@@ -329,7 +310,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     const handleSqueezeEnd1Extended = () => {
       originalSqueezeEnd1();
       rightGrabbing.current = false;
-      console.log('✋ Right sword released - Movement may stop');
     };
     
     controller0.addEventListener('squeezestart', handleSqueezeStart0Extended);
@@ -338,7 +318,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     controller1.addEventListener('squeezeend', handleSqueezeEnd1Extended);
     
     // Add multiple types of trigger/select event listeners
-    console.log('🎮 Adding ALL possible trigger event listeners...');
     
     // Primary trigger events (selectstart/selectend)
     controller0.addEventListener('selectstart', handleSelectStart0);
@@ -346,33 +325,31 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     controller1.addEventListener('selectstart', handleSelectStart1);
     controller1.addEventListener('selectend', handleSelectEnd1);
     
-    // Alternative button events
-    controller0.addEventListener('click', handleClick0);
-    controller1.addEventListener('click', handleClick1);
+    // Alternative button events (cast to any to bypass type checking)
+    (controller0 as any).addEventListener('click', handleClick0);
+    (controller1 as any).addEventListener('click', handleClick1);
     
     // Try inputsourceschange events
-    controller0.addEventListener('connected', () => console.log('🎮 Controller 0 connected'));
-    controller1.addEventListener('connected', () => console.log('🎮 Controller 1 connected'));
+    controller0.addEventListener('connected', () => {});
+    controller1.addEventListener('connected', () => {});
     
-    // Add any available input events
+    // Add any available input events (cast to any to bypass type checking)
     ['select', 'selectstart', 'selectend', 'click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'].forEach(eventType => {
       try {
-        controller0.addEventListener(eventType, (e) => {
-          console.log(`🎮 Controller 0 ${eventType} event:`, e);
+        (controller0 as any).addEventListener(eventType, (e: any) => {
           if (eventType.includes('start') || eventType.includes('down') || eventType === 'click') {
             leftTriggerPressed.current = true;
             setTimeout(() => { leftTriggerPressed.current = false; }, 100);
           }
         });
-        controller1.addEventListener(eventType, (e) => {
-          console.log(`🎮 Controller 1 ${eventType} event:`, e);
+        (controller1 as any).addEventListener(eventType, (e: any) => {
           if (eventType.includes('start') || eventType.includes('down') || eventType === 'click') {
             rightTriggerPressed.current = true;
             setTimeout(() => { rightTriggerPressed.current = false; }, 100);
           }
         });
       } catch (error) {
-        console.warn(`Event ${eventType} not supported:`, error);
+
       }
     });
     
@@ -388,10 +365,10 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         controller1.removeEventListener('selectstart', handleSelectStart1);
         controller1.removeEventListener('selectend', handleSelectEnd1);
         
-        controller0.removeEventListener('click', handleClick0);
-        controller1.removeEventListener('click', handleClick1);
+        (controller0 as any).removeEventListener('click', handleClick0);
+        (controller1 as any).removeEventListener('click', handleClick1);
       } catch (error) {
-        console.warn('Error removing controller event listeners:', error);
+
       }
     };
   }, [gl]);
@@ -482,11 +459,9 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     if (swordsHeld > lastSwordsHeld.current) {
       // Just grabbed sword(s) - lock current direction
       lockedDirection.current = cameraDirection.clone().normalize();
-      console.log('🔒 Direction locked when grabbing swords');
     } else if (swordsHeld < lastSwordsHeld.current) {
       // Just released sword(s) - unlock direction
       lockedDirection.current = null;
-      console.log('🔓 Direction unlocked when releasing swords');
     }
     lastSwordsHeld.current = swordsHeld;
 
@@ -630,7 +605,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     // Method 3: Try WebXR session input sources
     const session = gl.xr.getSession();
     if (session?.inputSources) {
-      for (const inputSource of session.inputSources) {
+      for (let i = 0; i < session.inputSources.length; i++) {
+        const inputSource = session.inputSources[i];
         if (inputSource.gamepad) {
           if (inputSource.handedness === 'left') {
             gamepad0 = gamepad0 || inputSource.gamepad;
@@ -832,7 +808,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         const distance = bullet.mesh.position.distanceTo(targetPos);
         
         if (distance < 0.6) { // Bullet hit target
-          console.log(`Bullet ${bullet.id} hit target ${target.id}!`);
           
           // Calculate hit direction for shattering
           const hitDirection = bullet.mesh.position.clone().sub(targetPos).normalize();
@@ -856,10 +831,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     [{ id: 'left', sword: leftSwordRef.current, controller: controller0 },
      { id: 'right', sword: rightSwordRef.current, controller: controller1 }].forEach(({ id, sword, controller }) => {
       if (!sword || !controller) {
-        console.log(`⚠️ COLLISION DEBUG: Skipping ${id} - sword exists: ${!!sword}, controller exists: ${!!controller}`);
         return;
       }
-      console.log(`🔍 COLLISION DEBUG: Running collision check for ${id} sword`);
 
       // Get sword tip position instead of controller position
       const currentPos = new THREE.Vector3();
@@ -888,7 +861,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
             
             // Large collision radius - easy to hit
             if (distance < 2.5) {
-              console.log(`VRControllers: Sword ${id} hit target ${target.id}!`);
               destroyTarget(target.id);
               addHitEffect(target.position);
             }
@@ -896,7 +868,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           
           // Check collisions with static destructible objects
           if (staticObjects.current.length === 0) {
-            console.log('⚠️ No static objects found for collision detection');
           }
           
           // Get world group position offset for coordinate space correction
@@ -917,9 +888,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
             }
             
             if (distance < 2.5) {
-              console.log(`💥 COLLISION HIT: Sword ${id} destroyed ${obj.userData.type || 'object'} at distance ${distance.toFixed(2)}!`);
-              console.log(`💥 COLLISION HIT: Object world pos: ${objWorldPos.x.toFixed(2)}, ${objWorldPos.y.toFixed(2)}, ${objWorldPos.z.toFixed(2)}`);
-              console.log(`💥 COLLISION HIT: Sword tip pos: ${currentPos.x.toFixed(2)}, ${currentPos.y.toFixed(2)}, ${currentPos.z.toFixed(2)}`);
               
               // Mark as destroyed
               obj.userData.destroyed = true;
@@ -968,10 +936,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           
           // Enhanced collision debug logging
           if (closestDistance !== Infinity && closestDistance < 10) {
-            console.log(`📏 COLLISION DEBUG: ${id} sword closest object at distance: ${closestDistance.toFixed(2)}`);
-            console.log(`🌍 COLLISION DEBUG: WorldGroup offset: ${worldOffset.x.toFixed(2)}, ${worldOffset.y.toFixed(2)}, ${worldOffset.z.toFixed(2)}`);
-            console.log(`⚔️ COLLISION DEBUG: Sword tip position: ${currentPos.x.toFixed(2)}, ${currentPos.y.toFixed(2)}, ${currentPos.z.toFixed(2)}`);
-            console.log(`📊 COLLISION DEBUG: Static objects count: ${staticObjects.current.length}, Active objects: ${staticObjects.current.filter(o => !o.userData?.destroyed).length}`);
           }
         }
       }
@@ -996,9 +960,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       const swordDistance = leftPos.distanceTo(rightPos);
       
       if (swordDistance < 0.8 && canSwordClash()) { // Swords are close enough to clash
-        console.log(`💥 SWORD CLASH DETECTED: Distance ${swordDistance.toFixed(2)} between sword tips!`);
-        console.log(`💥 SWORD CLASH: Left tip: ${leftPos.x.toFixed(2)}, ${leftPos.y.toFixed(2)}, ${leftPos.z.toFixed(2)}`);
-        console.log(`💥 SWORD CLASH: Right tip: ${rightPos.x.toFixed(2)}, ${rightPos.y.toFixed(2)}, ${rightPos.z.toFixed(2)}`);
         
         // Calculate collision point (midpoint between swords)
         const collisionPoint = leftPos.clone().lerp(rightPos, 0.5);
@@ -1009,7 +970,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         cameraDirection.applyQuaternion(camera.quaternion);
         
         // Fire actual projectile from sword clash point
-        console.log('⚔️ SWORD CLASH - FIRING PROJECTILE!');
         // Send to Quest 3 debug display
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
           (window as any).vrDebugLog('SWORD CLASH - PROJECTILE FIRED!');

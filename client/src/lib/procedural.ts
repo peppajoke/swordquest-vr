@@ -201,7 +201,6 @@ export class ProceduralWorldGenerator {
       this.worldGroup.add(obj);
     });
     
-    console.log(`🌍 Generated chunk ${chunkId} at (${chunkPos.x}, ${chunkPos.z}) with ${destroyables.length} destroyables`);
     return chunk;
   }
 
@@ -217,7 +216,6 @@ export class ProceduralWorldGenerator {
     // If at edge or moving into unexplored areas, generate more aggressively
     if (isAtEdge || this.isMovingIntoUnexplored(playerPosition, movementDirection)) {
       generateRadius = 3; // 7x7 grid for aggressive generation
-      console.log(`🚀 AGGRESSIVE GENERATION: Player at terrain edge, expanding to ${generateRadius * 2 + 1}x${generateRadius * 2 + 1} grid`);
     }
     
     // Generate chunks around player
@@ -327,7 +325,6 @@ export class ProceduralWorldGenerator {
         });
         
         chunksToRemove.push(key);
-        console.log(`🧹 Cleaned up distant chunk ${key}`);
       }
     });
     

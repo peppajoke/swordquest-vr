@@ -19,7 +19,6 @@ export default function VRGame() {
   const [maxFuel] = useState(2000);
 
   useEffect(() => {
-    console.log('VRGame: Initializing VR sword fighting game');
     initializeGame();
 
     // Setup audio
@@ -36,7 +35,6 @@ export default function VRGame() {
     successSFX.volume = 0.6;
     setSuccessSound(successSFX);
 
-    console.log('VRGame: Audio initialized');
   }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound]);
 
   return (
