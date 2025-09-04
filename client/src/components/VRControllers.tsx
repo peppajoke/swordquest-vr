@@ -183,26 +183,30 @@ export default function VRControllers() {
     
     const handleSqueezeStart0Extended = () => {
       originalSqueezeStart0();
+      leftGrabbing.current = true; // FIX: Actually update grip state
       targetLeftScale.current = 1.5; // Expand when squeezing
-      console.log('Left sword extending...');
+      console.log('⚔️ LEFT SWORD GRIPPED - Movement enabled!');
     };
     
     const handleSqueezeEnd0Extended = () => {
       originalSqueezeEnd0();
+      leftGrabbing.current = false; // FIX: Actually update grip state
       targetLeftScale.current = 0.5; // Shrink when releasing
-      console.log('Left sword retracting...');
+      console.log('✋ Left sword released - Movement may stop');
     };
     
     const handleSqueezeStart1Extended = () => {
       originalSqueezeStart1();
+      rightGrabbing.current = true; // FIX: Actually update grip state
       targetRightScale.current = 1.5; // Expand when squeezing
-      console.log('Right sword extending...');
+      console.log('⚔️ RIGHT SWORD GRIPPED - Movement enabled!');
     };
     
     const handleSqueezeEnd1Extended = () => {
       originalSqueezeEnd1();
+      rightGrabbing.current = false; // FIX: Actually update grip state
       targetRightScale.current = 0.5; // Shrink when releasing
-      console.log('Right sword retracting...');
+      console.log('✋ Right sword released - Movement may stop');
     };
     
     controller0.addEventListener('squeezestart', handleSqueezeStart0Extended);
@@ -295,10 +299,24 @@ export default function VRControllers() {
     // Only move forward if holding at least one sword, speed increases with both swords
     if (swordsHeld > 0) {
       const speedMultiplier = swordsHeld; // 1x speed for one sword, 2x for both
-      camera.position.z += gameSpeed * speedMultiplier;
+      const actualSpeed = gameSpeed * speedMultiplier;
+      
+      // FIX: Move the XR rig (VR space) not just camera
+      if (gl.xr.getSession()) {
+        // In VR - move the camera group/rig
+        const xrRig = camera.parent;
+        if (xrRig) {
+          xrRig.position.z += actualSpeed;
+        } else {
+          camera.position.z += actualSpeed;
+        }
+      } else {
+        // In 2D preview - move camera directly
+        camera.position.z += actualSpeed;
+      }
       
       if (Math.random() < 0.005) { // Occasionally log grip status
-        console.log(`⚔️ Gripping ${swordsHeld} sword(s) - Speed: ${(gameSpeed * speedMultiplier).toFixed(3)}`);
+        console.log(`⚔️ Gripping ${swordsHeld} sword(s) - Speed: ${actualSpeed.toFixed(3)}`);
       }
     } else {
       if (Math.random() < 0.005) { // Log when stopped
@@ -615,7 +633,9 @@ export default function VRControllers() {
         const cameraDirection = new THREE.Vector3(0, 0, -1);
         cameraDirection.applyQuaternion(camera.quaternion);
         
-        // Handle the sword clash with projectile firing
+        // Fire actual projectile from sword clash point
+        console.log('⚔️ SWORD CLASH - FIRING PROJECTILE!');
+        fireBullet(controller0, 'left'); // Fire projectile from clash
         handleSwordClash(collisionPoint, cameraPosition, cameraDirection);
       }
     }
