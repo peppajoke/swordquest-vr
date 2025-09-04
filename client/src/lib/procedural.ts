@@ -169,6 +169,10 @@ export class ProceduralWorldGenerator {
       const height = obstacle instanceof THREE.Mesh ? 0.5 : 0.5;
       obstacle.position.set(x, height, z);
       obstacle.castShadow = true;
+      
+      // Mark all obstacles as destroyable
+      (obstacle as any).userData = { destroyable: true, health: 1, type: 'obstacle' };
+      
       obstacles.push(obstacle);
     }
     

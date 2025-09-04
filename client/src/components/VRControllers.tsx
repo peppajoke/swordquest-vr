@@ -689,11 +689,12 @@ export default function VRControllers() {
             }
           });
           
-          // Check collisions with destroyable objects from procedural world
+          // Check collisions with all destroyable objects from procedural world
           if (worldGenerator.current) {
             const chunks = worldGenerator.current.getGeneratedChunks();
             chunks.forEach(chunk => {
-              chunk.destroyables.forEach(obj => {
+              // Check both destroyables and obstacles (all are now destructible)
+              [...chunk.destroyables, ...chunk.obstacles].forEach(obj => {
                 if (!obj.userData || obj.userData.destroyed) return;
                 
                 const distance = currentPos.distanceTo(obj.position);
