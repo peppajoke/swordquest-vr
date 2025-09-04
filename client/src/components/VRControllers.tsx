@@ -673,8 +673,8 @@ export default function VRControllers() {
         const velocity = currentPos.clone().sub(prevPos);
         const speed = velocity.length();
         
-        // Only check collisions if sword is moving fast enough (slashing)
-        if (speed > 0.01) {
+        // Check collisions always - no speed requirement for destruction
+        if (true) {
           // Check collisions with game targets
           targets.forEach(target => {
             if (target.destroyed) return;
@@ -682,8 +682,8 @@ export default function VRControllers() {
             const targetPos = new THREE.Vector3(...target.position);
             const distance = currentPos.distanceTo(targetPos);
             
-            // Simple distance-based collision
-            if (distance < 1.0) {
+            // Large collision radius - easy to hit
+            if (distance < 2.5) {
               console.log(`VRControllers: Sword ${id} hit target ${target.id}!`);
               destroyTarget(target.id);
               addHitEffect(target.position);
@@ -699,7 +699,7 @@ export default function VRControllers() {
                 if (!obj.userData || obj.userData.destroyed) return;
                 
                 const distance = currentPos.distanceTo(obj.position);
-                if (distance < 0.8) {
+                if (distance < 2.5) {
                   console.log(`⚔️ Sword ${id} destroyed ${obj.userData.type || 'object'}!`);
                   
                   // Mark as destroyed
