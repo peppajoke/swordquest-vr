@@ -19,6 +19,12 @@ export default function VRControllers() {
   const controller1Ref = useRef<THREE.Group>();
   const { addSwordCollider, removeSwordCollider, targets, destroyTarget, addHitEffect } = useVRGame();
   const previousPositions = useRef<{ [key: string]: THREE.Vector3 }>({});
+  
+  // Store sword angles for each controller (in radians)
+  const swordAngles = useRef<{ [key: string]: number }>({
+    controller0: 0,
+    controller1: 0
+  });
 
   // Create sword mesh
   const createSword = () => {
@@ -44,10 +50,6 @@ export default function VRControllers() {
     guard.position.y = 0.1;
     guard.castShadow = true;
     swordGroup.add(guard);
-
-    // Rotate sword to point forward at a more natural angle
-    swordGroup.rotation.x = -Math.PI / 4; // 45 degrees downward
-    swordGroup.rotation.z = Math.PI / 8;   // Slight twist for natural grip
 
     return swordGroup;
   };
@@ -108,6 +110,29 @@ export default function VRControllers() {
     
     if (!controller0 || !controller1) return;
     
+    // Get controller gamepads for joystick input
+    const gamepad0 = controller0.userData.gamepad;
+    const gamepad1 = controller1.userData.gamepad;
+    
+    // Update sword angles based on joystick input
+    if (gamepad0?.axes) {
+      const joystickY = gamepad0.axes[3]; // Right joystick Y axis
+      if (joystickY < -0.5) { // Joystick pushed down
+        swordAngles.current.controller0 = Math.min(swordAngles.current.controller0 + 0.02, Math.PI / 3); // Max 60 degrees down
+      } else {
+        swordAngles.current.controller0 = Math.max(swordAngles.current.controller0 - 0.01, 0); // Return to neutral
+      }
+    }
+    
+    if (gamepad1?.axes) {
+      const joystickY = gamepad1.axes[3]; // Right joystick Y axis
+      if (joystickY < -0.5) { // Joystick pushed down
+        swordAngles.current.controller1 = Math.min(swordAngles.current.controller1 + 0.02, Math.PI / 3); // Max 60 degrees down
+      } else {
+        swordAngles.current.controller1 = Math.max(swordAngles.current.controller1 - 0.01, 0); // Return to neutral
+      }
+    }
+    
     // Handle left controller sword
     if (leftGrabbing.current) {
       if (!leftSwordRef.current?.parent) {
@@ -116,6 +141,10 @@ export default function VRControllers() {
         controller0.add(sword);
         addSwordCollider('left', sword);
         console.log('VRControllers: Left sword spawned');
+      }
+      // Update sword angle based on joystick input
+      if (leftSwordRef.current) {
+        leftSwordRef.current.rotation.x = -swordAngles.current.controller0;
       }
     } else if (!leftGrabbing.current && leftSwordRef.current?.parent) {
       controller0.remove(leftSwordRef.current);
@@ -132,6 +161,10 @@ export default function VRControllers() {
         controller1.add(sword);
         addSwordCollider('right', sword);
         console.log('VRControllers: Right sword spawned');
+      }
+      // Update sword angle based on joystick input
+      if (rightSwordRef.current) {
+        rightSwordRef.current.rotation.x = -swordAngles.current.controller1;
       }
     } else if (!rightGrabbing.current && rightSwordRef.current?.parent) {
       controller1.remove(rightSwordRef.current);
