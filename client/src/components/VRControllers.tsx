@@ -318,25 +318,31 @@ export default function VRControllers() {
     if (leftGripping) swordsHeld++;
     if (rightGripping) swordsHeld++;
     
-    // Only move forward if holding at least one sword, speed increases with both swords
+    // Only move when holding at least one sword, speed increases with both swords
     if (swordsHeld > 0) {
       const speedMultiplier = swordsHeld; // 1x speed for one sword, 2x for both
-      const actualSpeed = gameSpeed * speedMultiplier;
+      const baseSpeed = gameSpeed * 0.3; // SLOWER: Reduce speed to 30% for VR comfort
+      const actualSpeed = baseSpeed * speedMultiplier;
       
-      // FIX: WebXR movement - need to move the world, not the camera
+      // Get the direction the player is facing
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      
+      // FIX: WebXR movement - move in the direction you're facing
       if (gl.xr.getSession()) {
-        // In VR - move the entire scene towards the player instead
-        // This creates the illusion of forward movement
-        scene.position.z -= actualSpeed; // Move world backward = player moves forward
+        // In VR - move the world in the opposite direction of where you're looking
+        const moveVector = cameraDirection.clone().multiplyScalar(-actualSpeed);
+        scene.position.add(moveVector);
         
-        // Also move the camera for consistency with target cleanup
-        camera.position.z += actualSpeed;
+        // Also move the camera position for consistency with target cleanup
+        const cameraMove = cameraDirection.clone().multiplyScalar(actualSpeed);
+        camera.position.add(cameraMove);
         
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`VR MOVEMENT: ${actualSpeed.toFixed(3)} speed`);
+          (window as any).vrDebugLog(`VR MOVE: ${actualSpeed.toFixed(3)} speed`);
         }
       } else {
-        // In 2D preview - move camera directly
+        // In 2D preview - move camera directly forward
         camera.position.z += actualSpeed;
       }
       
