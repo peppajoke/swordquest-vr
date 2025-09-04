@@ -109,11 +109,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   
   function createSword() {
     const sword = new THREE.Group();
+    sword.userData.isCustomModel = true; // Mark as custom model
     
     // Handle (shorter)
     const handleGeometry = new THREE.CylinderGeometry(0.015, 0.02, 0.15);
     const handleMaterial = new THREE.MeshLambertMaterial({ color: '#4a4a4a' });
     const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+    handle.userData.isCustomModel = true; // Mark as custom
     handle.position.y = -0.05;
     sword.add(handle);
     
@@ -121,6 +123,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const guardGeometry = new THREE.BoxGeometry(0.1, 0.01, 0.02);
     const guardMaterial = new THREE.MeshLambertMaterial({ color: '#666' });
     const guard = new THREE.Mesh(guardGeometry, guardMaterial);
+    guard.userData.isCustomModel = true; // Mark as custom
     guard.position.y = 0.02;
     sword.add(guard);
     
@@ -128,6 +131,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const bladeGeometry = new THREE.BoxGeometry(0.01, 0.3, 0.005);
     const bladeMaterial = new THREE.MeshLambertMaterial({ color: '#c0c0c0' });
     const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    blade.userData.isCustomModel = true; // Mark as custom
     blade.position.y = 0.2;
     sword.add(blade);
     
@@ -139,11 +143,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   
   function createGun() {
     const gun = new THREE.Group();
+    gun.userData.isCustomModel = true; // Mark as custom model
     
     // Grip
     const gripGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.03);
     const gripMaterial = new THREE.MeshLambertMaterial({ color: '#2a2a2a' });
     const grip = new THREE.Mesh(gripGeometry, gripMaterial);
+    grip.userData.isCustomModel = true; // Mark as custom
     grip.position.y = -0.04;
     gun.add(grip);
     
@@ -151,6 +157,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const barrelGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.12);
     const barrelMaterial = new THREE.MeshLambertMaterial({ color: '#1a1a1a' });
     const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+    barrel.userData.isCustomModel = true; // Mark as custom
     barrel.rotation.z = Math.PI / 2;
     barrel.position.y = 0.02;
     barrel.position.z = 0.06;
@@ -160,6 +167,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const bodyGeometry = new THREE.BoxGeometry(0.025, 0.04, 0.08);
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: '#333' });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.userData.isCustomModel = true; // Mark as custom
     body.position.y = 0.02;
     gun.add(body);
     
@@ -178,34 +186,23 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     if (!controller0 || !controller1) return;
 
-    // Store controller refs and COMPLETELY hide ALL controller models
+    // Store controller refs - keep them visible so our custom objects show
     if (!controller0Ref.current) {
       controller0Ref.current = gl.xr.getController(0);
-      controller0Ref.current.visible = false; // Hide ray controller
-      // Hide all children of the controller
-      controller0Ref.current.traverse((child) => {
-        child.visible = false;
-      });
       scene.add(controller0Ref.current);
     }
     if (!controller1Ref.current) {
       controller1Ref.current = gl.xr.getController(1);
-      controller1Ref.current.visible = false; // Hide ray controller
-      // Hide all children of the controller
-      controller1Ref.current.traverse((child) => {
-        child.visible = false;
-      });
       scene.add(controller1Ref.current);
     }
     
-    // Hide controller grip models (the actual controller visuals)
+    // Hide only the grip models (default controller visuals) but keep the containers visible
     if (!controllerGrip0Ref.current) {
       controllerGrip0Ref.current = gl.xr.getControllerGrip(0);
-      controllerGrip0Ref.current.visible = false; // Hide grip model
-      // Hide all children and sub-children of grip controller
+      // Only hide default controller models if they exist, not custom objects
       controllerGrip0Ref.current.traverse((child) => {
-        child.visible = false;
-        if (child.type === 'Mesh' || child.type === 'Group') {
+        // Hide only default controller meshes, not our custom swords/guns
+        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
           child.visible = false;
         }
       });
@@ -213,41 +210,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     }
     if (!controllerGrip1Ref.current) {
       controllerGrip1Ref.current = gl.xr.getControllerGrip(1);
-      controllerGrip1Ref.current.visible = false; // Hide grip model
-      // Hide all children and sub-children of grip controller
+      // Only hide default controller models if they exist, not custom objects
       controllerGrip1Ref.current.traverse((child) => {
-        child.visible = false;
-        if (child.type === 'Mesh' || child.type === 'Group') {
+        // Hide only default controller meshes, not our custom swords/guns
+        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
           child.visible = false;
         }
       });
       scene.add(controllerGrip1Ref.current);
-    }
-    
-    // Continuously ensure controllers stay invisible
-    if (controller0Ref.current) {
-      controller0Ref.current.visible = false;
-      controller0Ref.current.traverse((child) => {
-        child.visible = false;
-      });
-    }
-    if (controller1Ref.current) {
-      controller1Ref.current.visible = false;
-      controller1Ref.current.traverse((child) => {
-        child.visible = false;
-      });
-    }
-    if (controllerGrip0Ref.current) {
-      controllerGrip0Ref.current.visible = false;
-      controllerGrip0Ref.current.traverse((child) => {
-        child.visible = false;
-      });
-    }
-    if (controllerGrip1Ref.current) {
-      controllerGrip1Ref.current.visible = false;
-      controllerGrip1Ref.current.traverse((child) => {
-        child.visible = false;
-      });
     }
 
     // Handle controller input
