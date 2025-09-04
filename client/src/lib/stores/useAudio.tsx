@@ -10,6 +10,7 @@ interface AudioState {
   playerDamageSound: HTMLAudioElement | null;
   accelerationSound: HTMLAudioElement | null;
   boostSound: HTMLAudioElement | null;
+  gunAmmoSound: HTMLAudioElement | null;
   isMuted: boolean;
   
   // Setter functions
@@ -22,6 +23,7 @@ interface AudioState {
   setPlayerDamageSound: (sound: HTMLAudioElement) => void;
   setAccelerationSound: (sound: HTMLAudioElement) => void;
   setBoostSound: (sound: HTMLAudioElement) => void;
+  setGunAmmoSound: (sound: HTMLAudioElement) => void;
   
   // Control functions
   toggleMute: () => void;
@@ -33,6 +35,7 @@ interface AudioState {
   playPlayerDamage: () => void;
   playAcceleration: () => void;
   playBoost: () => void;
+  playGunAmmo: () => void;
 }
 
 export const useAudio = create<AudioState>((set, get) => ({
@@ -45,6 +48,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   playerDamageSound: null,
   accelerationSound: null,
   boostSound: null,
+  gunAmmoSound: null,
   isMuted: false, // Audio enabled by default
   
   setBackgroundMusic: (music) => set({ backgroundMusic: music }),
@@ -56,6 +60,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   setPlayerDamageSound: (sound) => set({ playerDamageSound: sound }),
   setAccelerationSound: (sound) => set({ accelerationSound: sound }),
   setBoostSound: (sound) => set({ boostSound: sound }),
+  setGunAmmoSound: (sound) => set({ gunAmmoSound: sound }),
   
   toggleMute: () => {
     const { isMuted } = get();
@@ -153,6 +158,16 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.5;
+      soundClone.play().catch(error => {});
+    }
+  },
+  
+  playGunAmmo: () => {
+    const { gunAmmoSound, successSound, isMuted } = get();
+    const sound = gunAmmoSound || successSound; // Fallback to success sound
+    if (sound && !isMuted) {
+      const soundClone = sound.cloneNode() as HTMLAudioElement;
+      soundClone.volume = 0.4;
       soundClone.play().catch(error => {});
     }
   }

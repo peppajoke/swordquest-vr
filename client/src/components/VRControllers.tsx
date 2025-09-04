@@ -552,6 +552,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
               ammo.current = Math.min(maxAmmo.current, ammo.current + ammoAmount);
               console.log(`Picked up ammo! +${ammoAmount} (${ammo.current}/${maxAmmo.current})`);
               
+              // Play ammo pickup sound
+              import('../lib/stores/useAudio').then(({ useAudio }) => {
+                useAudio.getState().playGunAmmo();
+              });
+              
               // Remove pickup with animation
               const animatePickup = () => {
                 child.scale.multiplyScalar(1.1);

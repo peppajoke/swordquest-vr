@@ -24,7 +24,8 @@ export default function VRGame() {
     setGunHitSound,
     setPlayerDamageSound,
     setAccelerationSound,
-    setBoostSound
+    setBoostSound,
+    setGunAmmoSound
   } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
@@ -78,8 +79,14 @@ export default function VRGame() {
       boostSFX.volume = 0.5;
       setBoostSound(boostSFX);
     } catch { /* Use fallback */ }
+    
+    try {
+      const gunAmmoSFX = new Audio('/sounds/gun_ammo.mp3');
+      gunAmmoSFX.volume = 0.4;
+      setGunAmmoSound(gunAmmoSFX);
+    } catch { /* Use fallback */ }
 
-  }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound]);
+  }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
 
   return (
     <>
