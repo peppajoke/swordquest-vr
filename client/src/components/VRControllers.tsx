@@ -249,8 +249,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     blade.position.y = 0.32;
     sword.add(blade);
     
-    // Rotate sword 45 degrees away from player (flipped direction)
-    sword.rotation.x = -Math.PI / 4; // -45 degrees in radians
+    // Rotate sword to point forward properly
+    sword.rotation.z = Math.PI / 2; // 90 degrees to point forward
     
     return sword;
   }
@@ -284,6 +284,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     body.userData.isCustomModel = true; // Mark as custom
     body.position.y = 0.02;
     gun.add(body);
+    
+    // Rotate entire gun 90 degrees downward
+    gun.rotation.x = Math.PI / 2; // 90 degrees downward
     
     return gun;
   }
