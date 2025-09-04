@@ -200,21 +200,21 @@ function TurretTower({ position }: { position: [number, number, number] }) {
         // Create turret bullet group
         const bulletGroup = new THREE.Group();
         
-        // Core energy bolt - elongated capsule shape
-        const coreGeometry = new THREE.CapsuleGeometry(0.012, 0.1, 4, 8);
+        // Core energy bolt - thin elongated cylinder like Star Wars blaster
+        const coreGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.25, 8);
         const coreMaterial = new THREE.MeshLambertMaterial({ 
           color: '#ff2200',
           emissive: '#ff4400',
-          emissiveIntensity: 0.9
+          emissiveIntensity: 1.2
         });
         const core = new THREE.Mesh(coreGeometry, coreMaterial);
         
-        // Outer glow effect
-        const glowGeometry = new THREE.CapsuleGeometry(0.02, 0.12, 4, 8);
+        // Outer glow effect - slightly thicker
+        const glowGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.3, 8);
         const glowMaterial = new THREE.MeshLambertMaterial({ 
           color: '#ff6644',
           emissive: '#ff2200',
-          emissiveIntensity: 0.5,
+          emissiveIntensity: 0.6,
           transparent: true,
           opacity: 0.7
         });
