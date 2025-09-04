@@ -415,7 +415,9 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     if (leftGripping) swordsHeld++;
     if (rightGripping) swordsHeld++;
     
-    // Get the direction the player is facing - constrained to ground level (no vertical movement)
+    // Camera direction already calculated above for burst speed system
+    
+    // Get the direction the player is facing first
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
     cameraDirection.y = 0; // Lock to ground level - no up/down movement
@@ -429,8 +431,19 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       // Just started accelerating - check timing for burst speed
       const stopDuration = currentTime - lastStoppedAccelerating.current;
       if (lastStoppedAccelerating.current > 0 && stopDuration >= 400 && stopDuration <= 600) {
-        console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = BURST SPEED ACTIVATED!`);
-        burstSpeedMultiplier.current = 2.5; // 2.5x speed boost
+        // Calculate boost strength based on how close to perfect 500ms timing
+        const perfectTiming = 500;
+        const timingError = Math.abs(stopDuration - perfectTiming);
+        const maxError = 100; // 100ms is max error (400ms or 600ms from perfect)
+        const timingAccuracy = 1.0 - (timingError / maxError); // 1.0 = perfect, 0.0 = worst
+        
+        // Scale boost from 1.5x (worst) to 4.0x (perfect)
+        const minBoost = 1.5;
+        const maxBoost = 4.0;
+        const boostStrength = minBoost + (maxBoost - minBoost) * timingAccuracy;
+        
+        console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = ${boostStrength.toFixed(1)}x BOOST!`);
+        burstSpeedMultiplier.current = boostStrength;
         burstSpeedDecay.current = currentTime + 1000; // 1 second duration
         
         // Transfer all momentum into new direction
@@ -452,10 +465,11 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       burstSpeedMultiplier.current = 1.0;
       burstSpeedDecay.current = 0;
     } else if (burstSpeedDecay.current > 0) {
-      // Smoothly decay burst speed
+      // Smoothly decay burst speed (preserve original boost strength)
       const timeRemaining = burstSpeedDecay.current - currentTime;
       const decayProgress = timeRemaining / 1000;
-      burstSpeedMultiplier.current = 1.0 + (2.5 - 1.0) * decayProgress;
+      const originalBoost = burstSpeedMultiplier.current; // Keep the original boost strength
+      burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayProgress;
     }
     
     // Update fuel system
