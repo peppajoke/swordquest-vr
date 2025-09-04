@@ -20,6 +20,10 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
 
   const leftGrabbing = useRef(false);
   const rightGrabbing = useRef(false);
+  const leftTrigger = useRef(false);
+  const rightTrigger = useRef(false);
+  const lastLeftTrigger = useRef(false);
+  const lastRightTrigger = useRef(false);
 
   // Movement and fuel system refs
   const velocity = useRef(new THREE.Vector3());
@@ -32,6 +36,14 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const maxSpeed = useRef(8.0);
   const accelerationRate = useRef(12.0);
   const turnRate = useRef(0.3);
+  
+  // Gun system
+  const bullets = useRef<Array<{
+    id: string;
+    mesh: THREE.Mesh;
+    velocity: THREE.Vector3;
+    startTime: number;
+  }>>([]);
 
   // Fuel system
   const fuel = useRef(100.0);
@@ -52,6 +64,35 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   // Momentum system
   const momentumTransferBonus = useRef(0);
 
+  function createBullet(startPosition: THREE.Vector3, direction: THREE.Vector3) {
+    const bullet = new THREE.Mesh(
+      new THREE.SphereGeometry(0.02),
+      new THREE.MeshLambertMaterial({ color: '#ffff00', emissive: '#ffaa00' })
+    );
+    bullet.position.copy(startPosition);
+    
+    return {
+      id: `bullet_${Date.now()}_${Math.random()}`,
+      mesh: bullet,
+      velocity: direction.normalize().multiplyScalar(5.0), // Slow moving
+      startTime: Date.now()
+    };
+  }
+  
+  function fireBullet(controller: THREE.XRTargetRaySpace, hand: 'left' | 'right', scene: THREE.Scene) {
+    if (!controller) return;
+    
+    const controllerPos = new THREE.Vector3();
+    const controllerDir = new THREE.Vector3();
+    
+    controller.getWorldPosition(controllerPos);
+    controller.getWorldDirection(controllerDir);
+    
+    const bullet = createBullet(controllerPos, controllerDir);
+    bullets.current.push(bullet);
+    scene.add(bullet.mesh);
+  }
+  
   function createSword() {
     const sword = new THREE.Group();
     
@@ -105,11 +146,13 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     const gamepad0 = controller0.gamepad;
     const gamepad1 = controller1.gamepad;
     
-    if (gamepad0 && gamepad0.buttons.length > 0) {
-      leftGrabbing.current = gamepad0.buttons[0].pressed;
+    if (gamepad0 && gamepad0.buttons.length > 1) {
+      leftGrabbing.current = gamepad0.buttons[1].pressed; // Grip button for sword
+      leftTrigger.current = gamepad0.buttons[0].pressed;   // Trigger for gun
     }
-    if (gamepad1 && gamepad1.buttons.length > 0) {
-      rightGrabbing.current = gamepad1.buttons[0].pressed;
+    if (gamepad1 && gamepad1.buttons.length > 1) {
+      rightGrabbing.current = gamepad1.buttons[1].pressed; // Grip button for sword
+      rightTrigger.current = gamepad1.buttons[0].pressed;   // Trigger for gun
     }
 
     const controller0Obj = controller0Ref.current;
@@ -300,6 +343,76 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       }
     }
 
+    // Gun firing logic - only when not holding swords
+    
+    // Left gun
+    if (!leftSwordRef.current && leftTrigger.current && !lastLeftTrigger.current) {
+      fireBullet(controller0Obj, 'left', scene);
+    }
+    lastLeftTrigger.current = leftTrigger.current;
+    
+    // Right gun
+    if (!rightSwordRef.current && rightTrigger.current && !lastRightTrigger.current) {
+      fireBullet(controller1Obj, 'right', scene);
+    }
+    lastRightTrigger.current = rightTrigger.current;
+    
+    // Update bullets
+    bullets.current = bullets.current.filter(bullet => {
+      // Move bullet
+      bullet.mesh.position.add(bullet.velocity.clone().multiplyScalar(deltaTime));
+      
+      // Check collision with red pillars
+      let hitPillar = false;
+      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+      if (worldGroup) {
+        worldGroup.traverse((child) => {
+          if (child.userData.isPillar && !child.userData.destroyed) {
+            const pillarPos = new THREE.Vector3();
+            child.getWorldPosition(pillarPos);
+            
+            const distance = bullet.mesh.position.distanceTo(pillarPos);
+            if (distance < 0.5) { // Bullet hit pillar
+              explodePillar(child.uuid);
+              child.userData.destroyed = true;
+              
+              // Create explosion effect
+              addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
+              
+              // Remove pillar with explosion animation
+              const explosionScale = { x: 1, y: 1, z: 1 };
+              const animate = () => {
+                explosionScale.x += 0.1;
+                explosionScale.y += 0.1;
+                explosionScale.z += 0.1;
+                child.scale.set(explosionScale.x, explosionScale.y, explosionScale.z);
+                child.rotation.x += 0.2;
+                child.rotation.z += 0.2;
+                
+                if (explosionScale.x < 2) {
+                  requestAnimationFrame(animate);
+                } else {
+                  child.parent?.remove(child);
+                }
+              };
+              animate();
+              hitPillar = true;
+            }
+          }
+        });
+      }
+      
+      // Remove bullet if it hit something, is too old, or traveled too far
+      if (hitPillar || 
+          (currentTime - bullet.startTime) > 10000 || // 10 seconds max life
+          bullet.mesh.position.length() > 100) {
+        scene.remove(bullet.mesh);
+        return false;
+      }
+      
+      return true;
+    });
+    
     // Simple sword collision detection with red pillars
     [leftSwordRef.current, rightSwordRef.current].forEach(sword => {
       if (!sword) return;
