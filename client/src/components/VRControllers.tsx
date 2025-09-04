@@ -446,9 +446,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     }
     
     // Burst speed timing system
-    const isAccelerating = swordsHeld > 0 && fuel.current > 0;
+    const currentlyAccelerating = swordsHeld > 0 && fuel.current > 0;
     
-    if (isAccelerating && !wasAcceleratingPreviously.current) {
+    if (currentlyAccelerating && !wasAcceleratingPreviously.current) {
       const stopDuration = currentTime - lastStoppedAccelerating.current;
       if (lastStoppedAccelerating.current > 0 && stopDuration >= 400 && stopDuration <= 600) {
         const perfectTiming = 500;
@@ -475,11 +475,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
           velocity.current.copy(newDirection.clone().normalize().multiplyScalar(currentSpeed));
         }
       }
-    } else if (!isAccelerating && wasAcceleratingPreviously.current) {
+    } else if (!currentlyAccelerating && wasAcceleratingPreviously.current) {
       lastStoppedAccelerating.current = currentTime;
     }
     
-    wasAcceleratingPreviously.current = isAccelerating;
+    wasAcceleratingPreviously.current = currentlyAccelerating;
 
     // Update burst speed decay
     if (burstSpeedDecay.current > 0 && currentTime > burstSpeedDecay.current) {
