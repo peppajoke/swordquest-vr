@@ -728,8 +728,16 @@ export default function VRControllers() {
       }
       console.log(`🗡️ Running collision detection for ${id} sword`);
 
+      // Get sword tip position instead of controller position
       const currentPos = new THREE.Vector3();
-      controller.getWorldPosition(currentPos);
+      if (sword) {
+        // Get the sword's blade tip position (blade is at y=0.4 in sword space)
+        const bladeTip = new THREE.Vector3(0, 0.8, 0); // Tip of the blade
+        sword.localToWorld(bladeTip);
+        currentPos.copy(bladeTip);
+      } else {
+        controller.getWorldPosition(currentPos);
+      }
       
       const prevPos = previousPositions.current[id];
       if (prevPos) {
@@ -840,8 +848,13 @@ export default function VRControllers() {
       const leftPos = new THREE.Vector3();
       const rightPos = new THREE.Vector3();
       
-      controller0.getWorldPosition(leftPos);
-      controller1.getWorldPosition(rightPos);
+      // Get actual sword tip positions
+      const leftTip = new THREE.Vector3(0, 0.8, 0);
+      const rightTip = new THREE.Vector3(0, 0.8, 0);
+      leftSwordRef.current.localToWorld(leftTip);
+      rightSwordRef.current.localToWorld(rightTip);
+      leftPos.copy(leftTip);
+      rightPos.copy(rightTip);
       
       // Check distance between sword tips (accounting for sword length)
       const swordDistance = leftPos.distanceTo(rightPos);
