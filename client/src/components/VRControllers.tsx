@@ -380,8 +380,7 @@ export default function VRControllers() {
     // Debug controller detection and send to Quest 3 display
     if (Math.random() < 0.01) { // Log 1% of frames
       const isVRActive = !!gl.xr.getSession();
-      console.log('🎮 Controller Detection - Left:', !!controller0, 'Right:', !!controller1);
-      console.log('🎮 VR Session Active:', isVRActive);
+      // Removed controller detection logging
       
       // Send debug data to Quest 3 display
       if (typeof window !== 'undefined') {
@@ -433,9 +432,7 @@ export default function VRControllers() {
         velocity.current.normalize().multiplyScalar(desiredSpeed);
       }
       
-      if (Math.random() < 0.005) {
-        console.log(`⚔️ Momentum: ${velocity.current.length().toFixed(3)} - Accel: ${acceleration.current.length().toFixed(3)}`);
-      }
+      // Removed momentum logging
     } else {
       // Exponential speed decay - maintains high speeds, drops low speeds quickly
       const currentSpeed = velocity.current.length();
@@ -456,9 +453,7 @@ export default function VRControllers() {
       // Gentle acceleration decay
       acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
       
-      if (Math.random() < 0.005 && velocity.current.length() > 0.01) {
-        console.log(`🛑 Exponential decay: ${velocity.current.length().toFixed(3)} (threshold: ${speedThreshold})`);
-      }
+      // Removed decay logging
     }
     
     // Apply velocity to movement
@@ -723,10 +718,10 @@ export default function VRControllers() {
     [{ id: 'left', sword: leftSwordRef.current, controller: controller0 },
      { id: 'right', sword: rightSwordRef.current, controller: controller1 }].forEach(({ id, sword, controller }) => {
       if (!sword || !controller) {
-        console.log(`🗡️ Skipping collision for ${id} - sword: ${!!sword}, controller: ${!!controller}`);
+        console.log(`⚠️ COLLISION DEBUG: Skipping ${id} - sword exists: ${!!sword}, controller exists: ${!!controller}`);
         return;
       }
-      console.log(`🗡️ Running collision detection for ${id} sword`);
+      console.log(`🔍 COLLISION DEBUG: Running collision check for ${id} sword`);
 
       // Get sword tip position instead of controller position
       const currentPos = new THREE.Vector3();
@@ -784,7 +779,9 @@ export default function VRControllers() {
             }
             
             if (distance < 2.5) {
-              console.log(`⚔️ Sword ${id} destroyed ${obj.userData.type || 'object'}!`);
+              console.log(`💥 COLLISION HIT: Sword ${id} destroyed ${obj.userData.type || 'object'} at distance ${distance.toFixed(2)}!`);
+              console.log(`💥 COLLISION HIT: Object world pos: ${objWorldPos.x.toFixed(2)}, ${objWorldPos.y.toFixed(2)}, ${objWorldPos.z.toFixed(2)}`);
+              console.log(`💥 COLLISION HIT: Sword tip pos: ${currentPos.x.toFixed(2)}, ${currentPos.y.toFixed(2)}, ${currentPos.z.toFixed(2)}`);
               
               // Mark as destroyed
               obj.userData.destroyed = true;
@@ -831,11 +828,12 @@ export default function VRControllers() {
             }
           });
           
-          // Log closest distance for debugging
+          // Enhanced collision debug logging
           if (closestDistance !== Infinity && closestDistance < 10) {
-            console.log(`🗡️ Sword ${id} closest to object at distance: ${closestDistance.toFixed(2)}`);
-            console.log(`🗡️ WorldGroup offset: ${worldOffset.x.toFixed(2)}, ${worldOffset.y.toFixed(2)}, ${worldOffset.z.toFixed(2)}`);
-            console.log(`🗡️ Sword position: ${currentPos.x.toFixed(2)}, ${currentPos.y.toFixed(2)}, ${currentPos.z.toFixed(2)}`);
+            console.log(`📏 COLLISION DEBUG: ${id} sword closest object at distance: ${closestDistance.toFixed(2)}`);
+            console.log(`🌍 COLLISION DEBUG: WorldGroup offset: ${worldOffset.x.toFixed(2)}, ${worldOffset.y.toFixed(2)}, ${worldOffset.z.toFixed(2)}`);
+            console.log(`⚔️ COLLISION DEBUG: Sword tip position: ${currentPos.x.toFixed(2)}, ${currentPos.y.toFixed(2)}, ${currentPos.z.toFixed(2)}`);
+            console.log(`📊 COLLISION DEBUG: Static objects count: ${staticObjects.current.length}, Active objects: ${staticObjects.current.filter(o => !o.userData?.destroyed).length}`);
           }
         }
       }
@@ -860,7 +858,9 @@ export default function VRControllers() {
       const swordDistance = leftPos.distanceTo(rightPos);
       
       if (swordDistance < 0.8 && canSwordClash()) { // Swords are close enough to clash
-        console.log('⚔️ Swords are clashing!');
+        console.log(`💥 SWORD CLASH DETECTED: Distance ${swordDistance.toFixed(2)} between sword tips!`);
+        console.log(`💥 SWORD CLASH: Left tip: ${leftPos.x.toFixed(2)}, ${leftPos.y.toFixed(2)}, ${leftPos.z.toFixed(2)}`);
+        console.log(`💥 SWORD CLASH: Right tip: ${rightPos.x.toFixed(2)}, ${rightPos.y.toFixed(2)}, ${rightPos.z.toFixed(2)}`);
         
         // Calculate collision point (midpoint between swords)
         const collisionPoint = leftPos.clone().lerp(rightPos, 0.5);
