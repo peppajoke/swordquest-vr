@@ -653,7 +653,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       const moveVector = velocity.current.clone().multiplyScalar(deltaTime);
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
       if (worldGroup) {
-        worldGroup.position.sub(moveVector);
+        worldGroup.position.add(moveVector);
       }
     }
 
