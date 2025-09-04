@@ -9,13 +9,14 @@ import { KeyboardMouseControls } from './KeyboardMouseControls';
 import { ControlsInstructions } from './ControlsInstructions';
 import { DeathHandler } from './DeathHandler';
 import { LoadingScreen } from './LoadingScreen';
+import { DeathRoom } from './DeathRoom';
 import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
 export default function VRGame() {
   const { scene } = useThree();
-  const { initializeGame, health, maxHealth, isDead, respawn } = useVRGame();
+  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
   const { 
     setBackgroundMusic, 
     setHitSound, 
@@ -94,6 +95,32 @@ export default function VRGame() {
   // if (isLoading) {
   //   return <LoadingScreen onComplete={() => setIsLoading(false)} />;
   // }
+
+  // Show death room if player is in death room, otherwise show main game
+  if (inDeathRoom) {
+    return (
+      <>
+        {/* Death Room Lighting */}
+        <color attach="background" args={["#220000"]} />
+        <ambientLight intensity={0.2} />
+        
+        {/* World Group for death room */}
+        <group name="worldGroup">
+          <DeathRoom />
+        </group>
+
+        {/* VR Components for death room interaction */}
+        <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} />
+        
+        {/* Debug display */}
+        <VRDebugDisplay
+          fuel={fuel}
+          maxFuel={maxFuel}
+          ammo={ammo}
+        />
+      </>
+    );
+  }
 
   return (
     <>

@@ -223,6 +223,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   function createSword() {
     const sword = new THREE.Group();
     sword.userData.isCustomModel = true; // Mark as custom model
+    sword.userData.isSword = true; // Mark as sword for collision detection
     
     // Handle (bigger)
     const handleGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25);
@@ -751,6 +752,27 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
                 child.userData.health = 0;
                 // Turret destruction is handled in GameObjects.tsx
               }
+            }
+          }
+          
+          // Hit Play Again box in death room
+          if (child.userData.isPlayAgainBox) {
+            const boxPos = new THREE.Vector3();
+            child.getWorldPosition(boxPos);
+            
+            const distance = swordPos.distanceTo(boxPos);
+            if (distance < 2.0) { // Hit distance for the Play Again box
+              console.log('⚔️ Slashed Play Again box - respawning!');
+              
+              // Play sword hit sound
+              import('../lib/stores/useAudio').then(({ useAudio }) => {
+                useAudio.getState().playSwordHit();
+              });
+              
+              // Exit death room and respawn
+              import('../lib/stores/useVRGame').then(({ useVRGame }) => {
+                useVRGame.getState().exitDeathRoom();
+              });
             }
           }
         });

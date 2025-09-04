@@ -39,6 +39,7 @@ interface VRGameState {
   maxHealth: number;
   isDead: boolean;
   gameOver: boolean;
+  inDeathRoom: boolean;
   
   // Endless runner mechanics
   gameSpeed: number;
@@ -68,6 +69,8 @@ interface VRGameState {
   heal: (amount: number) => void;
   respawn: () => void;
   setGameOver: (gameOver: boolean) => void;
+  enterDeathRoom: () => void;
+  exitDeathRoom: () => void;
 }
 
 const createInitialTargets = (): Target[] => [];
@@ -116,6 +119,7 @@ export const useVRGame = create<VRGameState>()(
     maxHealth: 100,
     isDead: false,
     gameOver: false,
+    inDeathRoom: false,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -363,11 +367,9 @@ export const useVRGame = create<VRGameState>()(
       set({ health: newHealth, isDead, gameOver: isDead });
       
       if (isDead) {
-        console.log('💀 GAME OVER - Rebooting in 3 seconds...');
-        // Auto-reboot after 3 seconds
-        setTimeout(() => {
-          get().respawn();
-        }, 3000);
+        console.log('💀 GAME OVER - Entering death room...');
+        // Enter death room instead of auto-respawn
+        get().enterDeathRoom();
       } else {
         console.log(`💥 Took ${damage} damage! Health: ${newHealth}/${state.maxHealth}`);
       }
@@ -386,13 +388,34 @@ export const useVRGame = create<VRGameState>()(
         health: 100,
         isDead: false,
         gameOver: false,
-        score: 0
+        score: 0,
+        inDeathRoom: false
       });
       console.log('🔄 Respawned!');
     },
     
     setGameOver: (gameOver: boolean) => {
       set({ gameOver });
+    },
+    
+    enterDeathRoom: () => {
+      set({
+        inDeathRoom: true,
+        isDead: true,
+        gameOver: false
+      });
+      console.log('🏠 Entered death room - slash the Play Again box to respawn!');
+    },
+    
+    exitDeathRoom: () => {
+      set({
+        inDeathRoom: false,
+        isDead: false,
+        health: 100,
+        gameOver: false,
+        score: 0
+      });
+      console.log('🔄 Exiting death room and respawning!');
     }
   }))
 );
