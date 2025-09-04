@@ -15,16 +15,21 @@ export function VROverlay({ fuel, maxFuel, health, maxHealth }: VROverlayProps) 
   const groupRef = useRef<THREE.Group>(null);
   
   useFrame(({ camera }) => {
-    // Position overlay in front of player, following camera
+    // Position overlay in bottom left of VR view
     if (groupRef.current) {
       const cameraPosition = camera.position.clone();
-      const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      const cameraQuaternion = camera.quaternion.clone();
       
-      // Position overlay 2 units in front of camera, slightly below eye level
-      const overlayPosition = cameraPosition.clone().add(
-        cameraDirection.multiplyScalar(2)
-      );
-      overlayPosition.y -= 0.3; // Lower it slightly
+      // Create local coordinate system from camera
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraQuaternion);
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
+      
+      // Position in bottom left: close distance, left and down from center
+      const overlayPosition = cameraPosition.clone()
+        .add(forward.multiplyScalar(1.5)) // 1.5 units in front
+        .add(right.multiplyScalar(-0.8))  // 0.8 units to the left
+        .add(up.multiplyScalar(-0.6));    // 0.6 units down
       
       groupRef.current.position.copy(overlayPosition);
       groupRef.current.lookAt(camera.position);
@@ -50,27 +55,27 @@ export function VROverlay({ fuel, maxFuel, health, maxHealth }: VROverlayProps) 
     <group ref={groupRef}>
       <Html
         transform
-        occlude
-        distanceFactor={1}
+        occlude={false}
+        distanceFactor={0.5}
         style={{
           pointerEvents: 'none',
           userSelect: 'none',
-          width: '300px',
-          height: '100px',
+          width: '200px',
+          height: '80px',
         }}
       >
         <div style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          border: '2px solid #333',
-          borderRadius: '10px',
-          padding: '15px',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          border: '2px solid #555',
+          borderRadius: '8px',
+          padding: '8px',
           fontFamily: 'Arial, sans-serif',
-          fontSize: '16px',
+          fontSize: '12px',
           color: '#fff',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
-          minWidth: '280px',
+          gap: '6px',
+          minWidth: '180px',
         }}>
           {/* Health Bar */}
           <div>
