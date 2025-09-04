@@ -88,6 +88,9 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     controller.getWorldPosition(controllerPos);
     controller.getWorldDirection(controllerDir);
     
+    // Invert the direction - VR controllers point backwards by default
+    controllerDir.negate();
+    
     const bullet = createBullet(controllerPos, controllerDir);
     bullets.current.push(bullet);
     scene.add(bullet.mesh);
