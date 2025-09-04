@@ -120,8 +120,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     blade.position.y = 0.2;
     sword.add(blade);
     
-    // Rotate sword 45 degrees away from player
-    sword.rotation.x = Math.PI / 4; // 45 degrees in radians
+    // Rotate sword 45 degrees away from player (flipped direction)
+    sword.rotation.x = -Math.PI / 4; // -45 degrees in radians
     
     return sword;
   }

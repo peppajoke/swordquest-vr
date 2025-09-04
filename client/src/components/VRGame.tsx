@@ -82,8 +82,8 @@ export default function VRGame() {
         maxHealth={maxHealth}
       />
       
-      {/* VR Debug Display - Visible in Quest 3 */}
-      <VRDebugDisplay />
+      {/* VR Debug Display with HP/Fuel - Visible in Quest 3 */}
+      <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} />
     </>
   );
 }
