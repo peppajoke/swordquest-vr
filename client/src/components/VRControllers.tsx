@@ -300,6 +300,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const controller0 = inputSources.find(input => input.handedness === 'right'); // Controller 0 = RIGHT hand ✓
     const controller1 = inputSources.find(input => input.handedness === 'left');  // Controller 1 = LEFT hand ✓
     // ⚠️ NEVER swap these - they work correctly as-is! ⚠️
+    
+    // 🚨 TRIGGER ASSIGNMENT FIX: The triggers are intentionally CROSSED/SWAPPED! 🚨
+    // This is INTENTIONAL and REQUIRED for correct hand mapping in VR!
+    // RIGHT controller (0) -> LEFT trigger variable (swapped on purpose!)
+    // LEFT controller (1) -> RIGHT trigger variable (swapped on purpose!)
+    // DO NOT "FIX" THIS - IT'S THE CORRECT CROSS-MAPPING! 🚨
 
     if (!controller0 || !controller1) return;
 
@@ -343,11 +349,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     if (gamepad0 && gamepad0.buttons.length > 1) {
       rightGrabbing.current = gamepad0.buttons[1].pressed; // Right hand (controller0) grip
-      rightTrigger.current = gamepad0.buttons[0].pressed;   // Right controller fires right gun
+      leftTrigger.current = gamepad0.buttons[0].pressed;    // Right controller (0) fires LEFT gun - SWAPPED!
     }
     if (gamepad1 && gamepad1.buttons.length > 1) {
       leftGrabbing.current = gamepad1.buttons[1].pressed; // Left hand (controller1) grip
-      leftTrigger.current = gamepad1.buttons[0].pressed;   // Left controller fires left gun
+      rightTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires RIGHT gun - SWAPPED!
     }
 
     const controller0Obj = controller0Ref.current;
