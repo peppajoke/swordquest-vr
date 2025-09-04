@@ -11,6 +11,7 @@ interface AudioState {
   accelerationSound: HTMLAudioElement | null;
   boostSound: HTMLAudioElement | null;
   gunAmmoSound: HTMLAudioElement | null;
+  currentAccelerationSound: HTMLAudioElement | null;
   isMuted: boolean;
   
   // Setter functions
@@ -36,6 +37,7 @@ interface AudioState {
   playAcceleration: () => void;
   playBoost: () => void;
   playGunAmmo: () => void;
+  stopAcceleration: () => void;
 }
 
 export const useAudio = create<AudioState>((set, get) => ({
@@ -49,6 +51,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   accelerationSound: null,
   boostSound: null,
   gunAmmoSound: null,
+  currentAccelerationSound: null,
   isMuted: false, // Audio enabled by default
   
   setBackgroundMusic: (music) => set({ backgroundMusic: music }),
@@ -108,6 +111,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.4;
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
     }
   },
@@ -118,6 +122,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.5;
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
     }
   },
@@ -128,6 +133,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.4;
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
     }
   },
@@ -138,17 +144,30 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.6;
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
     }
   },
   
   playAcceleration: () => {
-    const { accelerationSound, successSound, isMuted } = get();
+    const { accelerationSound, successSound, isMuted, currentAccelerationSound } = get();
+    
+    // Stop any existing acceleration sound
+    if (currentAccelerationSound) {
+      currentAccelerationSound.pause();
+      currentAccelerationSound.currentTime = 0;
+    }
+    
     const sound = accelerationSound || successSound; // Fallback to success sound
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.3;
+      soundClone.loop = true; // Loop the acceleration sound
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
+      
+      // Store reference to current acceleration sound
+      set({ currentAccelerationSound: soundClone });
     }
   },
   
@@ -158,6 +177,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.5;
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
     }
   },
@@ -168,7 +188,17 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.4;
+      soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
+    }
+  },
+  
+  stopAcceleration: () => {
+    const { currentAccelerationSound } = get();
+    if (currentAccelerationSound) {
+      currentAccelerationSound.pause();
+      currentAccelerationSound.currentTime = 0;
+      set({ currentAccelerationSound: null });
     }
   }
 }));

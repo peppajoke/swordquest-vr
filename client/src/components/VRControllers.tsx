@@ -34,6 +34,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   const velocity = useRef(new THREE.Vector3());
   const acceleration = useRef(new THREE.Vector3());
   const lastDirection = useRef(new THREE.Vector3(0, 0, -1));
+  const isAccelerating = useRef(false);
   const lockedDirection = useRef<THREE.Vector3 | null>(null);
   const lastSwordsHeld = useRef(0);
 
@@ -500,7 +501,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         wasEmpty.current = true;
         emptyPenaltyTime.current = 0;
       }
-      wasAccelerating.current = true;
+      // Track acceleration for sound
     } else {
       if (swordsHeld === 0) {
         const rechargeRate = wasEmpty.current && emptyPenaltyTime.current < 3.0 
@@ -520,7 +521,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
           }
         }
       }
-      wasAccelerating.current = false;
+      // Track deceleration for sound
     }
     
     if (onFuelChange) {
@@ -583,9 +584,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     lastSwordsHeld.current = swordsHeld;
 
     // Movement system
-    if (swordsHeld > 0 && fuel.current > 0) {
-      // Play acceleration sound (only occasionally to avoid spam)
-      if (Math.random() < 0.01) { // 1% chance per frame when accelerating
+    const wasAccelerating = isAccelerating.current;
+    isAccelerating.current = swordsHeld > 0 && fuel.current > 0;
+    
+    if (isAccelerating.current) {
+      // Start acceleration sound if not already playing
+      if (!wasAccelerating) {
         import('../lib/stores/useAudio').then(({ useAudio }) => {
           useAudio.getState().playAcceleration();
         });
@@ -629,6 +633,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         }
         
         acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
+      
+      }
+      
+      // Stop acceleration sound if we were accelerating but now stopped
+      if (wasAccelerating && !isAccelerating.current) {
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().stopAcceleration();
+        });
       }
     }
 
