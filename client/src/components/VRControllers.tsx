@@ -437,12 +437,27 @@ export default function VRControllers() {
         console.log(`⚔️ Momentum: ${velocity.current.length().toFixed(3)} - Accel: ${acceleration.current.length().toFixed(3)}`);
       }
     } else {
-      // Decelerate when not gripping
-      velocity.current.multiplyScalar(Math.pow(0.1, deltaTime * decelerationRate.current));
-      acceleration.current.multiplyScalar(Math.pow(0.05, deltaTime));
+      // Exponential speed decay - maintains high speeds, drops low speeds quickly
+      const currentSpeed = velocity.current.length();
+      const speedThreshold = 1.0; // Speed below which decay accelerates
+      
+      if (currentSpeed > speedThreshold) {
+        // High speeds: gentle decay (maintain momentum)
+        const highSpeedDecay = 0.98; // Very gentle decay for high speeds
+        velocity.current.multiplyScalar(Math.pow(highSpeedDecay, deltaTime * 60));
+      } else {
+        // Low speeds: exponential decay (quick drop-off)
+        const normalizedSpeed = currentSpeed / speedThreshold; // 0 to 1
+        const exponentialFactor = Math.pow(normalizedSpeed, 2); // Square makes it more exponential
+        const decayRate = 0.1 + (0.9 * exponentialFactor); // 0.1 to 1.0 decay rate
+        velocity.current.multiplyScalar(Math.pow(decayRate, deltaTime * 60));
+      }
+      
+      // Gentle acceleration decay
+      acceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
       
       if (Math.random() < 0.005 && velocity.current.length() > 0.01) {
-        console.log(`🛑 Decelerating: ${velocity.current.length().toFixed(3)}`);
+        console.log(`🛑 Exponential decay: ${velocity.current.length().toFixed(3)} (threshold: ${speedThreshold})`);
       }
     }
     
