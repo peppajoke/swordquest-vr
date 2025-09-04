@@ -319,29 +319,33 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       scene.add(controller1Ref.current);
     }
     
-    // Hide only the grip models (default controller visuals) but keep the containers visible
+    // Set up grip controllers for weapon attachment
     if (!controllerGrip0Ref.current) {
       controllerGrip0Ref.current = gl.xr.getControllerGrip(0);
-      // Only hide default controller models if they exist, not custom objects
-      controllerGrip0Ref.current.traverse((child) => {
-        // Hide only default controller meshes, not our custom swords/guns
-        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
-          child.visible = false;
-        }
-      });
       scene.add(controllerGrip0Ref.current);
     }
     if (!controllerGrip1Ref.current) {
       controllerGrip1Ref.current = gl.xr.getControllerGrip(1);
-      // Only hide default controller models if they exist, not custom objects
-      controllerGrip1Ref.current.traverse((child) => {
-        // Hide only default controller meshes, not our custom swords/guns
-        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
-          child.visible = false;
-        }
-      });
       scene.add(controllerGrip1Ref.current);
     }
+    
+    // Hide default controller models but keep our custom weapons visible
+    setTimeout(() => {
+      if (controllerGrip0Ref.current) {
+        controllerGrip0Ref.current.traverse((child) => {
+          if (child.type === 'Mesh' && !child.userData.isCustomModel) {
+            child.visible = false;
+          }
+        });
+      }
+      if (controllerGrip1Ref.current) {
+        controllerGrip1Ref.current.traverse((child) => {
+          if (child.type === 'Mesh' && !child.userData.isCustomModel) {
+            child.visible = false;
+          }
+        });
+      }
+    }, 100);
 
     // Handle controller input
     const gamepad0 = controller0.gamepad;
@@ -356,8 +360,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       rightTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires RIGHT gun - SWAPPED!
     }
 
-    const controller0Obj = controller0Ref.current;
-    const controller1Obj = controller1Ref.current;
+    // Use grip controllers for weapon attachment (they track hand pose better)
+    const controller0Obj = controllerGrip0Ref.current;
+    const controller1Obj = controllerGrip1Ref.current;
     
     if (!controller0Obj || !controller1Obj) return;
 
