@@ -91,26 +91,50 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
 
   return (
     <group ref={groupRef}>
-      {/* Health Bar */}
+      {/* Health Bar Background */}
+      <mesh position={[0, 0.15, 0]}>
+        <boxGeometry args={[1, 0.08, 0.01]} />
+        <meshLambertMaterial color="#333333" />
+      </mesh>
+      
+      {/* Health Bar Fill */}
+      <mesh position={[-0.5 + (healthPercentage / 100) * 0.5, 0.15, 0.005]}>
+        <boxGeometry args={[(healthPercentage / 100), 0.07, 0.01]} />
+        <meshLambertMaterial color={getHealthColor()} />
+      </mesh>
+      
+      {/* Health Bar Label */}
       <Text
-        position={[0, 0.2, 0]}
-        fontSize={0.3}
-        color={getHealthColor()}
+        position={[0, 0.25, 0]}
+        fontSize={0.08}
+        color="#ffffff"
         anchorX="center"
         anchorY="middle"
       >
-        ♥ HP: {health}/{maxHealth} ({healthPercentage.toFixed(0)}%)
+        HEALTH
       </Text>
       
-      {/* Fuel Bar */}
+      {/* Fuel Bar Background */}
+      <mesh position={[0, -0.05, 0]}>
+        <boxGeometry args={[1, 0.08, 0.01]} />
+        <meshLambertMaterial color="#333333" />
+      </mesh>
+      
+      {/* Fuel Bar Fill */}
+      <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, -0.05, 0.005]}>
+        <boxGeometry args={[(fuelPercentage / 100), 0.07, 0.01]} />
+        <meshLambertMaterial color={getFuelColor()} />
+      </mesh>
+      
+      {/* Fuel Bar Label */}
       <Text
-        position={[0, -0.2, 0]}
-        fontSize={0.3}
-        color={getFuelColor()}
+        position={[0, 0.05, 0]}
+        fontSize={0.08}
+        color="#ffffff"
         anchorX="center"
         anchorY="middle"
       >
-        ⛽ FUEL: {Math.round(fuel)}/{maxFuel} ({fuelPercentage.toFixed(0)}%)
+        FUEL
       </Text>
     </group>
   );
