@@ -37,6 +37,8 @@ interface VRGameState {
   lastClashTime: number;
   health: number;
   maxHealth: number;
+  isDead: boolean;
+  gameOver: boolean;
   
   // Endless runner mechanics
   gameSpeed: number;
@@ -64,6 +66,8 @@ interface VRGameState {
   setHealth: (health: number) => void;
   takeDamage: (damage: number) => void;
   heal: (amount: number) => void;
+  respawn: () => void;
+  setGameOver: (gameOver: boolean) => void;
 }
 
 const createInitialTargets = (): Target[] => [];
@@ -110,6 +114,8 @@ export const useVRGame = create<VRGameState>()(
     lastClashTime: 0,
     health: 100,
     maxHealth: 100,
+    isDead: false,
+    gameOver: false,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -252,7 +258,9 @@ export const useVRGame = create<VRGameState>()(
         swordColliders: [],
         targetMeshes: {},
         lastClashTime: 0,
-        health: 100
+        health: 100,
+        isDead: false,
+        gameOver: false
       });
     },
 
@@ -346,13 +354,41 @@ export const useVRGame = create<VRGameState>()(
     },
 
     takeDamage: (damage: number) => {
-      const { health } = get();
-      set({ health: Math.max(0, health - damage) });
+      const state = get();
+      if (state.isDead) return;
+      
+      const newHealth = Math.max(0, state.health - damage);
+      const isDead = newHealth <= 0;
+      
+      set({ health: newHealth, isDead, gameOver: isDead });
+      
+      if (isDead) {
+        console.log('💀 GAME OVER - You have died!');
+      } else {
+        console.log(`💥 Took ${damage} damage! Health: ${newHealth}/${state.maxHealth}`);
+      }
     },
 
     heal: (amount: number) => {
-      const { health, maxHealth } = get();
-      set({ health: Math.min(maxHealth, health + amount) });
+      const state = get();
+      if (state.isDead) return;
+      
+      const newHealth = Math.min(state.maxHealth, state.health + amount);
+      set({ health: newHealth });
+    },
+    
+    respawn: () => {
+      set({
+        health: 100,
+        isDead: false,
+        gameOver: false,
+        score: 0
+      });
+      console.log('🔄 Respawned!');
+    },
+    
+    setGameOver: (gameOver: boolean) => {
+      set({ gameOver });
     }
   }))
 );

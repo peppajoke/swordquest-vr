@@ -7,12 +7,14 @@ import SwordEffects from './SwordEffects';
 import { VRDebugDisplay } from './VRDebugDisplay';
 import { KeyboardMouseControls } from './KeyboardMouseControls';
 import { ControlsInstructions } from './ControlsInstructions';
+import { DeathHandler } from './DeathHandler';
+import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
 export default function VRGame() {
   const { scene } = useThree();
-  const { initializeGame, health, maxHealth } = useVRGame();
+  const { initializeGame, health, maxHealth, isDead, respawn } = useVRGame();
   const { setBackgroundMusic, setHitSound, setSuccessSound } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
@@ -76,6 +78,42 @@ export default function VRGame() {
       
       {/* VR Debug Display with HP/Fuel/Ammo - Visible in Quest 3 */}
       <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} />
+      
+      {/* Death Overlay */}
+      {isDead && (
+        <group>
+          {/* Death Screen Background */}
+          <mesh position={[0, 0, -2]}>
+            <planeGeometry args={[10, 6]} />
+            <meshLambertMaterial color="#000000" opacity={0.8} transparent />
+          </mesh>
+          
+          {/* Game Over Text */}
+          <Text
+            position={[0, 1, -1.9]}
+            fontSize={1}
+            color="#ff0000"
+            anchorX="center"
+            anchorY="middle"
+          >
+            GAME OVER
+          </Text>
+          
+          {/* Respawn Instructions */}
+          <Text
+            position={[0, -0.5, -1.9]}
+            fontSize={0.3}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            Press R to Respawn
+          </Text>
+        </group>
+      )}
+      
+      {/* Death Handler for respawn */}
+      <DeathHandler />
     </>
   );
 }
