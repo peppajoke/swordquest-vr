@@ -21,6 +21,8 @@ export default function VRControllers() {
   const previousPositions = useRef<{ [key: string]: THREE.Vector3 }>({});
   const bullets = useRef<{ id: string, mesh: THREE.Mesh, velocity: THREE.Vector3, controllerId: string }[]>([]);
   const lastBulletTime = useRef<{ [key: string]: number }>({});
+  const leftTriggerPressed = useRef(false);
+  const rightTriggerPressed = useRef(false);
 
   // Create bullet mesh
   const createBullet = () => {
@@ -133,10 +135,37 @@ export default function VRControllers() {
       rightGrabbing.current = false;
     };
     
+    // Trigger event handlers
+    const handleSelectStart0 = () => {
+      console.log('Left controller select/trigger start');
+      leftTriggerPressed.current = true;
+    };
+    
+    const handleSelectEnd0 = () => {
+      console.log('Left controller select/trigger end');
+      leftTriggerPressed.current = false;
+    };
+    
+    const handleSelectStart1 = () => {
+      console.log('Right controller select/trigger start');
+      rightTriggerPressed.current = true;
+    };
+    
+    const handleSelectEnd1 = () => {
+      console.log('Right controller select/trigger end');
+      rightTriggerPressed.current = false;
+    };
+    
     controller0.addEventListener('squeezestart', handleSqueezeStart0);
     controller0.addEventListener('squeezeend', handleSqueezeEnd0);
     controller1.addEventListener('squeezestart', handleSqueezeStart1);
     controller1.addEventListener('squeezeend', handleSqueezeEnd1);
+    
+    // Add trigger/select event listeners
+    controller0.addEventListener('selectstart', handleSelectStart0);
+    controller0.addEventListener('selectend', handleSelectEnd0);
+    controller1.addEventListener('selectstart', handleSelectStart1);
+    controller1.addEventListener('selectend', handleSelectEnd1);
     
     return () => {
       try {
@@ -144,6 +173,11 @@ export default function VRControllers() {
         controller0.removeEventListener('squeezeend', handleSqueezeEnd0);
         controller1.removeEventListener('squeezestart', handleSqueezeStart1);
         controller1.removeEventListener('squeezeend', handleSqueezeEnd1);
+        
+        controller0.removeEventListener('selectstart', handleSelectStart0);
+        controller0.removeEventListener('selectend', handleSelectEnd0);
+        controller1.removeEventListener('selectstart', handleSelectStart1);
+        controller1.removeEventListener('selectend', handleSelectEnd1);
       } catch (error) {
         console.warn('Error removing controller event listeners:', error);
       }
@@ -156,9 +190,30 @@ export default function VRControllers() {
     
     if (!controller0 || !controller1) return;
     
-    // Get controller gamepads for input
-    const gamepad0 = controller0.userData.gamepad;
-    const gamepad1 = controller1.userData.gamepad;
+    // Get controller gamepads for input - try multiple methods
+    let gamepad0 = controller0.userData.gamepad;
+    let gamepad1 = controller1.userData.gamepad;
+    
+    // Alternative: Try getting gamepad from WebXR session
+    const session = gl.xr.getSession();
+    if (session && session.inputSources) {
+      const inputSources = Array.from(session.inputSources);
+      
+      // Find left and right controllers
+      const leftController = inputSources.find(source => source.handedness === 'left');
+      const rightController = inputSources.find(source => source.handedness === 'right');
+      
+      gamepad0 = leftController?.gamepad || gamepad0;
+      gamepad1 = rightController?.gamepad || gamepad1;
+    }
+    
+    // Debug: Log gamepad availability (reduce spam)
+    if (Math.random() < 0.01) { // Only log 1% of frames
+      console.log('Gamepad0:', !!gamepad0, 'Gamepad1:', !!gamepad1);
+      if (gamepad0) {
+        console.log('Gamepad0 buttons length:', gamepad0.buttons?.length);
+      }
+    }
     
     // Handle movement with left controller's left joystick
     if (gamepad0?.axes) {
@@ -195,11 +250,29 @@ export default function VRControllers() {
     }
     
     // Handle trigger input for bullet firing
-    if (gamepad0?.buttons?.[0]?.pressed) { // Left trigger pressed
+    // Debug: Log gamepad state
+    if (gamepad0?.buttons) {
+      gamepad0.buttons.forEach((button: any, index: number) => {
+        if (button.pressed) {
+          console.log(`Left controller button ${index} pressed:`, button.value);
+        }
+      });
+    }
+    
+    if (gamepad1?.buttons) {
+      gamepad1.buttons.forEach((button: any, index: number) => {
+        if (button.pressed) {
+          console.log(`Right controller button ${index} pressed:`, button.value);
+        }
+      });
+    }
+    
+    // Use event-based trigger detection instead of gamepad polling
+    if (leftTriggerPressed.current) {
       fireBullet(controller0, 'left');
     }
     
-    if (gamepad1?.buttons?.[0]?.pressed) { // Right trigger pressed
+    if (rightTriggerPressed.current) {
       fireBullet(controller1, 'right');
     }
     
