@@ -445,8 +445,6 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = ${boostStrength.toFixed(1)}x BOOST!`);
         burstSpeedMultiplier.current = boostStrength;
         burstSpeedDecay.current = currentTime + 3000; // 3 second duration
-        // Reset the stop time so we don't decay during grace period
-        lastStoppedAccelerating.current = 0;
         
         // Transfer all momentum into new direction
         const currentSpeed = velocity.current.length();
@@ -462,34 +460,18 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     
     wasAcceleratingPreviously.current = isAccelerating;
     
-    // Update burst speed decay - with 600ms grace period
-    if (burstSpeedDecay.current > 0 && lastStoppedAccelerating.current > 0) {
-      const timeSinceStopped = currentTime - lastStoppedAccelerating.current;
-      if (timeSinceStopped > 600) {
-        // Grace period over, start normal decay
-        if (currentTime > burstSpeedDecay.current) {
-          burstSpeedMultiplier.current = 1.0;
-          burstSpeedDecay.current = 0;
-        } else {
-          const timeRemaining = burstSpeedDecay.current - currentTime;
-          const decayProgress = timeRemaining / 3000;
-          const originalBoost = burstSpeedMultiplier.current;
-          const decayCurve = Math.sqrt(decayProgress);
-          burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
-        }
-      }
-    } else if (burstSpeedDecay.current > 0 && lastStoppedAccelerating.current === 0) {
-      // Normal decay when no grace period needed
-      if (currentTime > burstSpeedDecay.current) {
-        burstSpeedMultiplier.current = 1.0;
-        burstSpeedDecay.current = 0;
-      } else {
-        const timeRemaining = burstSpeedDecay.current - currentTime;
-        const decayProgress = timeRemaining / 3000;
-        const originalBoost = burstSpeedMultiplier.current;
-        const decayCurve = Math.sqrt(decayProgress);
-        burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
-      }
+    // Update burst speed decay
+    if (burstSpeedDecay.current > 0 && currentTime > burstSpeedDecay.current) {
+      burstSpeedMultiplier.current = 1.0;
+      burstSpeedDecay.current = 0;
+    } else if (burstSpeedDecay.current > 0) {
+      // Smoothly decay burst speed (preserve original boost strength)
+      const timeRemaining = burstSpeedDecay.current - currentTime;
+      const decayProgress = timeRemaining / 3000;
+      const originalBoost = burstSpeedMultiplier.current; // Keep the original boost strength
+      // Use a square root curve for slower initial decay
+      const decayCurve = Math.sqrt(decayProgress);
+      burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
     }
     
     // Update fuel system
