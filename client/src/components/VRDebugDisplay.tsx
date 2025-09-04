@@ -63,10 +63,10 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
       
-      // Position in upper left area of view
+      // Position in upper center area of view
       const displayPosition = cameraPosition.clone()
         .add(forward.multiplyScalar(2.0))  // 2 units in front
-        .add(right.multiplyScalar(-1.2))   // 1.2 units to the left
+        .add(right.multiplyScalar(-0.2))   // 0.2 units to the left (more centered)
         .add(up.multiplyScalar(0.5));      // 0.5 units up
       
       groupRef.current.position.copy(displayPosition);
@@ -92,50 +92,28 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
   return (
     <group ref={groupRef}>
       {/* Health Bar Background */}
-      <mesh position={[0, 0.15, 0]}>
+      <mesh position={[0, 0.1, 0]}>
         <boxGeometry args={[1, 0.08, 0.01]} />
         <meshLambertMaterial color="#333333" />
       </mesh>
       
-      {/* Health Bar Fill */}
-      <mesh position={[-0.5 + (healthPercentage / 100) * 0.5, 0.15, 0.005]}>
+      {/* Health Bar Fill - Always Green */}
+      <mesh position={[-0.5 + (healthPercentage / 100) * 0.5, 0.1, 0.005]}>
         <boxGeometry args={[(healthPercentage / 100), 0.07, 0.01]} />
-        <meshLambertMaterial color={getHealthColor()} />
+        <meshLambertMaterial color="#00ff00" />
       </mesh>
-      
-      {/* Health Bar Label */}
-      <Text
-        position={[0, 0.25, 0]}
-        fontSize={0.08}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-      >
-        HEALTH
-      </Text>
       
       {/* Fuel Bar Background */}
-      <mesh position={[0, -0.05, 0]}>
+      <mesh position={[0, -0.1, 0]}>
         <boxGeometry args={[1, 0.08, 0.01]} />
         <meshLambertMaterial color="#333333" />
       </mesh>
       
-      {/* Fuel Bar Fill */}
-      <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, -0.05, 0.005]}>
+      {/* Fuel Bar Fill - Always Yellow */}
+      <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, -0.1, 0.005]}>
         <boxGeometry args={[(fuelPercentage / 100), 0.07, 0.01]} />
-        <meshLambertMaterial color={getFuelColor()} />
+        <meshLambertMaterial color="#ffff00" />
       </mesh>
-      
-      {/* Fuel Bar Label */}
-      <Text
-        position={[0, 0.05, 0]}
-        fontSize={0.08}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-      >
-        FUEL
-      </Text>
     </group>
   );
 }
