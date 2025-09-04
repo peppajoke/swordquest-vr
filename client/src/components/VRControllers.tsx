@@ -758,11 +758,19 @@ export default function VRControllers() {
             console.log('⚠️ No static objects found for collision detection');
           }
           
+          // Get world group position offset for coordinate space correction
+          const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+          const worldOffset = worldGroup ? worldGroup.position.clone() : new THREE.Vector3(0, 0, 0);
+          
           let closestDistance = Infinity;
           staticObjects.current.forEach(obj => {
             if (!obj.userData || obj.userData.destroyed) return;
             
-            const distance = currentPos.distanceTo(obj.position);
+            // Get object's world position (accounting for worldGroup movement)
+            const objWorldPos = new THREE.Vector3();
+            obj.getWorldPosition(objWorldPos);
+            
+            const distance = currentPos.distanceTo(objWorldPos);
             if (distance < closestDistance) {
               closestDistance = distance;
             }
@@ -773,8 +781,8 @@ export default function VRControllers() {
               // Mark as destroyed
               obj.userData.destroyed = true;
               
-              // Add hit effect
-              addHitEffect([obj.position.x, obj.position.y, obj.position.z]);
+              // Add hit effect using world position
+              addHitEffect([objWorldPos.x, objWorldPos.y, objWorldPos.z]);
               
               // Animate destruction - scale down and fade out
               const originalScale = obj.scale.clone();
@@ -818,6 +826,8 @@ export default function VRControllers() {
           // Log closest distance for debugging
           if (closestDistance !== Infinity && closestDistance < 10) {
             console.log(`🗡️ Sword ${id} closest to object at distance: ${closestDistance.toFixed(2)}`);
+            console.log(`🗡️ WorldGroup offset: ${worldOffset.x.toFixed(2)}, ${worldOffset.y.toFixed(2)}, ${worldOffset.z.toFixed(2)}`);
+            console.log(`🗡️ Sword position: ${currentPos.x.toFixed(2)}, ${currentPos.y.toFixed(2)}, ${currentPos.z.toFixed(2)}`);
           }
         }
       }
