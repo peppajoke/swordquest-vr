@@ -110,7 +110,7 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         
         console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = ${boostStrength.toFixed(1)}x BOOST!`);
         burstSpeedMultiplier.current = boostStrength;
-        burstSpeedDecay.current = currentTime + 1000; // 1 second duration
+        burstSpeedDecay.current = currentTime + 3000; // 3 second duration
         
         // Transfer all momentum into new direction
         const currentSpeed = velocity.current.length();
@@ -133,9 +133,11 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
     } else if (burstSpeedDecay.current > 0) {
       // Smoothly decay burst speed (preserve original boost strength)
       const timeRemaining = burstSpeedDecay.current - currentTime;
-      const decayProgress = timeRemaining / 1000;
+      const decayProgress = timeRemaining / 3000;
       const originalBoost = burstSpeedMultiplier.current; // Keep the original boost strength
-      burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayProgress;
+      // Use a square root curve for slower initial decay
+      const decayCurve = Math.sqrt(decayProgress);
+      burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
     }
     
     // Update fuel system
