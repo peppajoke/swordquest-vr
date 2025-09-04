@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 // Removed procedural generation import
 
-const SWORD_GEOMETRY = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
-const SWORD_HANDLE_GEOMETRY = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
+const SWORD_GEOMETRY = new THREE.CylinderGeometry(0.01, 0.01, 0.6, 8);
+const SWORD_HANDLE_GEOMETRY = new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8);
 const SWORD_MATERIAL = new THREE.MeshLambertMaterial({ color: '#c0392b' });
 const HANDLE_MATERIAL = new THREE.MeshLambertMaterial({ color: '#8b4513' });
 
@@ -36,11 +36,7 @@ export default function VRControllers() {
   const decelerationRate = useRef(0.05); // MUCH SLOWER: Extremely slow deceleration to maintain momentum much longer
   const turnRate = useRef(0.1);
   
-  // Sword animation tracking
-  const leftSwordScale = useRef(0.5); // Start smaller
-  const rightSwordScale = useRef(0.5);
-  const targetLeftScale = useRef(0.5);
-  const targetRightScale = useRef(0.5);
+  // Removed sword scaling variables
 
   // Create static level with floor and destructible objects
   const initializeStaticLevel = (worldGroup: THREE.Group) => {
@@ -172,9 +168,9 @@ export default function VRControllers() {
   const createSword = () => {
     const swordGroup = new THREE.Group();
     
-    // Blade
+    // Blade (smaller)
     const blade = new THREE.Mesh(SWORD_GEOMETRY, SWORD_MATERIAL);
-    blade.position.y = 0.4;
+    blade.position.y = 0.25;
     blade.castShadow = true;
     swordGroup.add(blade);
     
@@ -184,12 +180,12 @@ export default function VRControllers() {
     handle.castShadow = true;
     swordGroup.add(handle);
     
-    // Guard
+    // Guard (smaller)
     const guard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.02, 0.05),
+      new THREE.BoxGeometry(0.2, 0.015, 0.03),
       new THREE.MeshLambertMaterial({ color: '#34495e' })
     );
-    guard.position.y = 0.1;
+    guard.position.y = 0.05;
     guard.castShadow = true;
     swordGroup.add(guard);
 
@@ -283,8 +279,7 @@ export default function VRControllers() {
     
     const handleSqueezeStart0Extended = () => {
       originalSqueezeStart0();
-      leftGrabbing.current = true; // FIX: Actually update grip state
-      targetLeftScale.current = 1.5; // Expand when squeezing
+      leftGrabbing.current = true;
       console.log('⚔️ LEFT SWORD GRIPPED - Movement enabled!');
       // Send to Quest 3 debug display
       if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
@@ -294,15 +289,13 @@ export default function VRControllers() {
     
     const handleSqueezeEnd0Extended = () => {
       originalSqueezeEnd0();
-      leftGrabbing.current = false; // FIX: Actually update grip state
-      targetLeftScale.current = 0.5; // Shrink when releasing
+      leftGrabbing.current = false;
       console.log('✋ Left sword released - Movement may stop');
     };
     
     const handleSqueezeStart1Extended = () => {
       originalSqueezeStart1();
-      rightGrabbing.current = true; // FIX: Actually update grip state
-      targetRightScale.current = 1.5; // Expand when squeezing
+      rightGrabbing.current = true;
       console.log('⚔️ RIGHT SWORD GRIPPED - Movement enabled!');
       // Send to Quest 3 debug display
       if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
@@ -312,8 +305,7 @@ export default function VRControllers() {
     
     const handleSqueezeEnd1Extended = () => {
       originalSqueezeEnd1();
-      rightGrabbing.current = false; // FIX: Actually update grip state
-      targetRightScale.current = 0.5; // Shrink when releasing
+      rightGrabbing.current = false;
       console.log('✋ Right sword released - Movement may stop');
     };
     
@@ -638,51 +630,44 @@ export default function VRControllers() {
       }
     }
     
-    // Animate sword scales smoothly
-    const scaleSpeed = 0.05; // Animation speed
+    // Removed sword scaling animation - swords now disappear completely
     
-    // Left sword scale animation
-    if (Math.abs(leftSwordScale.current - targetLeftScale.current) > 0.01) {
-      if (leftSwordScale.current < targetLeftScale.current) {
-        leftSwordScale.current = Math.min(leftSwordScale.current + scaleSpeed, targetLeftScale.current);
-      } else {
-        leftSwordScale.current = Math.max(leftSwordScale.current - scaleSpeed, targetLeftScale.current);
+    // Handle left controller sword - only when squeezing
+    if (leftGrabbing.current) {
+      if (!leftSwordRef.current?.parent) {
+        const sword = createSword();
+        leftSwordRef.current = sword;
+        controller0.add(sword);
+        addSwordCollider('left', sword);
+        console.log('VRControllers: Left sword spawned');
       }
-    }
-    
-    // Right sword scale animation
-    if (Math.abs(rightSwordScale.current - targetRightScale.current) > 0.01) {
-      if (rightSwordScale.current < targetRightScale.current) {
-        rightSwordScale.current = Math.min(rightSwordScale.current + scaleSpeed, targetRightScale.current);
-      } else {
-        rightSwordScale.current = Math.max(rightSwordScale.current - scaleSpeed, targetRightScale.current);
+    } else {
+      // Remove sword when not squeezing
+      if (leftSwordRef.current?.parent) {
+        controller0.remove(leftSwordRef.current);
+        removeSwordCollider('left');
+        leftSwordRef.current = undefined;
+        console.log('VRControllers: Left sword removed');
       }
-    }
-    
-    // Handle left controller sword - always present
-    if (!leftSwordRef.current?.parent) {
-      const sword = createSword();
-      leftSwordRef.current = sword;
-      controller0.add(sword);
-      addSwordCollider('left', sword);
-      console.log('VRControllers: Left sword spawned (permanent)');
-    }
-    // Apply animated scale to left sword
-    if (leftSwordRef.current) {
-      leftSwordRef.current.scale.setScalar(leftSwordScale.current);
     }
 
-    // Handle right controller sword - always present
-    if (!rightSwordRef.current?.parent) {
-      const sword = createSword();
-      rightSwordRef.current = sword;
-      controller1.add(sword);
-      addSwordCollider('right', sword);
-      console.log('VRControllers: Right sword spawned (permanent)');
-    }
-    // Apply animated scale to right sword
-    if (rightSwordRef.current) {
-      rightSwordRef.current.scale.setScalar(rightSwordScale.current);
+    // Handle right controller sword - only when squeezing
+    if (rightGrabbing.current) {
+      if (!rightSwordRef.current?.parent) {
+        const sword = createSword();
+        rightSwordRef.current = sword;
+        controller1.add(sword);
+        addSwordCollider('right', sword);
+        console.log('VRControllers: Right sword spawned');
+      }
+    } else {
+      // Remove sword when not squeezing
+      if (rightSwordRef.current?.parent) {
+        controller1.remove(rightSwordRef.current);
+        removeSwordCollider('right');
+        rightSwordRef.current = undefined;
+        console.log('VRControllers: Right sword removed');
+      }
     }
 
     // Update bullets
@@ -731,8 +716,8 @@ export default function VRControllers() {
       // Get sword tip position instead of controller position
       const currentPos = new THREE.Vector3();
       if (sword) {
-        // Get the sword's blade tip position (blade is at y=0.4 in sword space)
-        const bladeTip = new THREE.Vector3(0, 0.8, 0); // Tip of the blade
+        // Get the sword's blade tip position (blade is smaller now)
+        const bladeTip = new THREE.Vector3(0, 0.5, 0); // Tip of the smaller blade
         sword.localToWorld(bladeTip);
         currentPos.copy(bladeTip);
       } else {
@@ -849,8 +834,8 @@ export default function VRControllers() {
       const rightPos = new THREE.Vector3();
       
       // Get actual sword tip positions
-      const leftTip = new THREE.Vector3(0, 0.8, 0);
-      const rightTip = new THREE.Vector3(0, 0.8, 0);
+      const leftTip = new THREE.Vector3(0, 0.5, 0);
+      const rightTip = new THREE.Vector3(0, 0.5, 0);
       leftSwordRef.current.localToWorld(leftTip);
       rightSwordRef.current.localToWorld(rightTip);
       leftPos.copy(leftTip);
