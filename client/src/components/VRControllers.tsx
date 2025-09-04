@@ -71,53 +71,127 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   // Momentum system
   const momentumTransferBonus = useRef(0);
 
-  function createBullet(startPosition: THREE.Vector3, direction: THREE.Vector3) {
-    // Create bullet group for Star Wars style blaster bolt
-    const bulletGroup = new THREE.Group();
+  function createInstantHit(startPosition: THREE.Vector3, direction: THREE.Vector3, scene: THREE.Scene) {
+    // Create instant visual beam effect
+    const beamGroup = new THREE.Group();
     
-    // Core energy bolt - elongated capsule shape
-    const coreGeometry = new THREE.CapsuleGeometry(0.008, 0.06, 4, 8);
-    const coreMaterial = new THREE.MeshLambertMaterial({ 
+    // Create a line geometry for the laser beam
+    const maxDistance = 100;
+    const endPosition = startPosition.clone().add(direction.normalize().multiplyScalar(maxDistance));
+    
+    // Raycast to find actual hit point
+    const raycaster = new THREE.Raycaster(startPosition, direction.normalize(), 0, maxDistance);
+    const intersects: THREE.Intersection[] = [];
+    
+    // Check hits on world objects
+    const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+    if (worldGroup) {
+      worldGroup.traverse((child) => {
+        if ((child.userData.isPillar && !child.userData.destroyed) || 
+            (child.userData.isTurret && child.userData.health > 0)) {
+          const intersection = raycaster.intersectObject(child, false);
+          intersects.push(...intersection);
+        }
+      });
+    }
+    
+    // Find closest hit
+    let hitDistance = maxDistance;
+    let hitTarget = null;
+    
+    if (intersects.length > 0) {
+      intersects.sort((a, b) => a.distance - b.distance);
+      hitDistance = intersects[0].distance;
+      hitTarget = intersects[0].object;
+      endPosition.copy(intersects[0].point!);
+    }
+    
+    // Create visible laser beam
+    const beamLength = hitDistance;
+    const beamGeometry = new THREE.CylinderGeometry(0.005, 0.005, beamLength, 8);
+    const beamMaterial = new THREE.MeshLambertMaterial({
       color: '#00ff00',
       emissive: '#88ff00',
-      emissiveIntensity: 1.0
-    });
-    const core = new THREE.Mesh(coreGeometry, coreMaterial);
-    
-    // Outer glow effect
-    const glowGeometry = new THREE.CapsuleGeometry(0.015, 0.08, 4, 8);
-    const glowMaterial = new THREE.MeshLambertMaterial({ 
-      color: '#44ff44',
-      emissive: '#44ff00',
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 1.5,
       transparent: true,
-      opacity: 0.6
+      opacity: 0.8
     });
-    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    const beam = new THREE.Mesh(beamGeometry, beamMaterial);
     
-    // Align with direction of travel
+    // Position beam correctly
+    const beamCenter = startPosition.clone().add(direction.clone().multiplyScalar(beamLength / 2));
+    beam.position.copy(beamCenter);
+    
+    // Align beam with direction
     const quaternion = new THREE.Quaternion();
     quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    beam.quaternion.copy(quaternion);
     
-    core.quaternion.copy(quaternion);
-    glow.quaternion.copy(quaternion);
+    beamGroup.add(beam);
+    scene.add(beamGroup);
     
-    bulletGroup.add(glow);
-    bulletGroup.add(core);
-    bulletGroup.position.copy(startPosition);
+    // Process hit if we hit something
+    if (hitTarget) {
+      if (hitTarget.userData.isPillar && !hitTarget.userData.destroyed) {
+        // Hit pillar - destroy it
+        const pillarPos = new THREE.Vector3();
+        hitTarget.getWorldPosition(pillarPos);
+        
+        import('../lib/stores/useVRGame').then(({ useVRGame }) => {
+          useVRGame.getState().explodePillar(hitTarget.uuid);
+        });
+        hitTarget.userData.destroyed = true;
+        
+        // Create explosion effect
+        import('../lib/stores/useVRGame').then(({ useVRGame }) => {
+          useVRGame.getState().addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
+        });
+        
+        // Remove pillar with explosion animation
+        const explosionScale = { x: 1, y: 1, z: 1 };
+        const animate = () => {
+          explosionScale.x += 0.1;
+          explosionScale.y += 0.1;
+          explosionScale.z += 0.1;
+          hitTarget.scale.set(explosionScale.x, explosionScale.y, explosionScale.z);
+          hitTarget.rotation.x += 0.2;
+          hitTarget.rotation.z += 0.2;
+          
+          if (explosionScale.x < 2) {
+            requestAnimationFrame(animate);
+          } else {
+            hitTarget.parent?.remove(hitTarget);
+          }
+        };
+        animate();
+      } else if (hitTarget.userData.isTurret && hitTarget.userData.health > 0) {
+        // Hit turret - damage it
+        hitTarget.userData.health -= 25;
+        console.log(`🎯 Turret hit! Health: ${hitTarget.userData.health}/100`);
+        
+        // Play hit sound
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playHit();
+        });
+        
+        // Create hit effect
+        const turretPos = new THREE.Vector3();
+        hitTarget.getWorldPosition(turretPos);
+        import('../lib/stores/useVRGame').then(({ useVRGame }) => {
+          useVRGame.getState().addHitEffect([turretPos.x, turretPos.y + 1, turretPos.z]);
+        });
+      }
+    }
     
-    // Mark as player bullet for collision detection
-    bulletGroup.userData.isPlayerBullet = true;
+    // Remove beam after short duration
+    setTimeout(() => {
+      scene.remove(beamGroup);
+    }, 100); // Brief flash
     
-    return {
-      id: `bullet_${Date.now()}_${Math.random()}`,
-      mesh: bulletGroup as THREE.Object3D,
-      velocity: direction.normalize().multiplyScalar(5.0), // Slow moving
-      startTime: Date.now()
-    };
+    return true;
   }
   
-  function fireBullet(controller: THREE.XRTargetRaySpace, hand: 'left' | 'right', scene: THREE.Scene) {
+  function fireInstantBullet(controller: THREE.XRTargetRaySpace, hand: 'left' | 'right', scene: THREE.Scene) {
     if (!controller || ammo.current <= 0) return; // Check ammo
     
     const controllerPos = new THREE.Vector3();
@@ -129,13 +203,15 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     // Invert the direction - VR controllers point backwards by default
     controllerDir.negate();
     
-    const bullet = createBullet(controllerPos, controllerDir);
-    bullets.current.push(bullet);
-    scene.add(bullet.mesh);
+    // Adjust gun position to barrel tip
+    controllerPos.add(controllerDir.clone().multiplyScalar(0.25));
+    
+    // Fire instant hit
+    createInstantHit(controllerPos, controllerDir, scene);
     
     // Consume ammo
     ammo.current--;
-    console.log(`Ammo: ${ammo.current}/${maxAmmo.current}`);
+    console.log(`⚡ ${hand} gun fired instantly! Ammo: ${ammo.current}/${maxAmmo.current}`);
   }
   
   function createSword() {
@@ -553,94 +629,17 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     // Right gun (controller0 = right hand)
     if (!rightSwordRef.current && rightTrigger.current && !lastRightTrigger.current) {
-      fireBullet(controller0Obj, 'right', scene);
+      fireInstantBullet(controller0Obj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
     
     // Left gun (controller1 = left hand)
     if (!leftSwordRef.current && leftTrigger.current && !lastLeftTrigger.current) {
-      fireBullet(controller1Obj, 'left', scene);
+      fireInstantBullet(controller1Obj, 'left', scene);
     }
     lastLeftTrigger.current = leftTrigger.current;
     
-    // Update bullets
-    bullets.current = bullets.current.filter(bullet => {
-      // Move bullet
-      bullet.mesh.position.add(bullet.velocity.clone().multiplyScalar(deltaTime));
-      
-      let bulletDestroyed = false;
-      
-      // Check collision with red pillars
-      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
-      if (worldGroup && !bulletDestroyed) {
-        worldGroup.traverse((child) => {
-          if (child.userData.isPillar && !child.userData.destroyed && !bulletDestroyed) {
-            const pillarPos = new THREE.Vector3();
-            child.getWorldPosition(pillarPos);
-            
-            const distance = bullet.mesh.position.distanceTo(pillarPos);
-            if (distance < 0.5) { // Bullet hit pillar
-              explodePillar(child.uuid);
-              child.userData.destroyed = true;
-              
-              // Create explosion effect
-              addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
-              
-              // Remove pillar with explosion animation
-              const explosionScale = { x: 1, y: 1, z: 1 };
-              const animate = () => {
-                explosionScale.x += 0.1;
-                explosionScale.y += 0.1;
-                explosionScale.z += 0.1;
-                child.scale.set(explosionScale.x, explosionScale.y, explosionScale.z);
-                child.rotation.x += 0.2;
-                child.rotation.z += 0.2;
-                
-                if (explosionScale.x < 2) {
-                  requestAnimationFrame(animate);
-                } else {
-                  child.parent?.remove(child);
-                }
-              };
-              animate();
-              bulletDestroyed = true;
-            }
-          }
-          
-          // Check collision with turrets
-          if (child.userData.isTurret && child.userData.health > 0 && !bulletDestroyed) {
-            const turretPos = new THREE.Vector3();
-            child.getWorldPosition(turretPos);
-            
-            const distance = bullet.mesh.position.distanceTo(turretPos);
-            if (distance < 1.0) { // Bullet hit turret
-              child.userData.health -= 25; // 25 damage per hit, 4 hits to kill
-              console.log(`🎯 Turret hit! Health: ${child.userData.health}/100`);
-              
-              // Play hit sound
-              import('../lib/stores/useAudio').then(({ useAudio }) => {
-                useAudio.getState().playHit();
-              });
-              
-              // Create hit effect
-              addHitEffect([turretPos.x, turretPos.y + 1, turretPos.z]);
-              
-              bulletDestroyed = true;
-            }
-          }
-        });
-      }
-      
-      // Remove bullet if it hit something, is too old, or traveled too far
-      if (bulletDestroyed || 
-          (currentTime - bullet.startTime) > 10000 || // 10 seconds max life
-          bullet.mesh.position.length() > 100) {
-        scene.remove(bullet.mesh);
-        return false;
-      }
-      
-      return true;
-    });
+    // No bullet movement needed - using instant hit system
     
     // Sword collision detection with pillars, turrets, and bullet slicing
     [leftSwordRef.current, rightSwordRef.current].forEach(sword => {

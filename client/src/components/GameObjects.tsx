@@ -237,7 +237,7 @@ function TurretTower({ position }: { position: [number, number, number] }) {
         const bulletData = {
           id: `turret_bullet_${Date.now()}_${Math.random()}`,
           mesh: bulletGroup,
-          velocity: direction.clone().multiplyScalar(8.0), // Fast bullets
+          velocity: direction.clone().multiplyScalar(4.0), // Slower bullets
           startTime: currentTime
         };
         
