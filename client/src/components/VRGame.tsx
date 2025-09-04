@@ -8,6 +8,7 @@ import { VRDebugDisplay } from './VRDebugDisplay';
 import { KeyboardMouseControls } from './KeyboardMouseControls';
 import { ControlsInstructions } from './ControlsInstructions';
 import { DeathHandler } from './DeathHandler';
+import { LoadingScreen } from './LoadingScreen';
 import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
@@ -89,9 +90,10 @@ export default function VRGame() {
 
   }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
 
-  if (isLoading) {
-    return <LoadingScreen onComplete={() => setIsLoading(false)} />;
-  }
+  // Loading screen should be handled outside Canvas - removed for now
+  // if (isLoading) {
+  //   return <LoadingScreen onComplete={() => setIsLoading(false)} />;
+  // }
 
   return (
     <>

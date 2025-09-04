@@ -653,32 +653,41 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       sword.localToWorld(bladeTip);
       swordPos.copy(bladeTip);
       
-      // Check collision with turret bullets (bullet slicing)
-      scene.traverse((child) => {
-        if (child.userData.isTurretBullet) {
-          const bulletPos = new THREE.Vector3();
-          child.getWorldPosition(bulletPos);
-          
-          const distance = swordPos.distanceTo(bulletPos);
-          if (distance < 0.2) { // Slice bullet
-            scene.remove(child);
-            console.log('⚔️ Bullet sliced with sword!');
+      // Check collision with turret bullets (bullet slicing) - with safety check
+      if (scene) {
+        scene.traverse((child) => {
+          if (child && child.userData && child.userData.isTurretBullet) {
+            const bulletPos = new THREE.Vector3();
+            child.getWorldPosition(bulletPos);
             
-            // Play sword hit sound for bullet slice
-            import('../lib/stores/useAudio').then(({ useAudio }) => {
-              useAudio.getState().playSwordHit();
-            });
-            
-            // Create slash effect
-            addHitEffect([bulletPos.x, bulletPos.y, bulletPos.z]);
+            const distance = swordPos.distanceTo(bulletPos);
+            if (distance < 0.2) { // Slice bullet
+              if (child.parent) {
+                child.parent.remove(child);
+              } else {
+                scene.remove(child);
+              }
+              console.log('⚔️ Bullet sliced with sword!');
+              
+              // Play sword hit sound for bullet slice
+              import('../lib/stores/useAudio').then(({ useAudio }) => {
+                useAudio.getState().playSwordHit();
+              });
+              
+              // Create slash effect
+              addHitEffect([bulletPos.x, bulletPos.y, bulletPos.z]);
+            }
           }
-        }
-      });
+        });
+      }
       
       // Find red pillars to hit
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
       if (worldGroup) {
         worldGroup.traverse((child) => {
+          if (!child || !child.userData) return;
+          
+          // Hit pillars
           if (child.userData.isPillar && !child.userData.destroyed) {
             const pillarPos = new THREE.Vector3();
             child.getWorldPosition(pillarPos);
@@ -704,10 +713,39 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
                 if (explosionScale.x < 2) {
                   requestAnimationFrame(animate);
                 } else {
-                  child.parent?.remove(child);
+                  if (child.parent) {
+                    child.parent.remove(child);
+                  }
                 }
               };
               animate();
+            }
+          }
+          
+          // Hit turrets with sword
+          if (child.userData.isTurret && child.userData.health > 0) {
+            const turretPos = new THREE.Vector3();
+            child.getWorldPosition(turretPos);
+            
+            const distance = swordPos.distanceTo(turretPos);
+            if (distance < 1.5) { // Hit distance for turrets (larger than pillars)
+              // Damage turret
+              child.userData.health -= 35; // More damage with sword
+              console.log(`⚔️ Turret slashed! Health: ${child.userData.health}/100`);
+              
+              // Play sword hit sound
+              import('../lib/stores/useAudio').then(({ useAudio }) => {
+                useAudio.getState().playSwordHit();
+              });
+              
+              // Create hit effect
+              addHitEffect([turretPos.x, turretPos.y, turretPos.z]);
+              
+              // If turret is destroyed, mark it
+              if (child.userData.health <= 0) {
+                child.userData.health = 0;
+                // Turret destruction is handled in GameObjects.tsx
+              }
             }
           }
         });
