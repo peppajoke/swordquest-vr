@@ -111,7 +111,7 @@ export default function VRControllers() {
   useEffect(() => {
     if (!gl.xr) return;
     
-    console.log('VRControllers: Setting up XR controller events');
+    console.log('VRControllers: Setting up grip-based movement system');
     
     // Get controllers from renderer
     const controller0 = gl.xr.getController(0);
@@ -284,11 +284,30 @@ export default function VRControllers() {
     // Update endless runner movement
     updateMovement(deltaTime);
     
-    // Move camera forward continuously
-    camera.position.z += gameSpeed;
+    // Move camera forward only when gripping swords
+    const leftGripping = leftGrabbing.current;
+    const rightGripping = rightGrabbing.current;
+    let swordsHeld = 0;
     
-    // Spawn new targets when needed
-    if (Math.random() < 0.01) { // 1% chance per frame to spawn
+    if (leftGripping) swordsHeld++;
+    if (rightGripping) swordsHeld++;
+    
+    // Only move forward if holding at least one sword, speed increases with both swords
+    if (swordsHeld > 0) {
+      const speedMultiplier = swordsHeld; // 1x speed for one sword, 2x for both
+      camera.position.z += gameSpeed * speedMultiplier;
+      
+      if (Math.random() < 0.005) { // Occasionally log grip status
+        console.log(`⚔️ Gripping ${swordsHeld} sword(s) - Speed: ${(gameSpeed * speedMultiplier).toFixed(3)}`);
+      }
+    } else {
+      if (Math.random() < 0.005) { // Log when stopped
+        console.log('✋ Not gripping swords - STOPPED');
+      }
+    }
+    
+    // Only spawn new targets when moving (gripping swords)
+    if (swordsHeld > 0 && Math.random() < 0.008) { // Spawn targets when moving
       spawnNewTargets();
     }
     
