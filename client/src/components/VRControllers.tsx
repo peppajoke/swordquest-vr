@@ -273,41 +273,89 @@ export default function VRControllers() {
     const controller0 = controller0Ref.current;
     const controller1 = controller1Ref.current;
     
-    if (!controller0 || !controller1) return;
-    
-    // Get controller gamepads for input - try multiple methods
-    let gamepad0 = controller0.userData.gamepad;
-    let gamepad1 = controller1.userData.gamepad;
-    
-    // Alternative: Try getting gamepad from WebXR session
-    const session = gl.xr.getSession();
-    if (session && session.inputSources) {
-      const inputSources = Array.from(session.inputSources);
-      
-      // Find left and right controllers
-      const leftController = inputSources.find(source => source.handedness === 'left');
-      const rightController = inputSources.find(source => source.handedness === 'right');
-      
-      gamepad0 = leftController?.gamepad || gamepad0;
-      gamepad1 = rightController?.gamepad || gamepad1;
+    // Debug controller detection
+    if (Math.random() < 0.01) { // Log 1% of frames
+      console.log('🎮 Controller Detection - Left:', !!controller0, 'Right:', !!controller1);
+      console.log('🎮 VR Session Active:', !!gl.xr.getSession());
     }
     
-    // Debug gamepad detection (reduce spam)
-    if (Math.random() < 0.005) { // Only log 0.5% of frames
-      if (gamepad0 || gamepad1) {
-        console.log('🎮 GAMEPADS DETECTED! Left:', !!gamepad0, 'Right:', !!gamepad1);
-        if (gamepad0?.buttons) console.log('Left gamepad buttons:', gamepad0.buttons.length);
-        if (gamepad1?.buttons) console.log('Right gamepad buttons:', gamepad1.buttons.length);
+    if (!controller0 || !controller1) return;
+    
+    // Get controller gamepads using multiple robust methods
+    let gamepad0: any = null;
+    let gamepad1: any = null;
+    
+    // Method 1: Try userData.gamepad
+    gamepad0 = controller0.userData?.gamepad;
+    gamepad1 = controller1.userData?.gamepad;
+    
+    // Method 2: Try direct gamepad property
+    gamepad0 = gamepad0 || (controller0 as any).gamepad;
+    gamepad1 = gamepad1 || (controller1 as any).gamepad;
+    
+    // Method 3: Try WebXR session input sources
+    const session = gl.xr.getSession();
+    if (session?.inputSources) {
+      for (const inputSource of session.inputSources) {
+        if (inputSource.gamepad) {
+          if (inputSource.handedness === 'left') {
+            gamepad0 = gamepad0 || inputSource.gamepad;
+          } else if (inputSource.handedness === 'right') {
+            gamepad1 = gamepad1 || inputSource.gamepad;
+          }
+        }
       }
     }
     
-    // Handle movement with left controller's left joystick
-    if (gamepad0?.axes) {
-      const joystickX = gamepad0.axes[2]; // Left joystick X axis
-      const joystickY = gamepad0.axes[3]; // Left joystick Y axis
+    // Method 4: Try navigator.getGamepads() as fallback
+    if (!gamepad0 || !gamepad1) {
+      const navigatorGamepads = navigator.getGamepads?.();
+      if (navigatorGamepads) {
+        for (let i = 0; i < navigatorGamepads.length; i++) {
+          const gamepad = navigatorGamepads[i];
+          if (gamepad) {
+            // Assign based on index or ID
+            if (!gamepad0 && i === 0) gamepad0 = gamepad;
+            if (!gamepad1 && i === 1) gamepad1 = gamepad;
+          }
+        }
+      }
+    }
+    
+    // Debug gamepad detection with more details
+    if (Math.random() < 0.01) { // Log 1% of frames for better debugging
+      console.log('🎮 Gamepad Status - Left:', !!gamepad0, 'Right:', !!gamepad1);
+      if (gamepad0) {
+        console.log('  Left gamepad - buttons:', gamepad0.buttons?.length, 'axes:', gamepad0.axes?.length);
+        if (gamepad0.axes?.length >= 4) {
+          console.log('  Left joystick - X:', gamepad0.axes[2]?.toFixed(2), 'Y:', gamepad0.axes[3]?.toFixed(2));
+        }
+      }
+      if (gamepad1) {
+        console.log('  Right gamepad - buttons:', gamepad1.buttons?.length, 'axes:', gamepad1.axes?.length);
+      }
+    }
+    
+    // Handle movement with left controller's joystick (try multiple axis mappings)
+    if (gamepad0?.axes && gamepad0.axes.length >= 2) {
+      // Try different joystick axis mappings for Quest 3
+      let joystickX = 0;
+      let joystickY = 0;
+      
+      // Primary mapping: axes[2] and axes[3] (typical for left joystick)
+      if (gamepad0.axes.length >= 4) {
+        joystickX = gamepad0.axes[2] || 0;
+        joystickY = gamepad0.axes[3] || 0;
+      }
+      
+      // Fallback mapping: axes[0] and axes[1] (in case they're mapped differently)
+      if (Math.abs(joystickX) < 0.05 && Math.abs(joystickY) < 0.05) {
+        joystickX = gamepad0.axes[0] || 0;
+        joystickY = gamepad0.axes[1] || 0;
+      }
       
       if (Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) { // Dead zone
-        const moveSpeed = 0.05; // Movement speed
+        const moveSpeed = 0.08; // Slightly faster movement
         
         // Get camera's forward and right vectors
         const forward = new THREE.Vector3(0, 0, -1);
@@ -331,7 +379,7 @@ export default function VRControllers() {
         // Apply movement to camera position
         camera.position.add(moveDirection.multiplyScalar(moveSpeed));
         
-        console.log(`VRControllers: Moving - X: ${joystickX.toFixed(2)}, Y: ${joystickY.toFixed(2)}`);
+        console.log(`\ud83c\udfae MOVING! X: ${joystickX.toFixed(2)}, Y: ${joystickY.toFixed(2)}`);
       }
     }
     
