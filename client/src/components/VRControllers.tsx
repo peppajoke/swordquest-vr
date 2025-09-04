@@ -432,6 +432,13 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = BURST SPEED ACTIVATED!`);
         burstSpeedMultiplier.current = 2.5; // 2.5x speed boost
         burstSpeedDecay.current = currentTime + 1000; // 1 second duration
+        
+        // Transfer all momentum into new direction
+        const currentSpeed = velocity.current.length();
+        if (currentSpeed > 0) {
+          const newDirection = lockedDirection.current || cameraDirection;
+          velocity.current.copy(newDirection.clone().normalize().multiplyScalar(currentSpeed));
+        }
       }
     } else if (!isAccelerating && wasAcceleratingPreviously.current) {
       // Just stopped accelerating - record the time
@@ -513,8 +520,9 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       const directionChange = currentMovementDirection.angleTo(lastDirection.current);
       const isHarshTurn = directionChange > Math.PI / 6; // 30 degrees or more
       
-      if (wasAccelerating.current && isHarshTurn) {
-        // Harsh turn while accelerating: reduce momentum
+      // Skip momentum loss if burst speed is active (momentum already transferred)
+      if (wasAccelerating.current && isHarshTurn && burstSpeedMultiplier.current <= 1.0) {
+        // Harsh turn while accelerating: reduce momentum (only when not in burst mode)
         const momentumLoss = 0.7; // lose 30% momentum
         velocity.current.multiplyScalar(momentumLoss);
         // Harsh turn while accelerating

@@ -93,6 +93,13 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         console.log(`🚀 PERFECT TIMING! ${stopDuration}ms pause = BURST SPEED ACTIVATED!`);
         burstSpeedMultiplier.current = 2.5; // 2.5x speed boost
         burstSpeedDecay.current = currentTime + 1000; // 1 second duration
+        
+        // Transfer all momentum into new direction
+        const currentSpeed = velocity.current.length();
+        if (currentSpeed > 0) {
+          const newDirection = lockedDirection.current || cameraDirection;
+          velocity.current.copy(newDirection.clone().normalize().multiplyScalar(currentSpeed));
+        }
       }
     } else if (!isAccelerating && wasAcceleratingPreviously.current) {
       // Just stopped accelerating - record the time
