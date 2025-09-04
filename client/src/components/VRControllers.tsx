@@ -325,11 +325,40 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const deltaTime = 1 / 60;
     const currentTime = Date.now();
 
-    // Get the direction the player is facing
-    const cameraDirection = new THREE.Vector3();
-    camera.getWorldDirection(cameraDirection);
-    cameraDirection.y = 0;
-    cameraDirection.normalize();
+    // Get the direction from controller hands instead of camera
+    let handDirection = new THREE.Vector3();
+    let validDirections = 0;
+    
+    // Get direction from right controller if available
+    if (controller0Obj && rightSwordRef.current) {
+      const rightDirection = new THREE.Vector3();
+      controller0Obj.getWorldDirection(rightDirection);
+      rightDirection.y = 0;
+      rightDirection.normalize();
+      handDirection.add(rightDirection);
+      validDirections++;
+    }
+    
+    // Get direction from left controller if available
+    if (controller1Obj && leftSwordRef.current) {
+      const leftDirection = new THREE.Vector3();
+      controller1Obj.getWorldDirection(leftDirection);
+      leftDirection.y = 0;
+      leftDirection.normalize();
+      handDirection.add(leftDirection);
+      validDirections++;
+    }
+    
+    // Average the directions and fallback to camera if no swords
+    if (validDirections > 0) {
+      handDirection.divideScalar(validDirections);
+      handDirection.normalize();
+    } else {
+      // Fallback to camera direction if no swords are held
+      camera.getWorldDirection(handDirection);
+      handDirection.y = 0;
+      handDirection.normalize();
+    }
     
     // Burst speed timing system
     const isAccelerating = swordsHeld > 0 && fuel.current > 0;
@@ -357,7 +386,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         
         const currentSpeed = velocity.current.length();
         if (currentSpeed > 0) {
-          const newDirection = lockedDirection.current || cameraDirection;
+          const newDirection = lockedDirection.current || handDirection;
           velocity.current.copy(newDirection.clone().normalize().multiplyScalar(currentSpeed));
         }
       }
@@ -458,7 +487,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     // Handle direction locking
     if (swordsHeld > lastSwordsHeld.current) {
-      lockedDirection.current = cameraDirection.clone().normalize();
+      lockedDirection.current = handDirection.clone().normalize();
     } else if (swordsHeld < lastSwordsHeld.current) {
       lockedDirection.current = null;
     }
@@ -471,7 +500,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       const burstMultiplier = burstSpeedMultiplier.current;
       const desiredSpeed = maxSpeed.current * speedMultiplier * fuelMultiplier * burstMultiplier;
       
-      const currentMovementDirection = lockedDirection.current || cameraDirection;
+      const currentMovementDirection = lockedDirection.current || handDirection;
       const targetDirection = currentMovementDirection.clone().multiplyScalar(desiredSpeed);
       
       lastDirection.current.copy(currentMovementDirection);
