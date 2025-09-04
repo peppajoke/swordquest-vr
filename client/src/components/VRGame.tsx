@@ -57,9 +57,9 @@ export default function VRGame() {
       
       {/* World Group - Everything that moves with locomotion */}
       <group name="worldGroup">
-        {/* Ground */}
+        {/* Ground - Increased by 300% (20 * 4 = 80) */}
         <mesh receiveShadow position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[20, 20]} />
+          <planeGeometry args={[80, 80]} />
           <meshLambertMaterial color="#2d3436" />
         </mesh>
         

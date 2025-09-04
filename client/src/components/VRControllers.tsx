@@ -33,7 +33,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const lastSwordsHeld = useRef(0);
 
   // Movement parameters
-  const maxSpeed = useRef(8.0);
+  const maxSpeed = useRef(3.2); // Reduced by 60% (8.0 * 0.4)
   const accelerationRate = useRef(12.0);
   const turnRate = useRef(0.3);
   

@@ -23,7 +23,7 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
   // Movement system
   const velocity = useRef(new THREE.Vector3(0, 0, 0));
   const acceleration = useRef(new THREE.Vector3(0, 0, 0));
-  const maxSpeed = useRef(5.0);
+  const maxSpeed = useRef(2.0); // Reduced by 60% (5.0 * 0.4)
   const accelerationRate = useRef(3.0);
   const decelerationRate = useRef(0.05);
   const turnRate = useRef(0.1);
