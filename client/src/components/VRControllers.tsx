@@ -17,7 +17,7 @@ export default function VRControllers() {
   const rightGrabbing = useRef(false);
   const controller0Ref = useRef<THREE.Group>();
   const controller1Ref = useRef<THREE.Group>();
-  const { addSwordCollider, removeSwordCollider, targets, destroyTarget, addHitEffect } = useVRGame();
+  const { addSwordCollider, removeSwordCollider, targets, destroyTarget, addHitEffect, handleSwordClash, canSwordClash } = useVRGame();
   const previousPositions = useRef<{ [key: string]: THREE.Vector3 }>({});
   const bullets = useRef<{ id: string, mesh: THREE.Mesh, velocity: THREE.Vector3, controllerId: string }[]>([]);
   const lastBulletTime = useRef<{ [key: string]: number }>({});
@@ -273,8 +273,8 @@ export default function VRControllers() {
     const controller0 = controller0Ref.current;
     const controller1 = controller1Ref.current;
     
-    // Debug controller detection
-    if (Math.random() < 0.01) { // Log 1% of frames
+    // Debug controller detection (much less spam)
+    if (Math.random() < 0.001) { // Log 0.1% of frames
       console.log('🎮 Controller Detection - Left:', !!controller0, 'Right:', !!controller1);
       console.log('🎮 VR Session Active:', !!gl.xr.getSession());
     }
@@ -322,17 +322,13 @@ export default function VRControllers() {
       }
     }
     
-    // Debug gamepad detection with more details
-    if (Math.random() < 0.01) { // Log 1% of frames for better debugging
-      console.log('🎮 Gamepad Status - Left:', !!gamepad0, 'Right:', !!gamepad1);
-      if (gamepad0) {
-        console.log('  Left gamepad - buttons:', gamepad0.buttons?.length, 'axes:', gamepad0.axes?.length);
-        if (gamepad0.axes?.length >= 4) {
+    // Debug gamepad detection (reduce spam)
+    if (Math.random() < 0.002) { // Log 0.2% of frames
+      if (gamepad0 || gamepad1) {
+        console.log('🎮 GAMEPADS DETECTED! Left:', !!gamepad0, 'Right:', !!gamepad1);
+        if (gamepad0?.axes?.length >= 4) {
           console.log('  Left joystick - X:', gamepad0.axes[2]?.toFixed(2), 'Y:', gamepad0.axes[3]?.toFixed(2));
         }
-      }
-      if (gamepad1) {
-        console.log('  Right gamepad - buttons:', gamepad1.buttons?.length, 'axes:', gamepad1.axes?.length);
       }
     }
     
@@ -563,6 +559,33 @@ export default function VRControllers() {
       
       previousPositions.current[id] = currentPos.clone();
     });
+    
+    // Sword-to-sword collision detection
+    if (controller0 && controller1 && leftSwordRef.current && rightSwordRef.current) {
+      const leftPos = new THREE.Vector3();
+      const rightPos = new THREE.Vector3();
+      
+      controller0.getWorldPosition(leftPos);
+      controller1.getWorldPosition(rightPos);
+      
+      // Check distance between sword tips (accounting for sword length)
+      const swordDistance = leftPos.distanceTo(rightPos);
+      
+      if (swordDistance < 0.8 && canSwordClash()) { // Swords are close enough to clash
+        console.log('⚔️ Swords are clashing!');
+        
+        // Calculate collision point (midpoint between swords)
+        const collisionPoint = leftPos.clone().lerp(rightPos, 0.5);
+        
+        // Get camera position and direction for projectile
+        const cameraPosition = camera.position.clone();
+        const cameraDirection = new THREE.Vector3(0, 0, -1);
+        cameraDirection.applyQuaternion(camera.quaternion);
+        
+        // Handle the sword clash with projectile firing
+        handleSwordClash(collisionPoint, cameraPosition, cameraDirection);
+      }
+    }
   });
 
   return (

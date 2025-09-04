@@ -26,6 +26,8 @@ interface VRGameState {
   hitEffects: HitEffect[];
   swordColliders: SwordCollider[];
   targetMeshes: { [key: string]: THREE.Mesh };
+  swordClashCooldown: number;
+  lastClashTime: number;
 
   // Actions
   initializeGame: () => void;
@@ -35,6 +37,8 @@ interface VRGameState {
   removeSwordCollider: (id: string) => void;
   registerTarget: (id: string, mesh: THREE.Mesh) => void;
   resetGame: () => void;
+  handleSwordClash: (collisionPoint: THREE.Vector3, cameraPosition: THREE.Vector3, cameraDirection: THREE.Vector3) => void;
+  canSwordClash: () => boolean;
 }
 
 const createInitialTargets = (): Target[] => [
@@ -53,6 +57,8 @@ export const useVRGame = create<VRGameState>()(
     hitEffects: [],
     swordColliders: [],
     targetMeshes: {},
+    swordClashCooldown: 5000, // 5 seconds in milliseconds
+    lastClashTime: 0,
 
     initializeGame: () => {
       console.log('VRGame: Initializing game state');
@@ -61,7 +67,8 @@ export const useVRGame = create<VRGameState>()(
         targets: createInitialTargets(),
         hitEffects: [],
         swordColliders: [],
-        targetMeshes: {}
+        targetMeshes: {},
+        lastClashTime: 0
       });
     },
 
@@ -154,8 +161,39 @@ export const useVRGame = create<VRGameState>()(
         targets: createInitialTargets(),
         hitEffects: [],
         swordColliders: [],
-        targetMeshes: {}
+        targetMeshes: {},
+        lastClashTime: 0
       });
+    },
+
+    canSwordClash: () => {
+      const { lastClashTime, swordClashCooldown } = get();
+      const now = Date.now();
+      return (now - lastClashTime) >= swordClashCooldown;
+    },
+
+    handleSwordClash: (collisionPoint: THREE.Vector3, cameraPosition: THREE.Vector3, cameraDirection: THREE.Vector3) => {
+      const { canSwordClash } = get();
+      
+      if (!canSwordClash()) {
+        console.log('⚔️ Sword clash on cooldown');
+        return;
+      }
+
+      console.log('⚔️ SWORDS CLASHED! Firing projectile from user viewpoint');
+      
+      // Update last clash time
+      set({ lastClashTime: Date.now() });
+      
+      // Create projectile from camera to collision point
+      const projectileDirection = collisionPoint.clone().sub(cameraPosition).normalize();
+      
+      // Add hit effect at collision point with directional velocity
+      const { addHitEffect } = get();
+      addHitEffect([collisionPoint.x, collisionPoint.y, collisionPoint.z], projectileDirection);
+      
+      // Add sparkle effect at sword collision point
+      addHitEffect([collisionPoint.x, collisionPoint.y, collisionPoint.z], new THREE.Vector3(0, 1, 0));
     }
   }))
 );
