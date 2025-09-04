@@ -28,6 +28,15 @@ interface VRGameState {
   targetMeshes: { [key: string]: THREE.Mesh };
   swordClashCooldown: number;
   lastClashTime: number;
+  
+  // Endless runner mechanics
+  gameSpeed: number;
+  baseSpeed: number;
+  speedIncrement: number;
+  gameStartTime: number;
+  distanceTraveled: number;
+  lastSpawnZ: number;
+  nextTargetId: number;
 
   // Actions
   initializeGame: () => void;
@@ -39,6 +48,9 @@ interface VRGameState {
   resetGame: () => void;
   handleSwordClash: (collisionPoint: THREE.Vector3, cameraPosition: THREE.Vector3, cameraDirection: THREE.Vector3) => void;
   canSwordClash: () => boolean;
+  updateMovement: (deltaTime: number) => void;
+  spawnNewTargets: () => void;
+  cleanupOldTargets: (playerZ: number) => void;
 }
 
 const createInitialTargets = (): Target[] => [
@@ -59,16 +71,30 @@ export const useVRGame = create<VRGameState>()(
     targetMeshes: {},
     swordClashCooldown: 5000, // 5 seconds in milliseconds
     lastClashTime: 0,
+    
+    // Endless runner state
+    gameSpeed: 0.02, // Initial forward movement speed
+    baseSpeed: 0.02,
+    speedIncrement: 0.001, // Speed increase per second
+    gameStartTime: Date.now(),
+    distanceTraveled: 0,
+    lastSpawnZ: -10, // Z position of last spawned targets
+    nextTargetId: 7, // Continue from existing targets
 
     initializeGame: () => {
-      console.log('VRGame: Initializing game state');
+      console.log('VRGame: Initializing endless runner game');
       set({
         score: 0,
         targets: createInitialTargets(),
         hitEffects: [],
         swordColliders: [],
         targetMeshes: {},
-        lastClashTime: 0
+        lastClashTime: 0,
+        gameSpeed: 0.02,
+        gameStartTime: Date.now(),
+        distanceTraveled: 0,
+        lastSpawnZ: -10,
+        nextTargetId: 7
       });
     },
 
@@ -194,6 +220,66 @@ export const useVRGame = create<VRGameState>()(
       
       // Add sparkle effect at sword collision point
       addHitEffect([collisionPoint.x, collisionPoint.y, collisionPoint.z], new THREE.Vector3(0, 1, 0));
+    },
+
+    updateMovement: (deltaTime: number) => {
+      const { gameSpeed, baseSpeed, speedIncrement, gameStartTime, distanceTraveled } = get();
+      
+      // Increase speed over time
+      const timeElapsed = (Date.now() - gameStartTime) / 1000; // seconds
+      const newSpeed = baseSpeed + (speedIncrement * timeElapsed);
+      
+      // Update distance traveled
+      const newDistance = distanceTraveled + (newSpeed * deltaTime * 60); // 60fps assumption
+      
+      set({ 
+        gameSpeed: newSpeed,
+        distanceTraveled: newDistance
+      });
+
+      if (Math.random() < 0.01) { // Debug log occasionally
+        console.log(`🏃 Speed: ${newSpeed.toFixed(3)}, Distance: ${newDistance.toFixed(1)}`);
+      }
+    },
+
+    spawnNewTargets: () => {
+      const { lastSpawnZ, nextTargetId, targets } = get();
+      
+      // Spawn new targets ahead of player
+      const spawnDistance = 20; // How far ahead to spawn
+      const newSpawnZ = lastSpawnZ - spawnDistance;
+      
+      // Create new targets in various positions
+      const newTargets: Target[] = [
+        { id: `target_${nextTargetId}`, position: [-2, 1.5, newSpawnZ], destroyed: false },
+        { id: `target_${nextTargetId + 1}`, position: [2, 1.5, newSpawnZ - 2], destroyed: false },
+        { id: `target_${nextTargetId + 2}`, position: [0, 2, newSpawnZ - 4], destroyed: false },
+        { id: `target_${nextTargetId + 3}`, position: [-1, 1, newSpawnZ - 6], destroyed: false },
+        { id: `target_${nextTargetId + 4}`, position: [1, 1, newSpawnZ - 8], destroyed: false },
+      ];
+      
+      console.log(`🎯 Spawning ${newTargets.length} new targets at Z: ${newSpawnZ}`);
+      
+      set({ 
+        targets: [...targets, ...newTargets],
+        lastSpawnZ: newSpawnZ,
+        nextTargetId: nextTargetId + 5
+      });
+    },
+
+    cleanupOldTargets: (playerZ: number) => {
+      const { targets } = get();
+      
+      // Remove targets that are far behind the player
+      const cleanupDistance = 10;
+      const cleanedTargets = targets.filter(target => 
+        target.position[2] > (playerZ + cleanupDistance)
+      );
+      
+      if (cleanedTargets.length !== targets.length) {
+        console.log(`🧹 Cleaned up ${targets.length - cleanedTargets.length} old targets`);
+        set({ targets: cleanedTargets });
+      }
     }
   }))
 );

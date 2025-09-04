@@ -17,7 +17,7 @@ export default function VRControllers() {
   const rightGrabbing = useRef(false);
   const controller0Ref = useRef<THREE.Group>();
   const controller1Ref = useRef<THREE.Group>();
-  const { addSwordCollider, removeSwordCollider, targets, destroyTarget, addHitEffect, handleSwordClash, canSwordClash } = useVRGame();
+  const { addSwordCollider, removeSwordCollider, targets, destroyTarget, addHitEffect, handleSwordClash, canSwordClash, updateMovement, spawnNewTargets, cleanupOldTargets, gameSpeed } = useVRGame();
   const previousPositions = useRef<{ [key: string]: THREE.Vector3 }>({});
   const bullets = useRef<{ id: string, mesh: THREE.Mesh, velocity: THREE.Vector3, controllerId: string }[]>([]);
   const lastBulletTime = useRef<{ [key: string]: number }>({});
@@ -269,7 +269,7 @@ export default function VRControllers() {
     };
   }, [gl]);
 
-  useFrame(() => {
+  useFrame((state, deltaTime) => {
     const controller0 = controller0Ref.current;
     const controller1 = controller1Ref.current;
     
@@ -280,6 +280,20 @@ export default function VRControllers() {
     }
     
     if (!controller0 || !controller1) return;
+    
+    // Update endless runner movement
+    updateMovement(deltaTime);
+    
+    // Move camera forward continuously
+    camera.position.z += gameSpeed;
+    
+    // Spawn new targets when needed
+    if (Math.random() < 0.01) { // 1% chance per frame to spawn
+      spawnNewTargets();
+    }
+    
+    // Clean up old targets
+    cleanupOldTargets(camera.position.z);
     
     // Get controller gamepads using multiple robust methods
     let gamepad0: any = null;
