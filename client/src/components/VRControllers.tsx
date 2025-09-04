@@ -32,7 +32,7 @@ export default function VRControllers() {
   const acceleration = useRef(new THREE.Vector3(0, 0, 0));
   const maxSpeed = useRef(5.0); // INCREASED: Much higher max speed
   const accelerationRate = useRef(3.0);
-  const decelerationRate = useRef(1.5); // SLOWER: Much slower deceleration to maintain momentum
+  const decelerationRate = useRef(0.05); // MUCH SLOWER: Extremely slow deceleration to maintain momentum much longer
   const turnRate = useRef(0.1);
   
   // Sword animation tracking
