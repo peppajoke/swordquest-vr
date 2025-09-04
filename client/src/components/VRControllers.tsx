@@ -23,6 +23,12 @@ export default function VRControllers() {
   const lastBulletTime = useRef<{ [key: string]: number }>({});
   const leftTriggerPressed = useRef(false);
   const rightTriggerPressed = useRef(false);
+  
+  // Sword animation tracking
+  const leftSwordScale = useRef(0.5); // Start smaller
+  const rightSwordScale = useRef(0.5);
+  const targetLeftScale = useRef(0.5);
+  const targetRightScale = useRef(0.5);
 
   // Create bullet mesh
   const createBullet = () => {
@@ -156,10 +162,40 @@ export default function VRControllers() {
       rightTriggerPressed.current = false;
     };
     
-    controller0.addEventListener('squeezestart', handleSqueezeStart0);
-    controller0.addEventListener('squeezeend', handleSqueezeEnd0);
-    controller1.addEventListener('squeezestart', handleSqueezeStart1);
-    controller1.addEventListener('squeezeend', handleSqueezeEnd1);
+    // Enhanced squeeze handlers for sword animation
+    const originalSqueezeStart0 = handleSqueezeStart0;
+    const originalSqueezeEnd0 = handleSqueezeEnd0;
+    const originalSqueezeStart1 = handleSqueezeStart1;
+    const originalSqueezeEnd1 = handleSqueezeEnd1;
+    
+    const handleSqueezeStart0Extended = () => {
+      originalSqueezeStart0();
+      targetLeftScale.current = 1.5; // Expand when squeezing
+      console.log('Left sword extending...');
+    };
+    
+    const handleSqueezeEnd0Extended = () => {
+      originalSqueezeEnd0();
+      targetLeftScale.current = 0.5; // Shrink when releasing
+      console.log('Left sword retracting...');
+    };
+    
+    const handleSqueezeStart1Extended = () => {
+      originalSqueezeStart1();
+      targetRightScale.current = 1.5; // Expand when squeezing
+      console.log('Right sword extending...');
+    };
+    
+    const handleSqueezeEnd1Extended = () => {
+      originalSqueezeEnd1();
+      targetRightScale.current = 0.5; // Shrink when releasing
+      console.log('Right sword retracting...');
+    };
+    
+    controller0.addEventListener('squeezestart', handleSqueezeStart0Extended);
+    controller0.addEventListener('squeezeend', handleSqueezeEnd0Extended);
+    controller1.addEventListener('squeezestart', handleSqueezeStart1Extended);
+    controller1.addEventListener('squeezeend', handleSqueezeEnd1Extended);
     
     // Add trigger/select event listeners
     controller0.addEventListener('selectstart', handleSelectStart0);
@@ -169,10 +205,10 @@ export default function VRControllers() {
     
     return () => {
       try {
-        controller0.removeEventListener('squeezestart', handleSqueezeStart0);
-        controller0.removeEventListener('squeezeend', handleSqueezeEnd0);
-        controller1.removeEventListener('squeezestart', handleSqueezeStart1);
-        controller1.removeEventListener('squeezeend', handleSqueezeEnd1);
+        controller0.removeEventListener('squeezestart', handleSqueezeStart0Extended);
+        controller0.removeEventListener('squeezeend', handleSqueezeEnd0Extended);
+        controller1.removeEventListener('squeezestart', handleSqueezeStart1Extended);
+        controller1.removeEventListener('squeezeend', handleSqueezeEnd1Extended);
         
         controller0.removeEventListener('selectstart', handleSelectStart0);
         controller0.removeEventListener('selectend', handleSelectEnd0);
@@ -276,6 +312,27 @@ export default function VRControllers() {
       fireBullet(controller1, 'right');
     }
     
+    // Animate sword scales smoothly
+    const scaleSpeed = 0.05; // Animation speed
+    
+    // Left sword scale animation
+    if (Math.abs(leftSwordScale.current - targetLeftScale.current) > 0.01) {
+      if (leftSwordScale.current < targetLeftScale.current) {
+        leftSwordScale.current = Math.min(leftSwordScale.current + scaleSpeed, targetLeftScale.current);
+      } else {
+        leftSwordScale.current = Math.max(leftSwordScale.current - scaleSpeed, targetLeftScale.current);
+      }
+    }
+    
+    // Right sword scale animation
+    if (Math.abs(rightSwordScale.current - targetRightScale.current) > 0.01) {
+      if (rightSwordScale.current < targetRightScale.current) {
+        rightSwordScale.current = Math.min(rightSwordScale.current + scaleSpeed, targetRightScale.current);
+      } else {
+        rightSwordScale.current = Math.max(rightSwordScale.current - scaleSpeed, targetRightScale.current);
+      }
+    }
+    
     // Handle left controller sword
     if (leftGrabbing.current) {
       if (!leftSwordRef.current?.parent) {
@@ -284,6 +341,10 @@ export default function VRControllers() {
         controller0.add(sword);
         addSwordCollider('left', sword);
         console.log('VRControllers: Left sword spawned');
+      }
+      // Apply animated scale to left sword
+      if (leftSwordRef.current) {
+        leftSwordRef.current.scale.setScalar(leftSwordScale.current);
       }
     } else if (!leftGrabbing.current && leftSwordRef.current?.parent) {
       controller0.remove(leftSwordRef.current);
@@ -300,6 +361,10 @@ export default function VRControllers() {
         controller1.add(sword);
         addSwordCollider('right', sword);
         console.log('VRControllers: Right sword spawned');
+      }
+      // Apply animated scale to right sword
+      if (rightSwordRef.current) {
+        rightSwordRef.current.scale.setScalar(rightSwordScale.current);
       }
     } else if (!rightGrabbing.current && rightSwordRef.current?.parent) {
       controller1.remove(rightSwordRef.current);
