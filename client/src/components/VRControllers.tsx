@@ -266,14 +266,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     grip.position.y = -0.04;
     gun.add(grip);
     
-    // Barrel (longer, rotated and positioned forward past the handle)
-    const barrelGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.25);
+    // Barrel (shorter, rotated and positioned closer to player)
+    const barrelGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.125); // Halved length from 0.25 to 0.125
     const barrelMaterial = new THREE.MeshLambertMaterial({ color: '#1a1a1a' });
     const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
     barrel.userData.isCustomModel = true; // Mark as custom
     barrel.rotation.x = Math.PI / 2; // Rotate 90 degrees to point forward
     barrel.position.y = 0.02;
-    barrel.position.z = 0.05; // Move even closer to player
+    barrel.position.z = 0.0; // Move even closer to player - right at handle level
     gun.add(barrel);
     
     // Body
