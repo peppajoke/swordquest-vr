@@ -28,6 +28,8 @@ interface VRGameState {
   targetMeshes: { [key: string]: THREE.Mesh };
   swordClashCooldown: number;
   lastClashTime: number;
+  health: number;
+  maxHealth: number;
   
   // Endless runner mechanics
   gameSpeed: number;
@@ -51,6 +53,9 @@ interface VRGameState {
   updateMovement: (deltaTime: number) => void;
   spawnNewTargets: () => void;
   cleanupOldTargets: (playerZ: number) => void;
+  setHealth: (health: number) => void;
+  takeDamage: (damage: number) => void;
+  heal: (amount: number) => void;
 }
 
 const createInitialTargets = (): Target[] => [
@@ -71,6 +76,8 @@ export const useVRGame = create<VRGameState>()(
     targetMeshes: {},
     swordClashCooldown: 5000, // 5 seconds in milliseconds
     lastClashTime: 0,
+    health: 100,
+    maxHealth: 100,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -188,7 +195,8 @@ export const useVRGame = create<VRGameState>()(
         hitEffects: [],
         swordColliders: [],
         targetMeshes: {},
-        lastClashTime: 0
+        lastClashTime: 0,
+        health: 100
       });
     },
 
@@ -280,6 +288,21 @@ export const useVRGame = create<VRGameState>()(
         console.log(`🧹 Cleaned up ${targets.length - cleanedTargets.length} old targets`);
         set({ targets: cleanedTargets });
       }
+    },
+
+    setHealth: (health: number) => {
+      const { maxHealth } = get();
+      set({ health: Math.max(0, Math.min(maxHealth, health)) });
+    },
+
+    takeDamage: (damage: number) => {
+      const { health } = get();
+      set({ health: Math.max(0, health - damage) });
+    },
+
+    heal: (amount: number) => {
+      const { health, maxHealth } = get();
+      set({ health: Math.min(maxHealth, health + amount) });
     }
   }))
 );

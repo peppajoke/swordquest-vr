@@ -10,7 +10,11 @@ const SWORD_HANDLE_GEOMETRY = new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8);
 const SWORD_MATERIAL = new THREE.MeshLambertMaterial({ color: '#c0392b' });
 const HANDLE_MATERIAL = new THREE.MeshLambertMaterial({ color: '#8b4513' });
 
-export default function VRControllers() {
+interface VRControllersProps {
+  onFuelChange?: (fuel: number) => void;
+}
+
+export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const { gl, scene, camera } = useThree();
   const leftSwordRef = useRef<THREE.Group>();
   const rightSwordRef = useRef<THREE.Group>();
@@ -463,6 +467,11 @@ export default function VRControllers() {
         }
       }
       wasAccelerating.current = false;
+    }
+    
+    // Update fuel in parent component
+    if (onFuelChange) {
+      onFuelChange(fuel.current);
     }
     
     // Calculate desired direction based on grip state, head direction, and fuel

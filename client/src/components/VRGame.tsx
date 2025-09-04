@@ -1,17 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import VRControllers from './VRControllers';
 import GameObjects from './GameObjects';
 import SwordEffects from './SwordEffects';
 import { VRDebugDisplay } from './VRDebugDisplay';
+import { VROverlay } from './VROverlay';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
 export default function VRGame() {
   const { scene } = useThree();
-  const { initializeGame } = useVRGame();
+  const { initializeGame, health, maxHealth } = useVRGame();
   const { setBackgroundMusic, setHitSound, setSuccessSound } = useAudio();
+  const [fuel, setFuel] = useState(2000);
+  const [maxFuel] = useState(2000);
 
   useEffect(() => {
     console.log('VRGame: Initializing VR sword fighting game');
@@ -66,7 +69,15 @@ export default function VRGame() {
       </group>
 
       {/* VR Components - Stay in VR space, don't move with world */}
-      <VRControllers />
+      <VRControllers onFuelChange={setFuel} />
+      
+      {/* VR Overlay with health and fuel meters */}
+      <VROverlay 
+        fuel={fuel}
+        maxFuel={maxFuel}
+        health={health}
+        maxHealth={maxHealth}
+      />
       
       {/* VR Debug Display - Visible in Quest 3 */}
       <VRDebugDisplay />
