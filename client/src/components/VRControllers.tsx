@@ -55,6 +55,10 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const wasAccelerating = useRef(false);
   const momentumTransferBonus = useRef(0); // temporary speed boost
   
+  // Direction locking system
+  const lockedDirection = useRef<THREE.Vector3 | null>(null);
+  const lastSwordsHeld = useRef(0);
+  
   // Removed sword scaling variables
 
   // Create static level with floor and destructible objects
@@ -474,14 +478,29 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       onFuelChange(fuel.current);
     }
     
+    // Handle direction locking when grabbing/releasing swords
+    if (swordsHeld > lastSwordsHeld.current) {
+      // Just grabbed sword(s) - lock current direction
+      lockedDirection.current = cameraDirection.clone().normalize();
+      console.log('🔒 Direction locked when grabbing swords');
+    } else if (swordsHeld < lastSwordsHeld.current) {
+      // Just released sword(s) - unlock direction
+      lockedDirection.current = null;
+      console.log('🔓 Direction unlocked when releasing swords');
+    }
+    lastSwordsHeld.current = swordsHeld;
+
     // Calculate desired direction based on grip state, head direction, and fuel
     if (swordsHeld > 0 && fuel.current > 0) {
       const speedMultiplier = swordsHeld; // 1x for one sword, 2x for both
       const fuelMultiplier = Math.max(0.3, fuel.current / maxFuel.current); // 30% minimum speed when low fuel
       const desiredSpeed = maxSpeed.current * speedMultiplier * fuelMultiplier + momentumTransferBonus.current;
       
-      // Advanced turning mechanics
-      const directionChange = cameraDirection.angleTo(lastDirection.current);
+      // Use locked direction instead of current camera direction
+      const movementDirection = lockedDirection.current || cameraDirection;
+      
+      // Advanced turning mechanics (only applies when direction changes due to re-grabbing)
+      const directionChange = movementDirection.angleTo(lastDirection.current);
       const isHarshTurn = directionChange > Math.PI / 6; // 30 degrees or more
       
       if (wasAccelerating.current && isHarshTurn) {
@@ -491,7 +510,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         // Harsh turn while accelerating
       }
       
-      const targetDirection = cameraDirection.clone().multiplyScalar(desiredSpeed);
+      const targetDirection = movementDirection.clone().multiplyScalar(desiredSpeed);
       
       // Smoothly interpolate acceleration toward target direction
       acceleration.current.lerp(targetDirection, turnRate.current);
@@ -547,7 +566,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           // Momentum transfer speed boost
         }
         
-        lastDirection.current.copy(cameraDirection);
+        lastDirection.current.copy(movementDirection);
       }
       
       // Decay momentum transfer bonus
