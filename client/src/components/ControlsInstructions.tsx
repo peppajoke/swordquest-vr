@@ -68,27 +68,19 @@ export function ControlsInstructions() {
       
       <div style={{ lineHeight: '1.4' }}>
         <div style={{ marginBottom: '8px' }}>
-          <strong>Movement:</strong>
+          <strong>Controls:</strong>
         </div>
         <div style={{ marginLeft: '10px', marginBottom: '8px' }}>
-          • WASD - Move around<br/>
           • Mouse - Look around<br/>
-          • Click to lock mouse cursor
-        </div>
-        
-        <div style={{ marginBottom: '8px' }}>
-          <strong>Swords & Fuel:</strong>
-        </div>
-        <div style={{ marginLeft: '10px', marginBottom: '8px' }}>
-          • Hold SPACEBAR - Left sword<br/>
-          • Hold SHIFT - Right sword<br/>
-          • Left Click - Left sword<br/>
-          • Right Click - Right sword<br/>
+          • Click anywhere to lock cursor<br/>
+          • Left Click - Pull sword + accelerate<br/>
+          • Right Click - Pull sword + accelerate<br/>
         </div>
         
         <div style={{ fontSize: '12px', color: '#aaa' }}>
-          Hold sword buttons + WASD to move and consume fuel.<br/>
-          Release to recharge fuel. Destroy objects to score!
+          Hold mouse buttons to accelerate forward in the direction you're looking.<br/>
+          Direction locks when you grab swords - release and re-grab to change direction.<br/>
+          Release buttons to recharge fuel. Destroy objects to score!
         </div>
       </div>
     </div>
