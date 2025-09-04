@@ -112,6 +112,11 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         burstSpeedMultiplier.current = boostStrength;
         burstSpeedDecay.current = currentTime + 3000; // 3 second duration
         
+        // Play boost success sound
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playSuccess();
+        });
+        
         // Transfer all momentum into new direction
         const currentSpeed = velocity.current.length();
         if (currentSpeed > 0) {

@@ -172,6 +172,11 @@ export default function VRControllers() {
         burstSpeedMultiplier.current = boostStrength;
         burstSpeedDecay.current = currentTime + 3000;
         
+        // Play boost success sound
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playSuccess();
+        });
+        
         const currentSpeed = velocity.current.length();
         if (currentSpeed > 0) {
           const newDirection = lockedDirection.current || cameraDirection;
