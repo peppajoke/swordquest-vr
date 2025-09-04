@@ -63,10 +63,10 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
       
-      // Position in upper right area of view
+      // Position in upper left area of view
       const displayPosition = cameraPosition.clone()
         .add(forward.multiplyScalar(2.0))  // 2 units in front
-        .add(right.multiplyScalar(1.0))    // 1 unit to the right
+        .add(right.multiplyScalar(-1.2))   // 1.2 units to the left
         .add(up.multiplyScalar(0.5));      // 0.5 units up
       
       groupRef.current.position.copy(displayPosition);
@@ -91,32 +91,10 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
 
   return (
     <group ref={groupRef}>
-      {/* VR Status Display */}
+      {/* Health Bar */}
       <Text
-        position={[0, 0.5, 0]}
+        position={[0, 0.2, 0]}
         fontSize={0.3}
-        color={debugData.vrSessionActive ? '#00ff00' : '#ff0000'}
-        anchorX="center"
-        anchorY="middle"
-      >
-        VR SESSION: {debugData.vrSessionActive ? 'ACTIVE ✓' : 'INACTIVE ✗'}
-      </Text>
-      
-      {/* Controller Status */}
-      <Text
-        position={[0, 0, 0]}
-        fontSize={0.2}
-        color={debugData.controllersDetected.left && debugData.controllersDetected.right ? '#00ff00' : '#ffaa00'}
-        anchorX="center"
-        anchorY="middle"
-      >
-        CONTROLLERS: L:{debugData.controllersDetected.left ? '✓' : '✗'} R:{debugData.controllersDetected.right ? '✓' : '✗'}
-      </Text>
-      
-      {/* Health Status */}
-      <Text
-        position={[0, -0.3, 0]}
-        fontSize={0.25}
         color={getHealthColor()}
         anchorX="center"
         anchorY="middle"
@@ -124,41 +102,16 @@ export function VRDebugDisplay({ fuel, maxFuel }: VRDebugDisplayProps) {
         ♥ HP: {health}/{maxHealth} ({healthPercentage.toFixed(0)}%)
       </Text>
       
-      {/* Fuel Status */}
+      {/* Fuel Bar */}
       <Text
-        position={[0, -0.7, 0]}
-        fontSize={0.25}
+        position={[0, -0.2, 0]}
+        fontSize={0.3}
         color={getFuelColor()}
         anchorX="center"
         anchorY="middle"
       >
         ⛽ FUEL: {Math.round(fuel)}/{maxFuel} ({fuelPercentage.toFixed(0)}%)
       </Text>
-      
-      {/* Grip Status */}
-      <Text
-        position={[0, -1.1, 0]}
-        fontSize={0.2}
-        color={debugData.gripStates.leftGripping || debugData.gripStates.rightGripping ? '#00ff00' : '#ffffff'}
-        anchorX="center"
-        anchorY="middle"
-      >
-        GRIPS: L:{debugData.gripStates.leftGripping ? '⚔️' : '✋'} R:{debugData.gripStates.rightGripping ? '⚔️' : '✋'}
-      </Text>
-      
-      {/* Event Log */}
-      {debugData.eventLogs.slice(-3).map((log, index) => (
-        <Text
-          key={index}
-          position={[0, -1.5 - (index * 0.25), 0]}
-          fontSize={0.12}
-          color="#cccccc"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {log}
-        </Text>
-      ))}
     </group>
   );
 }
