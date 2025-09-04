@@ -130,8 +130,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     if (!session) return;
 
     const inputSources = Array.from(session.inputSources);
-    const controller0 = inputSources.find(input => input.handedness === 'left');
-    const controller1 = inputSources.find(input => input.handedness === 'right');
+    const controller0 = inputSources.find(input => input.handedness === 'right'); // Controller 0 = Right
+    const controller1 = inputSources.find(input => input.handedness === 'left');  // Controller 1 = Left
 
     if (!controller0 || !controller1) return;
 
@@ -150,12 +150,12 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     const gamepad1 = controller1.gamepad;
     
     if (gamepad0 && gamepad0.buttons.length > 1) {
-      leftGrabbing.current = gamepad0.buttons[1].pressed; // Grip button for sword
-      leftTrigger.current = gamepad0.buttons[0].pressed;   // Trigger for gun
+      rightGrabbing.current = gamepad0.buttons[1].pressed; // Right hand (controller0) grip
+      rightTrigger.current = gamepad0.buttons[0].pressed;   // Right hand trigger
     }
     if (gamepad1 && gamepad1.buttons.length > 1) {
-      rightGrabbing.current = gamepad1.buttons[1].pressed; // Grip button for sword
-      rightTrigger.current = gamepad1.buttons[0].pressed;   // Trigger for gun
+      leftGrabbing.current = gamepad1.buttons[1].pressed; // Left hand (controller1) grip
+      leftTrigger.current = gamepad1.buttons[0].pressed;   // Left hand trigger
     }
 
     const controller0Obj = controller0Ref.current;
@@ -163,31 +163,31 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     
     if (!controller0Obj || !controller1Obj) return;
 
-    // Handle left controller sword
-    if (leftGrabbing.current) {
-      if (!leftSwordRef.current?.parent) {
-        const sword = createSword();
-        leftSwordRef.current = sword;
-        controller0Obj.add(sword);
-      }
-    } else {
-      if (leftSwordRef.current?.parent) {
-        controller0Obj.remove(leftSwordRef.current);
-        leftSwordRef.current = undefined;
-      }
-    }
-
-    // Handle right controller sword
+    // Handle right controller sword (controller0 = right hand)
     if (rightGrabbing.current) {
       if (!rightSwordRef.current?.parent) {
         const sword = createSword();
         rightSwordRef.current = sword;
-        controller1Obj.add(sword);
+        controller0Obj.add(sword);
       }
     } else {
       if (rightSwordRef.current?.parent) {
-        controller1Obj.remove(rightSwordRef.current);
+        controller0Obj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
+      }
+    }
+
+    // Handle left controller sword (controller1 = left hand)
+    if (leftGrabbing.current) {
+      if (!leftSwordRef.current?.parent) {
+        const sword = createSword();
+        leftSwordRef.current = sword;
+        controller1Obj.add(sword);
+      }
+    } else {
+      if (leftSwordRef.current?.parent) {
+        controller1Obj.remove(leftSwordRef.current);
+        leftSwordRef.current = undefined;
       }
     }
 
@@ -348,17 +348,17 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
 
     // Gun firing logic - only when not holding swords
     
-    // Left gun
-    if (!leftSwordRef.current && leftTrigger.current && !lastLeftTrigger.current) {
-      fireBullet(controller0Obj, 'left', scene);
-    }
-    lastLeftTrigger.current = leftTrigger.current;
-    
-    // Right gun
+    // Right gun (controller0 = right hand)
     if (!rightSwordRef.current && rightTrigger.current && !lastRightTrigger.current) {
-      fireBullet(controller1Obj, 'right', scene);
+      fireBullet(controller0Obj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
+    
+    // Left gun (controller1 = left hand)
+    if (!leftSwordRef.current && leftTrigger.current && !lastLeftTrigger.current) {
+      fireBullet(controller1Obj, 'left', scene);
+    }
+    lastLeftTrigger.current = leftTrigger.current;
     
     // Update bullets
     bullets.current = bullets.current.filter(bullet => {
