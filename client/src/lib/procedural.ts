@@ -205,12 +205,22 @@ export class ProceduralWorldGenerator {
     return chunk;
   }
 
-  public updateWorld(playerPosition: THREE.Vector3): void {
+  public updateWorld(playerPosition: THREE.Vector3, movementDirection?: THREE.Vector3): void {
     const currentChunkKey = this.getChunkKey(playerPosition.x, playerPosition.z);
     
-    // Generate chunks in a 3x3 grid around player
-    const generateRadius = 1; // 3x3 grid
+    // Check if player is at the edge of generated terrain
+    const isAtEdge = this.isPlayerAtTerrainEdge(playerPosition);
     
+    // Base generation radius
+    let generateRadius = 1; // 3x3 grid normally
+    
+    // If at edge or moving into unexplored areas, generate more aggressively
+    if (isAtEdge || this.isMovingIntoUnexplored(playerPosition, movementDirection)) {
+      generateRadius = 3; // 7x7 grid for aggressive generation
+      console.log(`🚀 AGGRESSIVE GENERATION: Player at terrain edge, expanding to ${generateRadius * 2 + 1}x${generateRadius * 2 + 1} grid`);
+    }
+    
+    // Generate chunks around player
     for (let dx = -generateRadius; dx <= generateRadius; dx++) {
       for (let dz = -generateRadius; dz <= generateRadius; dz++) {
         const chunkPos = this.getChunkPosition(
@@ -227,8 +237,71 @@ export class ProceduralWorldGenerator {
       }
     }
     
+    // If moving with direction, generate extra chunks ahead
+    if (movementDirection && movementDirection.length() > 0.1) {
+      this.generateDirectional(playerPosition, movementDirection, generateRadius);
+    }
+    
     // Cleanup distant chunks
     this.cleanupDistantChunks(playerPosition);
+  }
+
+  private isPlayerAtTerrainEdge(playerPosition: THREE.Vector3): boolean {
+    // Check if any adjacent chunks are missing
+    const checkRadius = 2;
+    for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+      for (let dz = -checkRadius; dz <= checkRadius; dz++) {
+        const chunkPos = this.getChunkPosition(
+          playerPosition.x + dx * this.config.chunkSize,
+          playerPosition.z + dz * this.config.chunkSize
+        );
+        const chunkKey = this.getChunkKey(chunkPos.x, chunkPos.z);
+        
+        if (!this.chunks.has(chunkKey)) {
+          return true; // Found missing chunk nearby
+        }
+      }
+    }
+    return false;
+  }
+
+  private isMovingIntoUnexplored(playerPosition: THREE.Vector3, movementDirection?: THREE.Vector3): boolean {
+    if (!movementDirection || movementDirection.length() < 0.1) return false;
+    
+    // Project forward in movement direction
+    const futurePosition = playerPosition.clone().add(
+      movementDirection.clone().normalize().multiplyScalar(this.config.chunkSize * 2)
+    );
+    
+    const futureChunkKey = this.getChunkKey(futurePosition.x, futurePosition.z);
+    return !this.chunks.has(futureChunkKey);
+  }
+
+  private generateDirectional(playerPosition: THREE.Vector3, direction: THREE.Vector3, baseRadius: number): void {
+    const normalizedDir = direction.clone().normalize();
+    
+    // Generate chunks in a line ahead of movement
+    for (let i = 1; i <= 4; i++) {
+      const futurePos = playerPosition.clone().add(
+        normalizedDir.clone().multiplyScalar(i * this.config.chunkSize)
+      );
+      
+      // Generate chunks in a small cross pattern around the future position
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const chunkPos = this.getChunkPosition(
+            futurePos.x + dx * this.config.chunkSize,
+            futurePos.z + dz * this.config.chunkSize
+          );
+          const chunkKey = this.getChunkKey(chunkPos.x, chunkPos.z);
+          
+          if (!this.chunks.has(chunkKey)) {
+            const newChunk = this.generateChunk(chunkPos);
+            this.chunks.set(chunkKey, newChunk);
+          }
+        }
+      }
+    }
   }
 
   private cleanupDistantChunks(playerPosition: THREE.Vector3): void {

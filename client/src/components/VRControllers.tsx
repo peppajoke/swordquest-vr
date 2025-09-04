@@ -409,9 +409,10 @@ export default function VRControllers() {
     // Clean up old targets
     cleanupOldTargets(camera.position.z);
     
-    // Update procedural world generation based on player position
+    // Update procedural world generation based on player position and movement direction
     if (worldGenerator.current) {
-      worldGenerator.current.updateWorld(camera.position);
+      const movementDirection = velocity.current.length() > 0.1 ? velocity.current.clone().normalize() : undefined;
+      worldGenerator.current.updateWorld(camera.position, movementDirection);
     }
     
     // Get controller gamepads using multiple robust methods
