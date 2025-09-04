@@ -141,25 +141,38 @@ export default function VRControllers() {
       rightGrabbing.current = false;
     };
     
-    // Trigger event handlers
+    // Comprehensive trigger event handlers for different event types
     const handleSelectStart0 = () => {
-      console.log('Left controller select/trigger start');
+      console.log('🔫 LEFT TRIGGER FIRED - selectstart');
       leftTriggerPressed.current = true;
     };
     
     const handleSelectEnd0 = () => {
-      console.log('Left controller select/trigger end');
+      console.log('🔫 LEFT TRIGGER RELEASED - selectend');
       leftTriggerPressed.current = false;
     };
     
     const handleSelectStart1 = () => {
-      console.log('Right controller select/trigger start');
+      console.log('🔫 RIGHT TRIGGER FIRED - selectstart');
       rightTriggerPressed.current = true;
     };
     
     const handleSelectEnd1 = () => {
-      console.log('Right controller select/trigger end');
+      console.log('🔫 RIGHT TRIGGER RELEASED - selectend');
       rightTriggerPressed.current = false;
+    };
+    
+    // Alternative event handlers for different button types
+    const handleClick0 = () => {
+      console.log('🔫 LEFT CLICK EVENT');
+      leftTriggerPressed.current = true;
+      setTimeout(() => { leftTriggerPressed.current = false; }, 100);
+    };
+    
+    const handleClick1 = () => {
+      console.log('🔫 RIGHT CLICK EVENT');
+      rightTriggerPressed.current = true;
+      setTimeout(() => { rightTriggerPressed.current = false; }, 100);
     };
     
     // Enhanced squeeze handlers for sword animation
@@ -197,11 +210,44 @@ export default function VRControllers() {
     controller1.addEventListener('squeezestart', handleSqueezeStart1Extended);
     controller1.addEventListener('squeezeend', handleSqueezeEnd1Extended);
     
-    // Add trigger/select event listeners
+    // Add multiple types of trigger/select event listeners
+    console.log('🎮 Adding ALL possible trigger event listeners...');
+    
+    // Primary trigger events (selectstart/selectend)
     controller0.addEventListener('selectstart', handleSelectStart0);
     controller0.addEventListener('selectend', handleSelectEnd0);
     controller1.addEventListener('selectstart', handleSelectStart1);
     controller1.addEventListener('selectend', handleSelectEnd1);
+    
+    // Alternative button events
+    controller0.addEventListener('click', handleClick0);
+    controller1.addEventListener('click', handleClick1);
+    
+    // Try inputsourceschange events
+    controller0.addEventListener('connected', () => console.log('🎮 Controller 0 connected'));
+    controller1.addEventListener('connected', () => console.log('🎮 Controller 1 connected'));
+    
+    // Add any available input events
+    ['select', 'selectstart', 'selectend', 'click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'].forEach(eventType => {
+      try {
+        controller0.addEventListener(eventType, (e) => {
+          console.log(`🎮 Controller 0 ${eventType} event:`, e);
+          if (eventType.includes('start') || eventType.includes('down') || eventType === 'click') {
+            leftTriggerPressed.current = true;
+            setTimeout(() => { leftTriggerPressed.current = false; }, 100);
+          }
+        });
+        controller1.addEventListener(eventType, (e) => {
+          console.log(`🎮 Controller 1 ${eventType} event:`, e);
+          if (eventType.includes('start') || eventType.includes('down') || eventType === 'click') {
+            rightTriggerPressed.current = true;
+            setTimeout(() => { rightTriggerPressed.current = false; }, 100);
+          }
+        });
+      } catch (error) {
+        console.warn(`Event ${eventType} not supported:`, error);
+      }
+    });
     
     return () => {
       try {
@@ -214,6 +260,9 @@ export default function VRControllers() {
         controller0.removeEventListener('selectend', handleSelectEnd0);
         controller1.removeEventListener('selectstart', handleSelectStart1);
         controller1.removeEventListener('selectend', handleSelectEnd1);
+        
+        controller0.removeEventListener('click', handleClick0);
+        controller1.removeEventListener('click', handleClick1);
       } catch (error) {
         console.warn('Error removing controller event listeners:', error);
       }
@@ -243,11 +292,12 @@ export default function VRControllers() {
       gamepad1 = rightController?.gamepad || gamepad1;
     }
     
-    // Debug: Log gamepad availability (reduce spam)
-    if (Math.random() < 0.01) { // Only log 1% of frames
-      console.log('Gamepad0:', !!gamepad0, 'Gamepad1:', !!gamepad1);
-      if (gamepad0) {
-        console.log('Gamepad0 buttons length:', gamepad0.buttons?.length);
+    // Debug gamepad detection (reduce spam)
+    if (Math.random() < 0.005) { // Only log 0.5% of frames
+      if (gamepad0 || gamepad1) {
+        console.log('🎮 GAMEPADS DETECTED! Left:', !!gamepad0, 'Right:', !!gamepad1);
+        if (gamepad0?.buttons) console.log('Left gamepad buttons:', gamepad0.buttons.length);
+        if (gamepad1?.buttons) console.log('Right gamepad buttons:', gamepad1.buttons.length);
       }
     }
     
@@ -303,13 +353,38 @@ export default function VRControllers() {
       });
     }
     
-    // Use event-based trigger detection instead of gamepad polling
+    // Use event-based trigger detection AND fallback to gamepad polling
     if (leftTriggerPressed.current) {
+      console.log('🚀 FIRING LEFT BULLET (event-based)');
       fireBullet(controller0, 'left');
     }
     
     if (rightTriggerPressed.current) {
+      console.log('🚀 FIRING RIGHT BULLET (event-based)');
       fireBullet(controller1, 'right');
+    }
+    
+    // FALLBACK: Also try gamepad button polling as backup
+    if (gamepad0?.buttons) {
+      // Try all possible button mappings for Quest 3
+      for (let i = 0; i < gamepad0.buttons.length; i++) {
+        if (gamepad0.buttons[i]?.pressed) {
+          console.log(`🎮 Left controller button ${i} pressed - FIRING!`);
+          fireBullet(controller0, 'left');
+          break; // Only fire once per frame
+        }
+      }
+    }
+    
+    if (gamepad1?.buttons) {
+      // Try all possible button mappings for Quest 3
+      for (let i = 0; i < gamepad1.buttons.length; i++) {
+        if (gamepad1.buttons[i]?.pressed) {
+          console.log(`🎮 Right controller button ${i} pressed - FIRING!`);
+          fireBullet(controller1, 'right');
+          break; // Only fire once per frame
+        }
+      }
     }
     
     // Animate sword scales smoothly
