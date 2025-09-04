@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
-import { ProceduralWorldGenerator } from '../lib/procedural';
+// Removed procedural generation import
 
 const SWORD_GEOMETRY = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
 const SWORD_HANDLE_GEOMETRY = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
@@ -24,7 +24,8 @@ export default function VRControllers() {
   const lastBulletTime = useRef<{ [key: string]: number }>({});
   const leftTriggerPressed = useRef(false);
   const rightTriggerPressed = useRef(false);
-  const worldGenerator = useRef<ProceduralWorldGenerator | null>(null);
+  const worldGenerator = useRef<any>(null);
+  const staticObjects = useRef<THREE.Object3D[]>([]);
   const lastSwordClashTime = useRef(0);
   
   // Momentum-based movement system
@@ -40,6 +41,85 @@ export default function VRControllers() {
   const rightSwordScale = useRef(0.5);
   const targetLeftScale = useRef(0.5);
   const targetRightScale = useRef(0.5);
+
+  // Create static level with floor and destructible objects
+  const initializeStaticLevel = (worldGroup: THREE.Group) => {
+  // Create large floor
+  const floorGeometry = new THREE.PlaneGeometry(200, 200);
+  const floorMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x4a4a4a,
+    transparent: true,
+    opacity: 0.8 
+  });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.1;
+  floor.receiveShadow = true;
+  worldGroup.add(floor);
+  
+  // Create lots of destructible objects scattered around
+  const objects: THREE.Object3D[] = [];
+  
+  for (let i = 0; i < 200; i++) {
+    const x = (Math.random() - 0.5) * 100;
+    const z = (Math.random() - 0.5) * 100;
+    const y = 0.5;
+    
+    // Random object type
+    const type = Math.floor(Math.random() * 6);
+    let object: THREE.Object3D;
+    
+    switch (type) {
+      case 0: // Wooden Crates
+        object = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8 + Math.random() * 0.6, 0.8 + Math.random() * 0.6, 0.8 + Math.random() * 0.6),
+          new THREE.MeshLambertMaterial({ color: 0x8B4513 + Math.random() * 0x333333 })
+        );
+        break;
+      case 1: // Crystal Formations
+        object = new THREE.Mesh(
+          new THREE.ConeGeometry(0.3 + Math.random() * 0.4, 1.0 + Math.random() * 0.8, 6),
+          new THREE.MeshLambertMaterial({ color: 0x00FFFF + Math.random() * 0x004444, transparent: true, opacity: 0.8 })
+        );
+        break;
+      case 2: // Pottery/Vases
+        object = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3 + Math.random() * 0.3, 0.4 + Math.random() * 0.3, 1.0 + Math.random() * 0.5, 8),
+          new THREE.MeshLambertMaterial({ color: 0xCD853F + Math.random() * 0x222222 })
+        );
+        break;
+      case 3: // Ice Blocks
+        object = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6 + Math.random() * 0.8, 0.6 + Math.random() * 0.8, 0.6 + Math.random() * 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x87CEEB + Math.random() * 0x111111, transparent: true, opacity: 0.7 })
+        );
+        break;
+      case 4: // Trees/Cylinders
+        object = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15 + Math.random() * 0.4, 0.3 + Math.random() * 0.6, 1.5 + Math.random() * 2.5),
+          new THREE.MeshLambertMaterial({ color: 0x4a4a2f + Math.random() * 0x202020 })
+        );
+        break;
+      default: // Rocks/Spheres
+        object = new THREE.Mesh(
+          new THREE.SphereGeometry(0.4 + Math.random() * 0.9, 8, 6),
+          new THREE.MeshLambertMaterial({ color: 0x666666 + Math.random() * 0x333333 })
+        );
+        break;
+    }
+    
+    object.position.set(x, y, z);
+    object.castShadow = true;
+    object.userData = { destroyable: true, health: 1, type: 'static' };
+    
+    objects.push(object);
+    worldGroup.add(object);
+  }
+  
+    console.log(`🏗️ Created static level with ${objects.length} destructible objects`);
+    staticObjects.current = objects;
+    return objects;
+  };
 
   // Create bullet mesh
   const createBullet = () => {
@@ -131,16 +211,13 @@ export default function VRControllers() {
     controller0Ref.current = controller0;
     controller1Ref.current = controller1;
     
-    // Initialize procedural world generator
+    // Initialize static level
     const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
     if (worldGroup && !worldGenerator.current) {
-      worldGenerator.current = new ProceduralWorldGenerator(scene, worldGroup, {
-        chunkSize: 15,
-        maxChunks: 20,
-        terrainHeight: 0,
-        obstacleCount: 6
-      });
-      console.log('🌍 Procedural world generator initialized');
+      // Mark as initialized to prevent re-creation
+      worldGenerator.current = { initialized: true } as any;
+      initializeStaticLevel(worldGroup);
+      console.log('🏗️ Static level initialized');
     }
     
     // Setup event handlers
@@ -409,11 +486,7 @@ export default function VRControllers() {
     // Clean up old targets
     cleanupOldTargets(camera.position.z);
     
-    // Update procedural world generation based on player position and movement direction
-    if (worldGenerator.current) {
-      const movementDirection = velocity.current.length() > 0.1 ? velocity.current.clone().normalize() : undefined;
-      worldGenerator.current.updateWorld(camera.position, movementDirection);
-    }
+    // Static level - no world generation needed
     
     // Get controller gamepads using multiple robust methods
     let gamepad0: any = null;
@@ -690,64 +763,58 @@ export default function VRControllers() {
             }
           });
           
-          // Check collisions with all destroyable objects from procedural world
-          if (worldGenerator.current) {
-            const chunks = worldGenerator.current.getGeneratedChunks();
-            chunks.forEach(chunk => {
-              // Check both destroyables and obstacles (all are now destructible)
-              [...chunk.destroyables, ...chunk.obstacles].forEach(obj => {
-                if (!obj.userData || obj.userData.destroyed) return;
-                
-                const distance = currentPos.distanceTo(obj.position);
-                if (distance < 2.5) {
-                  console.log(`⚔️ Sword ${id} destroyed ${obj.userData.type || 'object'}!`);
-                  
-                  // Mark as destroyed
-                  obj.userData.destroyed = true;
-                  
-                  // Add hit effect
-                  addHitEffect([obj.position.x, obj.position.y, obj.position.z]);
-                  
-                  // Animate destruction - scale down and fade out
-                  const originalScale = obj.scale.clone();
-                  const tl = { progress: 0 };
-                  
-                  const animate = () => {
-                    tl.progress += 0.05;
-                    if (tl.progress >= 1) {
-                      // Remove from scene
-                      obj.parent?.remove(obj);
-                      if (obj instanceof THREE.Mesh) {
-                        obj.geometry?.dispose();
-                        if (Array.isArray(obj.material)) {
-                          obj.material.forEach(mat => mat.dispose());
-                        } else {
-                          obj.material?.dispose();
-                        }
-                      }
-                      return;
+          // Check collisions with static destructible objects
+          staticObjects.current.forEach(obj => {
+            if (!obj.userData || obj.userData.destroyed) return;
+            
+            const distance = currentPos.distanceTo(obj.position);
+            if (distance < 2.5) {
+              console.log(`⚔️ Sword ${id} destroyed ${obj.userData.type || 'object'}!`);
+              
+              // Mark as destroyed
+              obj.userData.destroyed = true;
+              
+              // Add hit effect
+              addHitEffect([obj.position.x, obj.position.y, obj.position.z]);
+              
+              // Animate destruction - scale down and fade out
+              const originalScale = obj.scale.clone();
+              const tl = { progress: 0 };
+              
+              const animate = () => {
+                tl.progress += 0.05;
+                if (tl.progress >= 1) {
+                  // Remove from scene
+                  obj.parent?.remove(obj);
+                  if (obj instanceof THREE.Mesh) {
+                    obj.geometry?.dispose();
+                    if (Array.isArray(obj.material)) {
+                      obj.material.forEach(mat => mat.dispose());
+                    } else {
+                      obj.material?.dispose();
                     }
-                    
-                    // Scale down and fade
-                    const scale = 1 - tl.progress;
-                    obj.scale.copy(originalScale.clone().multiplyScalar(scale));
-                    
-                    if (obj instanceof THREE.Mesh && obj.material) {
-                      const material = Array.isArray(obj.material) ? obj.material[0] : obj.material;
-                      if ('opacity' in material) {
-                        material.opacity = scale;
-                        material.transparent = true;
-                      }
-                    }
-                    
-                    requestAnimationFrame(animate);
-                  };
-                  
-                  animate();
+                  }
+                  return;
                 }
-              });
-            });
-          }
+                
+                // Scale down and fade
+                const scale = 1 - tl.progress;
+                obj.scale.copy(originalScale.clone().multiplyScalar(scale));
+                
+                if (obj instanceof THREE.Mesh && obj.material) {
+                  const material = Array.isArray(obj.material) ? obj.material[0] : obj.material;
+                  if ('opacity' in material) {
+                    material.opacity = scale;
+                    material.transparent = true;
+                  }
+                }
+                
+                requestAnimationFrame(animate);
+              };
+              
+              animate();
+            }
+          });
         }
       }
       
