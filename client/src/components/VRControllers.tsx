@@ -142,28 +142,28 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const sword = new THREE.Group();
     sword.userData.isCustomModel = true; // Mark as custom model
     
-    // Handle (shorter)
-    const handleGeometry = new THREE.CylinderGeometry(0.015, 0.02, 0.15);
+    // Handle (bigger)
+    const handleGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25);
     const handleMaterial = new THREE.MeshLambertMaterial({ color: '#4a4a4a' });
     const handle = new THREE.Mesh(handleGeometry, handleMaterial);
     handle.userData.isCustomModel = true; // Mark as custom
-    handle.position.y = -0.05;
+    handle.position.y = -0.08;
     sword.add(handle);
     
-    // Guard (smaller)
-    const guardGeometry = new THREE.BoxGeometry(0.1, 0.01, 0.02);
+    // Guard (bigger)
+    const guardGeometry = new THREE.BoxGeometry(0.15, 0.02, 0.035);
     const guardMaterial = new THREE.MeshLambertMaterial({ color: '#666' });
     const guard = new THREE.Mesh(guardGeometry, guardMaterial);
     guard.userData.isCustomModel = true; // Mark as custom
-    guard.position.y = 0.02;
+    guard.position.y = 0.04;
     sword.add(guard);
     
-    // Blade (much shorter)
-    const bladeGeometry = new THREE.BoxGeometry(0.01, 0.3, 0.005);
+    // Blade (much bigger)
+    const bladeGeometry = new THREE.BoxGeometry(0.018, 0.5, 0.008);
     const bladeMaterial = new THREE.MeshLambertMaterial({ color: '#c0c0c0' });
     const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
     blade.userData.isCustomModel = true; // Mark as custom
-    blade.position.y = 0.2;
+    blade.position.y = 0.32;
     sword.add(blade);
     
     // Rotate sword 45 degrees away from player (flipped direction)
