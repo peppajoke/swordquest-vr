@@ -136,13 +136,36 @@ function TurretTower({ position }: { position: [number, number, number] }) {
     const playerPos = camera.position.clone();
     const distance = turretPos.distanceTo(playerPos);
     
-    // Only shoot if player is within 50 units and not too close
-    if (distance < 50 && distance > 5) {
+    // Define detection range and shooting range
+    const detectionRange = 25; // Turret detects player within 25 units
+    const shootingRange = 20;  // Turret shoots within 20 units
+    const canSeePlayer = distance < detectionRange && distance > 5;
+    const canShootPlayer = distance < shootingRange && distance > 5;
+    
+    // Change turret color based on detection
+    if (canSeePlayer) {
+      // Turn red when player is detected
+      groupRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+          child.material.color.setHex(0xff0000); // Bright red
+        }
+      });
+      
       // Rotate turret to face player
       const direction = playerPos.clone().sub(turretPos).normalize();
       const angle = Math.atan2(direction.x, direction.z);
       groupRef.current.rotation.y = angle;
-      
+    } else {
+      // Turn back to default gray when player is out of range
+      groupRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+          child.material.color.setHex(0x666666); // Dark gray
+        }
+      });
+    }
+    
+    // Only shoot if player is within shooting range
+    if (canShootPlayer) {
       // Shoot every 2 seconds
       if (currentTime - lastShotTime.current > 2000) {
         // Create turret bullet group
