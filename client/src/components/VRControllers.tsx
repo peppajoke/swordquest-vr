@@ -3,10 +3,13 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 
-export default function VRControllers() {
+interface VRControllersProps {
+  onFuelChange?: (fuel: number) => void;
+}
+
+export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const { 
     addHitEffect, 
-    onFuelChange,
     explodePillar 
   } = useVRGame();
 

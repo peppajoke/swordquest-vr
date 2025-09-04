@@ -27,9 +27,9 @@ export function VROverlay({ fuel, maxFuel, health, maxHealth }: VROverlayProps) 
       
       // Position in bottom left: close distance, left and down from center
       const overlayPosition = cameraPosition.clone()
-        .add(forward.multiplyScalar(1.5)) // 1.5 units in front
-        .add(right.multiplyScalar(-0.8))  // 0.8 units to the left
-        .add(up.multiplyScalar(-0.6));    // 0.6 units down
+        .add(forward.multiplyScalar(1.2)) // 1.2 units in front
+        .add(right.multiplyScalar(-0.7))  // 0.7 units to the left
+        .add(up.multiplyScalar(-0.5));    // 0.5 units down
       
       groupRef.current.position.copy(overlayPosition);
       groupRef.current.lookAt(camera.position);

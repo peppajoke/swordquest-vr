@@ -15,8 +15,8 @@ export default function VRGame() {
   const { scene } = useThree();
   const { initializeGame, health, maxHealth } = useVRGame();
   const { setBackgroundMusic, setHitSound, setSuccessSound } = useAudio();
-  const [fuel, setFuel] = useState(2000);
-  const [maxFuel] = useState(2000);
+  const [fuel, setFuel] = useState(100);
+  const [maxFuel] = useState(100);
 
   useEffect(() => {
     initializeGame();
