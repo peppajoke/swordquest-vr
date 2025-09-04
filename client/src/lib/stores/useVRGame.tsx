@@ -11,6 +11,7 @@ interface Target {
 interface HitEffect {
   id: string;
   position: { x: number, y: number, z: number };
+  direction?: { x: number, y: number, z: number };
   timestamp: number;
 }
 
@@ -29,7 +30,7 @@ interface VRGameState {
   // Actions
   initializeGame: () => void;
   destroyTarget: (id: string) => void;
-  addHitEffect: (position: [number, number, number]) => void;
+  addHitEffect: (position: [number, number, number], direction?: THREE.Vector3) => void;
   addSwordCollider: (id: string, mesh: THREE.Group) => void;
   removeSwordCollider: (id: string) => void;
   registerTarget: (id: string, mesh: THREE.Mesh) => void;
@@ -83,23 +84,30 @@ export const useVRGame = create<VRGameState>()(
           useAudio.getState().playHit();
         });
 
-        // Check if all targets destroyed
+        // Respawn individual target after 3 seconds
+        setTimeout(() => {
+          set(state => ({
+            targets: state.targets.map(t => 
+              t.id === id ? { ...t, destroyed: false } : t
+            )
+          }));
+          console.log(`VRGame: Target ${id} respawned`);
+        }, 3000);
+        
+        // Check if all targets destroyed for bonus score
         const remainingTargets = targets.filter(t => t.id !== id && !t.destroyed);
         if (remainingTargets.length === 0) {
-          console.log('VRGame: All targets destroyed! Respawning...');
-          setTimeout(() => {
-            set({
-              targets: createInitialTargets()
-            });
-          }, 2000);
+          console.log('VRGame: All targets destroyed! Bonus score!');
+          set(state => ({ score: state.score + 50 })); // Bonus points
         }
       }
     },
 
-    addHitEffect: (position: [number, number, number]) => {
+    addHitEffect: (position: [number, number, number], direction?: THREE.Vector3) => {
       const effect: HitEffect = {
         id: `effect_${Date.now()}_${Math.random()}`,
         position: { x: position[0], y: position[1], z: position[2] },
+        direction: direction ? { x: direction.x, y: direction.y, z: direction.z } : undefined,
         timestamp: Date.now()
       };
 

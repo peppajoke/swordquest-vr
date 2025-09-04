@@ -10,7 +10,7 @@ const SWORD_MATERIAL = new THREE.MeshLambertMaterial({ color: '#c0392b' });
 const HANDLE_MATERIAL = new THREE.MeshLambertMaterial({ color: '#8b4513' });
 
 export default function VRControllers() {
-  const { gl } = useThree();
+  const { gl, scene } = useThree();
   const leftSwordRef = useRef<THREE.Group>();
   const rightSwordRef = useRef<THREE.Group>();
   const leftGrabbing = useRef(false);
@@ -19,12 +19,55 @@ export default function VRControllers() {
   const controller1Ref = useRef<THREE.Group>();
   const { addSwordCollider, removeSwordCollider, targets, destroyTarget, addHitEffect } = useVRGame();
   const previousPositions = useRef<{ [key: string]: THREE.Vector3 }>({});
-  
-  // Store sword angles for each controller (in radians)
-  const swordAngles = useRef<{ [key: string]: number }>({
-    controller0: 0,
-    controller1: 0
-  });
+  const bullets = useRef<{ id: string, mesh: THREE.Mesh, velocity: THREE.Vector3, controllerId: string }[]>([]);
+  const lastBulletTime = useRef<{ [key: string]: number }>({});
+
+  // Create bullet mesh
+  const createBullet = () => {
+    const bulletGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+    const bulletMaterial = new THREE.MeshBasicMaterial({ color: '#ffff00' });
+    return new THREE.Mesh(bulletGeometry, bulletMaterial);
+  };
+
+  // Fire bullet function
+  const fireBullet = (controller: THREE.Group, controllerId: string) => {
+    const now = Date.now();
+    const lastTime = lastBulletTime.current[controllerId] || 0;
+    
+    // Rate limiting: 100ms between bullets (10 bullets per second max)
+    if (now - lastTime < 100) return;
+    
+    lastBulletTime.current[controllerId] = now;
+    
+    const bullet = createBullet();
+    const bulletId = `bullet_${controllerId}_${now}`;
+    
+    // Get controller position and direction
+    const controllerPos = new THREE.Vector3();
+    const controllerDirection = new THREE.Vector3(0, 0, -1);
+    
+    controller.getWorldPosition(controllerPos);
+    controller.getWorldDirection(controllerDirection);
+    
+    // Position bullet at controller location
+    bullet.position.copy(controllerPos);
+    
+    // Calculate bullet velocity (forward from controller)
+    const bulletVelocity = controllerDirection.multiplyScalar(10); // Speed: 10 units per frame
+    
+    // Add to scene
+    scene.add(bullet);
+    
+    // Store bullet data
+    bullets.current.push({
+      id: bulletId,
+      mesh: bullet,
+      velocity: bulletVelocity,
+      controllerId
+    });
+    
+    console.log(`VRControllers: Bullet fired from ${controllerId}`);
+  };
 
   // Create sword mesh
   const createSword = () => {
@@ -51,6 +94,9 @@ export default function VRControllers() {
     guard.castShadow = true;
     swordGroup.add(guard);
 
+    // Rotate sword 45 degrees away from player (forward)
+    swordGroup.rotation.x = -Math.PI / 4; // 45 degrees forward
+    
     return swordGroup;
   };
 
@@ -110,27 +156,17 @@ export default function VRControllers() {
     
     if (!controller0 || !controller1) return;
     
-    // Get controller gamepads for joystick input
+    // Get controller gamepads for trigger input
     const gamepad0 = controller0.userData.gamepad;
     const gamepad1 = controller1.userData.gamepad;
     
-    // Update sword angles based on joystick input
-    if (gamepad0?.axes) {
-      const joystickY = gamepad0.axes[3]; // Right joystick Y axis
-      if (joystickY < -0.5) { // Joystick pushed down
-        swordAngles.current.controller0 = Math.min(swordAngles.current.controller0 + 0.02, Math.PI / 3); // Max 60 degrees down
-      } else {
-        swordAngles.current.controller0 = Math.max(swordAngles.current.controller0 - 0.01, 0); // Return to neutral
-      }
+    // Handle trigger input for bullet firing
+    if (gamepad0?.buttons?.[0]?.pressed) { // Left trigger pressed
+      fireBullet(controller0, 'left');
     }
     
-    if (gamepad1?.axes) {
-      const joystickY = gamepad1.axes[3]; // Right joystick Y axis
-      if (joystickY < -0.5) { // Joystick pushed down
-        swordAngles.current.controller1 = Math.min(swordAngles.current.controller1 + 0.02, Math.PI / 3); // Max 60 degrees down
-      } else {
-        swordAngles.current.controller1 = Math.max(swordAngles.current.controller1 - 0.01, 0); // Return to neutral
-      }
+    if (gamepad1?.buttons?.[0]?.pressed) { // Right trigger pressed
+      fireBullet(controller1, 'right');
     }
     
     // Handle left controller sword
@@ -141,10 +177,6 @@ export default function VRControllers() {
         controller0.add(sword);
         addSwordCollider('left', sword);
         console.log('VRControllers: Left sword spawned');
-      }
-      // Update sword angle based on joystick input
-      if (leftSwordRef.current) {
-        leftSwordRef.current.rotation.x = -swordAngles.current.controller0;
       }
     } else if (!leftGrabbing.current && leftSwordRef.current?.parent) {
       controller0.remove(leftSwordRef.current);
@@ -162,16 +194,46 @@ export default function VRControllers() {
         addSwordCollider('right', sword);
         console.log('VRControllers: Right sword spawned');
       }
-      // Update sword angle based on joystick input
-      if (rightSwordRef.current) {
-        rightSwordRef.current.rotation.x = -swordAngles.current.controller1;
-      }
     } else if (!rightGrabbing.current && rightSwordRef.current?.parent) {
       controller1.remove(rightSwordRef.current);
       removeSwordCollider('right');
       rightSwordRef.current = undefined;
       console.log('VRControllers: Right sword despawned');
     }
+
+    // Update bullets
+    bullets.current = bullets.current.filter(bullet => {
+      // Move bullet
+      bullet.mesh.position.add(bullet.velocity);
+      
+      // Check collision with targets
+      let hitTarget = false;
+      targets.forEach(target => {
+        if (target.destroyed) return;
+        
+        const targetPos = new THREE.Vector3(...target.position);
+        const distance = bullet.mesh.position.distanceTo(targetPos);
+        
+        if (distance < 0.6) { // Bullet hit target
+          console.log(`Bullet ${bullet.id} hit target ${target.id}!`);
+          
+          // Calculate hit direction for shattering
+          const hitDirection = bullet.mesh.position.clone().sub(targetPos).normalize();
+          
+          destroyTarget(target.id);
+          addHitEffect(target.position, hitDirection);
+          hitTarget = true;
+        }
+      });
+      
+      // Remove bullet if it hit something or traveled too far
+      if (hitTarget || bullet.mesh.position.length() > 50) {
+        scene.remove(bullet.mesh);
+        return false;
+      }
+      
+      return true;
+    });
 
     // Update collision detection
     [{ id: 'left', sword: leftSwordRef.current, controller: controller0 },

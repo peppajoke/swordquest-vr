@@ -6,6 +6,7 @@ import { useVRGame } from '../lib/stores/useVRGame';
 interface ParticleEffect {
   id: string;
   position: THREE.Vector3;
+  velocity: THREE.Vector3;
   life: number;
   maxLife: number;
 }
@@ -33,25 +34,45 @@ export default function SwordEffects() {
     // Add new effects
     hitEffects.forEach(effect => {
       if (particleSystem.current.length < 100) {
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 15; i++) {
+          // Create directional scatter based on hit direction
+          const baseDirection = effect.direction ? 
+            new THREE.Vector3(effect.direction.x, effect.direction.y, effect.direction.z) :
+            new THREE.Vector3(0, 1, 0);
+            
+          // Add random spread to base direction
+          const scatter = new THREE.Vector3(
+            (Math.random() - 0.5) * 2,
+            Math.random() + 0.5, // Always some upward movement
+            (Math.random() - 0.5) * 2
+          ).add(baseDirection);
+          
           particleSystem.current.push({
             id: `${effect.id}_${i}`,
             position: new THREE.Vector3(
-              effect.position.x + (Math.random() - 0.5) * 0.2,
-              effect.position.y + (Math.random() - 0.5) * 0.2,
-              effect.position.z + (Math.random() - 0.5) * 0.2
+              effect.position.x + (Math.random() - 0.5) * 0.1,
+              effect.position.y + (Math.random() - 0.5) * 0.1,
+              effect.position.z + (Math.random() - 0.5) * 0.1
             ),
-            life: 1.0,
-            maxLife: 1.0
+            velocity: scatter.normalize().multiplyScalar(2 + Math.random() * 3),
+            life: 1.5 + Math.random() * 0.5,
+            maxLife: 1.5 + Math.random() * 0.5
           });
         }
       }
     });
 
-    // Update particles
+    // Update particles with physics
     particleSystem.current = particleSystem.current.filter(particle => {
-      particle.life -= delta * 2;
-      particle.position.y += delta * 0.5; // Rise up
+      particle.life -= delta;
+      
+      // Apply velocity with gravity
+      particle.position.add(particle.velocity.clone().multiplyScalar(delta));
+      particle.velocity.y -= delta * 2; // Gravity
+      
+      // Slow down over time (air resistance)
+      particle.velocity.multiplyScalar(0.98);
+      
       return particle.life > 0;
     });
 
