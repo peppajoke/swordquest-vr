@@ -17,6 +17,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   const controller1Ref = useRef<THREE.XRTargetRaySpace>();
   const leftSwordRef = useRef<THREE.Group>();
   const rightSwordRef = useRef<THREE.Group>();
+  const leftGunRef = useRef<THREE.Group>();
+  const rightGunRef = useRef<THREE.Group>();
 
   const leftGrabbing = useRef(false);
   const rightGrabbing = useRef(false);
@@ -125,6 +127,35 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     
     return sword;
   }
+  
+  function createGun() {
+    const gun = new THREE.Group();
+    
+    // Grip
+    const gripGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.03);
+    const gripMaterial = new THREE.MeshLambertMaterial({ color: '#2a2a2a' });
+    const grip = new THREE.Mesh(gripGeometry, gripMaterial);
+    grip.position.y = -0.04;
+    gun.add(grip);
+    
+    // Barrel
+    const barrelGeometry = new THREE.CylinderGeometry(0.008, 0.008, 0.12);
+    const barrelMaterial = new THREE.MeshLambertMaterial({ color: '#1a1a1a' });
+    const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+    barrel.rotation.z = Math.PI / 2;
+    barrel.position.y = 0.02;
+    barrel.position.z = 0.06;
+    gun.add(barrel);
+    
+    // Body
+    const bodyGeometry = new THREE.BoxGeometry(0.025, 0.04, 0.08);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: '#333' });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 0.02;
+    gun.add(body);
+    
+    return gun;
+  }
 
   useFrame((state) => {
     const { gl, camera, scene } = state;
@@ -166,31 +197,57 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     
     if (!controller0Obj || !controller1Obj) return;
 
-    // Handle right controller sword (controller0 = right hand)
+    // Handle right hand items (controller0 = right hand)
     if (rightGrabbing.current) {
+      // Show sword
       if (!rightSwordRef.current?.parent) {
         const sword = createSword();
         rightSwordRef.current = sword;
         controller0Obj.add(sword);
       }
+      // Hide gun
+      if (rightGunRef.current?.parent) {
+        controller0Obj.remove(rightGunRef.current);
+        rightGunRef.current = undefined;
+      }
     } else {
+      // Hide sword
       if (rightSwordRef.current?.parent) {
         controller0Obj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
       }
+      // Show gun
+      if (!rightGunRef.current?.parent) {
+        const gun = createGun();
+        rightGunRef.current = gun;
+        controller0Obj.add(gun);
+      }
     }
 
-    // Handle left controller sword (controller1 = left hand)
+    // Handle left hand items (controller1 = left hand)
     if (leftGrabbing.current) {
+      // Show sword
       if (!leftSwordRef.current?.parent) {
         const sword = createSword();
         leftSwordRef.current = sword;
         controller1Obj.add(sword);
       }
+      // Hide gun
+      if (leftGunRef.current?.parent) {
+        controller1Obj.remove(leftGunRef.current);
+        leftGunRef.current = undefined;
+      }
     } else {
+      // Hide sword
       if (leftSwordRef.current?.parent) {
         controller1Obj.remove(leftSwordRef.current);
         leftSwordRef.current = undefined;
+      }
+      // Show gun
+      if (!leftGunRef.current?.parent) {
+        const gun = createGun();
+        leftGunRef.current = gun;
+        controller1Obj.add(gun);
       }
     }
 
@@ -474,10 +531,5 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     });
   });
 
-  return (
-    <>
-      {controller0Ref.current && <primitive object={controller0Ref.current} />}
-      {controller1Ref.current && <primitive object={controller1Ref.current} />}
-    </>
-  );
+  return null; // Controllers are hidden, hands show swords/guns instead
 }
