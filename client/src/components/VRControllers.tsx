@@ -328,11 +328,14 @@ export default function VRControllers() {
       const cameraDirection = new THREE.Vector3();
       camera.getWorldDirection(cameraDirection);
       
-      // FIX: WebXR movement - move in the direction you're facing
+      // FIX: WebXR movement - move world group, not entire scene
       if (gl.xr.getSession()) {
-        // In VR - move the world in the opposite direction of where you're looking
-        const moveVector = cameraDirection.clone().multiplyScalar(-actualSpeed);
-        scene.position.add(moveVector);
+        // In VR - move only the world group (environment/targets), not controllers
+        const worldGroup = scene.getObjectByName('worldGroup');
+        if (worldGroup) {
+          const moveVector = cameraDirection.clone().multiplyScalar(-actualSpeed);
+          worldGroup.position.add(moveVector);
+        }
         
         // Also move the camera position for consistency with target cleanup
         const cameraMove = cameraDirection.clone().multiplyScalar(actualSpeed);

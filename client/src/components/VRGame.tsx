@@ -52,16 +52,21 @@ export default function VRGame() {
         shadow-camera-bottom={-10}
       />
       
-      {/* Ground */}
-      <mesh receiveShadow position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[20, 20]} />
-        <meshLambertMaterial color="#2d3436" />
-      </mesh>
+      {/* World Group - Everything that moves with locomotion */}
+      <group name="worldGroup">
+        {/* Ground */}
+        <mesh receiveShadow position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[20, 20]} />
+          <meshLambertMaterial color="#2d3436" />
+        </mesh>
+        
+        {/* Game Objects - targets and environment */}
+        <GameObjects />
+        <SwordEffects />
+      </group>
 
-      {/* Game Components */}
+      {/* VR Components - Stay in VR space, don't move with world */}
       <VRControllers />
-      <GameObjects />
-      <SwordEffects />
       
       {/* VR Debug Display - Visible in Quest 3 */}
       <VRDebugDisplay />
