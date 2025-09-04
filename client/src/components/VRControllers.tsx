@@ -50,7 +50,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
   // Fuel system
   const fuel = useRef(100.0);
   const maxFuel = useRef(100.0);
-  const fuelDrainRate = useRef(25.0);
+  const fuelDrainRate = useRef(3.0); // Much slower drain
   const fuelRechargeRate = useRef(35.0);
   const fuelPenaltyRecovery = useRef(15.0);
   const wasEmpty = useRef(false);
