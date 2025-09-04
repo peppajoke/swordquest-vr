@@ -134,6 +134,8 @@ function AmmoPickup({ position }: { position: [number, number, number] }) {
 function TurretTower({ position }: { position: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null);
   const lastShotTime = useRef(0);
+  const turretHealth = useRef(100); // Turrets have 100 health
+  const isDead = useRef(false);
   const turretBullets = useRef<Array<{
     id: string;
     mesh: THREE.Object3D;
@@ -142,13 +144,41 @@ function TurretTower({ position }: { position: [number, number, number] }) {
   }>>([]);
 
   useFrame((state, deltaTime) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || isDead.current) return;
     
     const currentTime = Date.now();
     const { camera, scene } = state;
     
     // Mark as turret for collision detection
     groupRef.current.userData.isTurret = true;
+    groupRef.current.userData.health = turretHealth.current;
+    
+    // Check if turret is destroyed
+    if (turretHealth.current <= 0 && !isDead.current) {
+      isDead.current = true;
+      // Destruction animation
+      const destroyAnimation = () => {
+        if (groupRef.current) {
+          groupRef.current.scale.multiplyScalar(1.1);
+          groupRef.current.rotation.x += 0.1;
+          groupRef.current.rotation.z += 0.1;
+          
+          if (groupRef.current.scale.x < 3) {
+            requestAnimationFrame(destroyAnimation);
+          } else {
+            // Complete despawn
+            scene.remove(groupRef.current);
+            // Clean up all turret bullets
+            turretBullets.current.forEach(bullet => {
+              scene.remove(bullet.mesh);
+            });
+            turretBullets.current = [];
+          }
+        }
+      };
+      destroyAnimation();
+      return;
+    }
     
     // Aim at player (camera position)
     const turretPos = new THREE.Vector3();
@@ -201,6 +231,9 @@ function TurretTower({ position }: { position: [number, number, number] }) {
         bulletGroup.add(core);
         bulletGroup.position.copy(turretPos);
         
+        // Mark as turret bullet for collision detection
+        bulletGroup.userData.isTurretBullet = true;
+        
         const bulletData = {
           id: `turret_bullet_${Date.now()}_${Math.random()}`,
           mesh: bulletGroup,
@@ -232,6 +265,28 @@ function TurretTower({ position }: { position: [number, number, number] }) {
         
         scene.remove(bullet.mesh);
         return false;
+      }
+      
+      // Check collision with player bullets
+      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+      if (worldGroup) {
+        let hitPlayerBullet = false;
+        worldGroup.traverse((child) => {
+          if (child.userData.isPlayerBullet && !hitPlayerBullet) {
+            const playerBulletPos = new THREE.Vector3();
+            child.getWorldPosition(playerBulletPos);
+            
+            const distance = bulletPos.distanceTo(playerBulletPos);
+            if (distance < 0.1) { // Bullets cancel each other out
+              scene.remove(bullet.mesh);
+              scene.remove(child);
+              hitPlayerBullet = true;
+              console.log('💥 Bullets canceled each other out!');
+            }
+          }
+        });
+        
+        if (hitPlayerBullet) return false;
       }
       
       // Remove bullet if too old or too far

@@ -106,6 +106,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     bulletGroup.add(core);
     bulletGroup.position.copy(startPosition);
     
+    // Mark as player bullet for collision detection
+    bulletGroup.userData.isPlayerBullet = true;
+    
     return {
       id: `bullet_${Date.now()}_${Math.random()}`,
       mesh: bulletGroup as THREE.Object3D,
@@ -565,12 +568,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       // Move bullet
       bullet.mesh.position.add(bullet.velocity.clone().multiplyScalar(deltaTime));
       
+      let bulletDestroyed = false;
+      
       // Check collision with red pillars
-      let hitPillar = false;
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
-      if (worldGroup) {
+      if (worldGroup && !bulletDestroyed) {
         worldGroup.traverse((child) => {
-          if (child.userData.isPillar && !child.userData.destroyed) {
+          if (child.userData.isPillar && !child.userData.destroyed && !bulletDestroyed) {
             const pillarPos = new THREE.Vector3();
             child.getWorldPosition(pillarPos);
             
@@ -599,14 +603,31 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
                 }
               };
               animate();
-              hitPillar = true;
+              bulletDestroyed = true;
+            }
+          }
+          
+          // Check collision with turrets
+          if (child.userData.isTurret && child.userData.health > 0 && !bulletDestroyed) {
+            const turretPos = new THREE.Vector3();
+            child.getWorldPosition(turretPos);
+            
+            const distance = bullet.mesh.position.distanceTo(turretPos);
+            if (distance < 1.0) { // Bullet hit turret
+              child.userData.health -= 25; // 25 damage per hit, 4 hits to kill
+              console.log(`🎯 Turret hit! Health: ${child.userData.health}/100`);
+              
+              // Create hit effect
+              addHitEffect([turretPos.x, turretPos.y + 1, turretPos.z]);
+              
+              bulletDestroyed = true;
             }
           }
         });
       }
       
       // Remove bullet if it hit something, is too old, or traveled too far
-      if (hitPillar || 
+      if (bulletDestroyed || 
           (currentTime - bullet.startTime) > 10000 || // 10 seconds max life
           bullet.mesh.position.length() > 100) {
         scene.remove(bullet.mesh);
@@ -616,7 +637,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       return true;
     });
     
-    // Simple sword collision detection with red pillars
+    // Sword collision detection with pillars, turrets, and bullet slicing
     [leftSwordRef.current, rightSwordRef.current].forEach(sword => {
       if (!sword) return;
       
@@ -624,6 +645,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       const bladeTip = new THREE.Vector3(0, 0.5, 0);
       sword.localToWorld(bladeTip);
       swordPos.copy(bladeTip);
+      
+      // Check collision with turret bullets (bullet slicing)
+      scene.traverse((child) => {
+        if (child.userData.isTurretBullet) {
+          const bulletPos = new THREE.Vector3();
+          child.getWorldPosition(bulletPos);
+          
+          const distance = swordPos.distanceTo(bulletPos);
+          if (distance < 0.2) { // Slice bullet
+            scene.remove(child);
+            console.log('⚔️ Bullet sliced with sword!');
+            // Create slash effect
+            addHitEffect([bulletPos.x, bulletPos.y, bulletPos.z]);
+          }
+        }
+      });
       
       // Find red pillars to hit
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
