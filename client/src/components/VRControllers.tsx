@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
+import { ProceduralWorldGenerator } from '../lib/procedural';
 
 const SWORD_GEOMETRY = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
 const SWORD_HANDLE_GEOMETRY = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
@@ -23,6 +24,8 @@ export default function VRControllers() {
   const lastBulletTime = useRef<{ [key: string]: number }>({});
   const leftTriggerPressed = useRef(false);
   const rightTriggerPressed = useRef(false);
+  const worldGenerator = useRef<ProceduralWorldGenerator | null>(null);
+  const lastSwordClashTime = useRef(0);
   
   // Sword animation tracking
   const leftSwordScale = useRef(0.5); // Start smaller
@@ -119,6 +122,18 @@ export default function VRControllers() {
     
     controller0Ref.current = controller0;
     controller1Ref.current = controller1;
+    
+    // Initialize procedural world generator
+    const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+    if (worldGroup && !worldGenerator.current) {
+      worldGenerator.current = new ProceduralWorldGenerator(scene, worldGroup, {
+        chunkSize: 15,
+        maxChunks: 20,
+        terrainHeight: 0,
+        obstacleCount: 6
+      });
+      console.log('🌍 Procedural world generator initialized');
+    }
     
     // Setup event handlers
     const handleSqueezeStart0 = () => {
@@ -365,6 +380,11 @@ export default function VRControllers() {
     
     // Clean up old targets
     cleanupOldTargets(camera.position.z);
+    
+    // Update procedural world generation based on player position
+    if (worldGenerator.current) {
+      worldGenerator.current.updateWorld(camera.position);
+    }
     
     // Get controller gamepads using multiple robust methods
     let gamepad0: any = null;
