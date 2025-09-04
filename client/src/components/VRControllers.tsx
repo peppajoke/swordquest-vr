@@ -273,7 +273,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     barrel.userData.isCustomModel = true; // Mark as custom
     barrel.rotation.x = Math.PI / 2; // Rotate 90 degrees to point forward
     barrel.position.y = 0.02;
-    barrel.position.z = 0.1; // Move closer to player, between handle and player
+    barrel.position.z = 0.05; // Move even closer to player
     gun.add(barrel);
     
     // Body
