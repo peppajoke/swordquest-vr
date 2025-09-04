@@ -5,7 +5,6 @@ import VRControllers from './VRControllers';
 import GameObjects from './GameObjects';
 import SwordEffects from './SwordEffects';
 import { VRDebugDisplay } from './VRDebugDisplay';
-import { VROverlay } from './VROverlay';
 import { KeyboardMouseControls } from './KeyboardMouseControls';
 import { ControlsInstructions } from './ControlsInstructions';
 import { useVRGame } from '../lib/stores/useVRGame';
@@ -73,14 +72,6 @@ export default function VRGame() {
       
       {/* Keyboard/Mouse Controls - Alternative to VR */}
       <KeyboardMouseControls onFuelChange={setFuel} />
-      
-      {/* VR Overlay with health and fuel meters */}
-      <VROverlay 
-        fuel={fuel}
-        maxFuel={maxFuel}
-        health={health}
-        maxHealth={maxHealth}
-      />
       
       {/* VR Debug Display with HP/Fuel - Visible in Quest 3 */}
       <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} />
