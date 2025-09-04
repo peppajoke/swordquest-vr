@@ -16,6 +16,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
   const controller0Ref = useRef<THREE.XRTargetRaySpace>();
   const controller1Ref = useRef<THREE.XRTargetRaySpace>();
+  const controllerGrip0Ref = useRef<THREE.XRGripSpace>();
+  const controllerGrip1Ref = useRef<THREE.XRGripSpace>();
   const leftSwordRef = useRef<THREE.Group>();
   const rightSwordRef = useRef<THREE.Group>();
   const leftGunRef = useRef<THREE.Group>();
@@ -176,16 +178,28 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     if (!controller0 || !controller1) return;
 
-    // Store controller refs and hide controller models
+    // Store controller refs and hide ALL controller models
     if (!controller0Ref.current) {
       controller0Ref.current = gl.xr.getController(0);
-      controller0Ref.current.visible = false; // Hide controller model
+      controller0Ref.current.visible = false; // Hide ray controller
       scene.add(controller0Ref.current);
     }
     if (!controller1Ref.current) {
       controller1Ref.current = gl.xr.getController(1);
-      controller1Ref.current.visible = false; // Hide controller model
+      controller1Ref.current.visible = false; // Hide ray controller
       scene.add(controller1Ref.current);
+    }
+    
+    // Hide controller grip models (the actual controller visuals)
+    if (!controllerGrip0Ref.current) {
+      controllerGrip0Ref.current = gl.xr.getControllerGrip(0);
+      controllerGrip0Ref.current.visible = false; // Hide grip model
+      scene.add(controllerGrip0Ref.current);
+    }
+    if (!controllerGrip1Ref.current) {
+      controllerGrip1Ref.current = gl.xr.getControllerGrip(1);
+      controllerGrip1Ref.current.visible = false; // Hide grip model
+      scene.add(controllerGrip1Ref.current);
     }
 
     // Handle controller input
