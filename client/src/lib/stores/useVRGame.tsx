@@ -245,9 +245,7 @@ export const useVRGame = create<VRGameState>()(
         distanceTraveled: newDistance
       });
 
-      if (Math.random() < 0.01) { // Debug log occasionally
-        console.log(`🏃 Speed: ${newSpeed.toFixed(3)}, Distance: ${newDistance.toFixed(1)}`);
-      }
+      // Removed speed/distance momentum logging
     },
 
     spawnNewTargets: () => {

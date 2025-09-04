@@ -575,7 +575,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         camera.position.add(moveVector);
         
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`VR MOMENTUM: ${velocity.current.length().toFixed(3)} speed`);
+          // Removed momentum logging
         }
       } else {
         // In 2D preview - move camera directly
@@ -635,14 +635,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     }
     
     // Debug gamepad detection (reduce spam)
-    if (Math.random() < 0.002) { // Log 0.2% of frames
-      if (gamepad0 || gamepad1) {
-        console.log('🎮 GAMEPADS DETECTED! Left:', !!gamepad0, 'Right:', !!gamepad1);
-        if (gamepad0?.axes?.length >= 4) {
-          console.log('  Left joystick - X:', gamepad0.axes[2]?.toFixed(2), 'Y:', gamepad0.axes[3]?.toFixed(2));
-        }
-      }
-    }
+    // Removed gamepad momentum logging
     
     // Handle movement with left controller's joystick (try multiple axis mappings)
     if (gamepad0?.axes && gamepad0.axes.length >= 2) {
@@ -721,12 +714,12 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
 
     // Use event-based trigger detection AND fallback to gamepad polling
     if (leftTriggerPressed.current) {
-      console.log('🚀 FIRING LEFT BULLET (event-based)');
+      // Firing left bullet
       fireBullet(controller0, 'left');
     }
     
     if (rightTriggerPressed.current) {
-      console.log('🚀 FIRING RIGHT BULLET (event-based)');
+      // Firing right bullet
       fireBullet(controller1, 'right');
     }
     
@@ -739,7 +732,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           if (i === 4) {
             handleAButton('left');
           } else {
-            console.log(`🎮 Left controller button ${i} pressed - FIRING!`);
+            // Left controller button pressed
             fireBullet(controller0, 'left');
           }
           break; // Only process one button per frame
@@ -755,7 +748,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           if (i === 4) {
             handleAButton('right');
           } else {
-            console.log(`🎮 Right controller button ${i} pressed - FIRING!`);
+            // Right controller button pressed
             fireBullet(controller1, 'right');
           }
           break; // Only process one button per frame
@@ -772,7 +765,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         leftSwordRef.current = sword;
         controller0.add(sword);
         addSwordCollider('left', sword);
-        console.log('VRControllers: Left sword spawned');
+        // Left sword spawned
       }
     } else {
       // Remove sword when not squeezing
@@ -780,7 +773,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         controller0.remove(leftSwordRef.current);
         removeSwordCollider('left');
         leftSwordRef.current = undefined;
-        console.log('VRControllers: Left sword removed');
+        // Left sword removed
       }
     }
 
@@ -791,7 +784,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         rightSwordRef.current = sword;
         controller1.add(sword);
         addSwordCollider('right', sword);
-        console.log('VRControllers: Right sword spawned');
+        // Right sword spawned
       }
     } else {
       // Remove sword when not squeezing
@@ -799,7 +792,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
         controller1.remove(rightSwordRef.current);
         removeSwordCollider('right');
         rightSwordRef.current = undefined;
-        console.log('VRControllers: Right sword removed');
+        // Right sword removed
       }
     }
 
