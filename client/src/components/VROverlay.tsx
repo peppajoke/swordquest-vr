@@ -25,11 +25,11 @@ export function VROverlay({ fuel, maxFuel, health, maxHealth }: VROverlayProps) 
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
       
-      // Position in bottom left: close distance, left and down from center
+      // Position in bottom left: closer and more visible in VR
       const overlayPosition = cameraPosition.clone()
-        .add(forward.multiplyScalar(1.2)) // 1.2 units in front
-        .add(right.multiplyScalar(-0.7))  // 0.7 units to the left
-        .add(up.multiplyScalar(-0.5));    // 0.5 units down
+        .add(forward.multiplyScalar(0.8)) // 0.8 units in front (closer)
+        .add(right.multiplyScalar(-0.6))  // 0.6 units to the left
+        .add(up.multiplyScalar(-0.4));    // 0.4 units down
       
       groupRef.current.position.copy(overlayPosition);
       groupRef.current.lookAt(camera.position);
@@ -56,26 +56,30 @@ export function VROverlay({ fuel, maxFuel, health, maxHealth }: VROverlayProps) 
       <Html
         transform
         occlude={false}
-        distanceFactor={0.5}
+        distanceFactor={1.0}
+        zIndexRange={[100, 0]}
         style={{
           pointerEvents: 'none',
           userSelect: 'none',
           width: '200px',
           height: '80px',
+          zIndex: 9999,
         }}
       >
         <div style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-          border: '2px solid #555',
-          borderRadius: '8px',
-          padding: '8px',
+          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          border: '3px solid #00ff00',
+          borderRadius: '10px',
+          padding: '12px',
           fontFamily: 'Arial, sans-serif',
-          fontSize: '12px',
+          fontSize: '16px',
           color: '#fff',
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
-          minWidth: '180px',
+          gap: '8px',
+          minWidth: '220px',
+          boxShadow: '0 0 20px rgba(0, 255, 0, 0.5)',
+          transform: 'scale(1.3)',
         }}>
           {/* Health Bar */}
           <div>
