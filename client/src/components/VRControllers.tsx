@@ -548,7 +548,8 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       
       // Check for momentum transfer opportunities
       if (!wasAccelerating.current) {
-        const directionChange = cameraDirection.angleTo(lastDirection.current);
+        const currentMovementDirection = lockedDirection.current || cameraDirection;
+        const directionChange = currentMovementDirection.angleTo(lastDirection.current);
         const isSignificantTurn = directionChange > Math.PI / 8; // 22.5 degrees
         
         if (isSignificantTurn && velocity.current.length() > 1.0) {
@@ -557,7 +558,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           const transferEfficiency = 1.0 + (currentSpeed / maxSpeed.current) * 0.3; // up to 30% bonus
           
           // Transfer momentum to new direction with bonus
-          const newDirection = cameraDirection.clone().normalize();
+          const newDirection = currentMovementDirection.clone().normalize();
           velocity.current = newDirection.multiplyScalar(currentSpeed * transferEfficiency);
           
           // Temporary speed boost
@@ -566,7 +567,7 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
           // Momentum transfer speed boost
         }
         
-        lastDirection.current.copy(movementDirection);
+        lastDirection.current.copy(currentMovementDirection);
       }
       
       // Decay momentum transfer bonus
