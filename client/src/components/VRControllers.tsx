@@ -30,8 +30,8 @@ export default function VRControllers() {
   const lastAButtonTime = useRef<{ [key: string]: number }>({});
   
   // Fuel system
-  const fuel = useRef(100); // 0-100 fuel
-  const maxFuel = useRef(100);
+  const fuel = useRef(2000); // 0-2000 fuel (20x more)
+  const maxFuel = useRef(2000); // 20x more fuel
   const fuelDrainRate = useRef(25); // fuel per second when accelerating
   const fuelRechargeRate = useRef(15); // fuel per second when not holding swords
   const fuelPenaltyRecovery = useRef(5); // slow recovery after running empty
