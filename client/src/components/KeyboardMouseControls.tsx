@@ -120,24 +120,33 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
         }
       }
     } else if (!isAccelerating && wasAcceleratingPreviously.current) {
-      // Just stopped accelerating - record the time
+      // Just stopped accelerating - record the time, but only start decay after 600ms window
       lastStoppedAccelerating.current = currentTime;
+      // Set decay to start after the 600ms timing window
+      burstSpeedDecay.current = currentTime + 600;
     }
     
     wasAcceleratingPreviously.current = isAccelerating;
     
-    // Update burst speed decay
+    // Update burst speed decay - only after 600ms window
     if (burstSpeedDecay.current > 0 && currentTime > burstSpeedDecay.current) {
-      burstSpeedMultiplier.current = 1.0;
-      burstSpeedDecay.current = 0;
-    } else if (burstSpeedDecay.current > 0) {
-      // Smoothly decay burst speed (preserve original boost strength)
-      const timeRemaining = burstSpeedDecay.current - currentTime;
-      const decayProgress = timeRemaining / 3000;
-      const originalBoost = burstSpeedMultiplier.current; // Keep the original boost strength
-      // Use a square root curve for slower initial decay
-      const decayCurve = Math.sqrt(decayProgress);
-      burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
+      // Check if we're in the decay phase (more than 600ms since stopping)
+      const timeSinceStopped = currentTime - lastStoppedAccelerating.current;
+      if (timeSinceStopped > 600) {
+        // Start decaying after 600ms window
+        const decayTime = timeSinceStopped - 600; // Time spent decaying
+        const decayDuration = 3000; // 3 second decay
+        if (decayTime >= decayDuration) {
+          burstSpeedMultiplier.current = 1.0;
+          burstSpeedDecay.current = 0;
+        } else {
+          // Smoothly decay burst speed
+          const decayProgress = (decayDuration - decayTime) / decayDuration;
+          const originalBoost = burstSpeedMultiplier.current;
+          const decayCurve = Math.sqrt(decayProgress);
+          burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
+        }
+      }
     }
     
     // Update fuel system
