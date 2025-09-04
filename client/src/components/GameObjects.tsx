@@ -136,7 +136,7 @@ function TurretTower({ position }: { position: [number, number, number] }) {
   const lastShotTime = useRef(0);
   const turretBullets = useRef<Array<{
     id: string;
-    mesh: THREE.Mesh;
+    mesh: THREE.Object3D;
     velocity: THREE.Vector3;
     startTime: number;
   }>>([]);
@@ -167,22 +167,49 @@ function TurretTower({ position }: { position: [number, number, number] }) {
       
       // Shoot every 2 seconds
       if (currentTime - lastShotTime.current > 2000) {
-        // Create turret bullet
-        const bullet = new THREE.Mesh(
-          new THREE.SphereGeometry(0.03),
-          new THREE.MeshLambertMaterial({ color: '#ff0000', emissive: '#aa0000' })
-        );
+        // Create turret bullet group
+        const bulletGroup = new THREE.Group();
         
-        bullet.position.copy(turretPos);
+        // Core energy bolt - elongated capsule shape
+        const coreGeometry = new THREE.CapsuleGeometry(0.012, 0.1, 4, 8);
+        const coreMaterial = new THREE.MeshLambertMaterial({ 
+          color: '#ff2200',
+          emissive: '#ff4400',
+          emissiveIntensity: 0.9
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        
+        // Outer glow effect
+        const glowGeometry = new THREE.CapsuleGeometry(0.02, 0.12, 4, 8);
+        const glowMaterial = new THREE.MeshLambertMaterial({ 
+          color: '#ff6644',
+          emissive: '#ff2200',
+          emissiveIntensity: 0.5,
+          transparent: true,
+          opacity: 0.7
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        
+        // Align with direction of travel
+        const quaternion = new THREE.Quaternion();
+        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+        
+        core.quaternion.copy(quaternion);
+        glow.quaternion.copy(quaternion);
+        
+        bulletGroup.add(glow);
+        bulletGroup.add(core);
+        bulletGroup.position.copy(turretPos);
+        
         const bulletData = {
           id: `turret_bullet_${Date.now()}_${Math.random()}`,
-          mesh: bullet,
+          mesh: bulletGroup,
           velocity: direction.clone().multiplyScalar(8.0), // Fast bullets
           startTime: currentTime
         };
         
         turretBullets.current.push(bulletData);
-        scene.add(bullet);
+        scene.add(bulletGroup);
         lastShotTime.current = currentTime;
       }
     }

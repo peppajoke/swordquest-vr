@@ -45,7 +45,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   // Gun system
   const bullets = useRef<Array<{
     id: string;
-    mesh: THREE.Mesh;
+    mesh: THREE.Object3D;
     velocity: THREE.Vector3;
     startTime: number;
   }>>([]);
@@ -72,15 +72,43 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   const momentumTransferBonus = useRef(0);
 
   function createBullet(startPosition: THREE.Vector3, direction: THREE.Vector3) {
-    const bullet = new THREE.Mesh(
-      new THREE.SphereGeometry(0.02),
-      new THREE.MeshLambertMaterial({ color: '#ffff00', emissive: '#ffaa00' })
-    );
-    bullet.position.copy(startPosition);
+    // Create bullet group for Star Wars style blaster bolt
+    const bulletGroup = new THREE.Group();
+    
+    // Core energy bolt - elongated capsule shape
+    const coreGeometry = new THREE.CapsuleGeometry(0.008, 0.06, 4, 8);
+    const coreMaterial = new THREE.MeshLambertMaterial({ 
+      color: '#00ff00',
+      emissive: '#88ff00',
+      emissiveIntensity: 1.0
+    });
+    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+    
+    // Outer glow effect
+    const glowGeometry = new THREE.CapsuleGeometry(0.015, 0.08, 4, 8);
+    const glowMaterial = new THREE.MeshLambertMaterial({ 
+      color: '#44ff44',
+      emissive: '#44ff00',
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.6
+    });
+    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    
+    // Align with direction of travel
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    
+    core.quaternion.copy(quaternion);
+    glow.quaternion.copy(quaternion);
+    
+    bulletGroup.add(glow);
+    bulletGroup.add(core);
+    bulletGroup.position.copy(startPosition);
     
     return {
       id: `bullet_${Date.now()}_${Math.random()}`,
-      mesh: bullet,
+      mesh: bulletGroup as THREE.Object3D,
       velocity: direction.normalize().multiplyScalar(5.0), // Slow moving
       startTime: Date.now()
     };
