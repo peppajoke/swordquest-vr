@@ -4,6 +4,7 @@ import { useThree } from '@react-three/fiber';
 import VRControllers from './VRControllers';
 import GameObjects from './GameObjects';
 import SwordEffects from './SwordEffects';
+import { VRDebugDisplay } from './VRDebugDisplay';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
@@ -61,6 +62,9 @@ export default function VRGame() {
       <VRControllers />
       <GameObjects />
       <SwordEffects />
+      
+      {/* VR Debug Display - Visible in Quest 3 */}
+      <VRDebugDisplay />
     </>
   );
 }

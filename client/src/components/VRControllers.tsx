@@ -186,6 +186,10 @@ export default function VRControllers() {
       leftGrabbing.current = true; // FIX: Actually update grip state
       targetLeftScale.current = 1.5; // Expand when squeezing
       console.log('⚔️ LEFT SWORD GRIPPED - Movement enabled!');
+      // Send to Quest 3 debug display
+      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog('LEFT SWORD GRIPPED!');
+      }
     };
     
     const handleSqueezeEnd0Extended = () => {
@@ -200,6 +204,10 @@ export default function VRControllers() {
       rightGrabbing.current = true; // FIX: Actually update grip state
       targetRightScale.current = 1.5; // Expand when squeezing
       console.log('⚔️ RIGHT SWORD GRIPPED - Movement enabled!');
+      // Send to Quest 3 debug display
+      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog('RIGHT SWORD GRIPPED!');
+      }
     };
     
     const handleSqueezeEnd1Extended = () => {
@@ -277,10 +285,24 @@ export default function VRControllers() {
     const controller0 = controller0Ref.current;
     const controller1 = controller1Ref.current;
     
-    // Debug controller detection (much less spam)
-    if (Math.random() < 0.001) { // Log 0.1% of frames
+    // Debug controller detection and send to Quest 3 display
+    if (Math.random() < 0.01) { // Log 1% of frames
+      const isVRActive = !!gl.xr.getSession();
       console.log('🎮 Controller Detection - Left:', !!controller0, 'Right:', !!controller1);
-      console.log('🎮 VR Session Active:', !!gl.xr.getSession());
+      console.log('🎮 VR Session Active:', isVRActive);
+      
+      // Send debug data to Quest 3 display
+      if (typeof window !== 'undefined') {
+        (window as any).vrDebugData = {
+          controllersDetected: { left: !!controller0, right: !!controller1 },
+          vrSessionActive: isVRActive,
+          gripStates: { 
+            leftGripping: leftGrabbing.current, 
+            rightGripping: rightGrabbing.current 
+          },
+          timestamp: Date.now()
+        };
+      }
     }
     
     if (!controller0 || !controller1) return;
@@ -635,6 +657,10 @@ export default function VRControllers() {
         
         // Fire actual projectile from sword clash point
         console.log('⚔️ SWORD CLASH - FIRING PROJECTILE!');
+        // Send to Quest 3 debug display
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog('SWORD CLASH - PROJECTILE FIRED!');
+        }
         fireBullet(controller0, 'left'); // Fire projectile from clash
         handleSwordClash(collisionPoint, cameraPosition, cameraDirection);
       }
