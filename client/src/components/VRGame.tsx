@@ -99,7 +99,7 @@ export default function VRGame() {
             GAME OVER
           </Text>
           
-          {/* Respawn Instructions */}
+          {/* Auto-reboot Message */}
           <Text
             position={[0, -0.5, -1.9]}
             fontSize={0.3}
@@ -107,7 +107,7 @@ export default function VRGame() {
             anchorX="center"
             anchorY="middle"
           >
-            Press R to Respawn
+            Rebooting in 3 seconds...
           </Text>
         </group>
       )}

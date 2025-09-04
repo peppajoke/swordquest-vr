@@ -363,7 +363,11 @@ export const useVRGame = create<VRGameState>()(
       set({ health: newHealth, isDead, gameOver: isDead });
       
       if (isDead) {
-        console.log('💀 GAME OVER - You have died!');
+        console.log('💀 GAME OVER - Rebooting in 3 seconds...');
+        // Auto-reboot after 3 seconds
+        setTimeout(() => {
+          get().respawn();
+        }, 3000);
       } else {
         console.log(`💥 Took ${damage} damage! Health: ${newHealth}/${state.maxHealth}`);
       }
