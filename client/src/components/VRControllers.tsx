@@ -208,11 +208,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     if (gamepad0 && gamepad0.buttons.length > 1) {
       rightGrabbing.current = gamepad0.buttons[1].pressed; // Right hand (controller0) grip
-      leftTrigger.current = gamepad0.buttons[0].pressed;   // Right controller fires left gun (swapped)
+      rightTrigger.current = gamepad0.buttons[0].pressed;   // Right controller fires right gun
     }
     if (gamepad1 && gamepad1.buttons.length > 1) {
       leftGrabbing.current = gamepad1.buttons[1].pressed; // Left hand (controller1) grip
-      rightTrigger.current = gamepad1.buttons[0].pressed;   // Left controller fires right gun (swapped)
+      leftTrigger.current = gamepad1.buttons[0].pressed;   // Left controller fires left gun
     }
 
     const controller0Obj = controller0Ref.current;
