@@ -659,44 +659,30 @@ export default function VRControllers() {
       }
     }
     
-    // Handle left controller sword
-    if (leftGrabbing.current) {
-      if (!leftSwordRef.current?.parent) {
-        const sword = createSword();
-        leftSwordRef.current = sword;
-        controller0.add(sword);
-        addSwordCollider('left', sword);
-        console.log('VRControllers: Left sword spawned');
-      }
-      // Apply animated scale to left sword
-      if (leftSwordRef.current) {
-        leftSwordRef.current.scale.setScalar(leftSwordScale.current);
-      }
-    } else if (!leftGrabbing.current && leftSwordRef.current?.parent) {
-      controller0.remove(leftSwordRef.current);
-      removeSwordCollider('left');
-      leftSwordRef.current = undefined;
-      console.log('VRControllers: Left sword despawned');
+    // Handle left controller sword - always present
+    if (!leftSwordRef.current?.parent) {
+      const sword = createSword();
+      leftSwordRef.current = sword;
+      controller0.add(sword);
+      addSwordCollider('left', sword);
+      console.log('VRControllers: Left sword spawned (permanent)');
+    }
+    // Apply animated scale to left sword
+    if (leftSwordRef.current) {
+      leftSwordRef.current.scale.setScalar(leftSwordScale.current);
     }
 
-    // Handle right controller sword
-    if (rightGrabbing.current) {
-      if (!rightSwordRef.current?.parent) {
-        const sword = createSword();
-        rightSwordRef.current = sword;
-        controller1.add(sword);
-        addSwordCollider('right', sword);
-        console.log('VRControllers: Right sword spawned');
-      }
-      // Apply animated scale to right sword
-      if (rightSwordRef.current) {
-        rightSwordRef.current.scale.setScalar(rightSwordScale.current);
-      }
-    } else if (!rightGrabbing.current && rightSwordRef.current?.parent) {
-      controller1.remove(rightSwordRef.current);
-      removeSwordCollider('right');
-      rightSwordRef.current = undefined;
-      console.log('VRControllers: Right sword despawned');
+    // Handle right controller sword - always present
+    if (!rightSwordRef.current?.parent) {
+      const sword = createSword();
+      rightSwordRef.current = sword;
+      controller1.add(sword);
+      addSwordCollider('right', sword);
+      console.log('VRControllers: Right sword spawned (permanent)');
+    }
+    // Apply animated scale to right sword
+    if (rightSwordRef.current) {
+      rightSwordRef.current.scale.setScalar(rightSwordScale.current);
     }
 
     // Update bullets
@@ -736,7 +722,11 @@ export default function VRControllers() {
     // Update collision detection
     [{ id: 'left', sword: leftSwordRef.current, controller: controller0 },
      { id: 'right', sword: rightSwordRef.current, controller: controller1 }].forEach(({ id, sword, controller }) => {
-      if (!sword || !controller) return;
+      if (!sword || !controller) {
+        console.log(`🗡️ Skipping collision for ${id} - sword: ${!!sword}, controller: ${!!controller}`);
+        return;
+      }
+      console.log(`🗡️ Running collision detection for ${id} sword`);
 
       const currentPos = new THREE.Vector3();
       controller.getWorldPosition(currentPos);
@@ -764,10 +754,19 @@ export default function VRControllers() {
           });
           
           // Check collisions with static destructible objects
+          if (staticObjects.current.length === 0) {
+            console.log('⚠️ No static objects found for collision detection');
+          }
+          
+          let closestDistance = Infinity;
           staticObjects.current.forEach(obj => {
             if (!obj.userData || obj.userData.destroyed) return;
             
             const distance = currentPos.distanceTo(obj.position);
+            if (distance < closestDistance) {
+              closestDistance = distance;
+            }
+            
             if (distance < 2.5) {
               console.log(`⚔️ Sword ${id} destroyed ${obj.userData.type || 'object'}!`);
               
@@ -815,6 +814,11 @@ export default function VRControllers() {
               animate();
             }
           });
+          
+          // Log closest distance for debugging
+          if (closestDistance !== Infinity && closestDistance < 10) {
+            console.log(`🗡️ Sword ${id} closest to object at distance: ${closestDistance.toFixed(2)}`);
+          }
         }
       }
       
