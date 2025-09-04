@@ -27,6 +27,7 @@ export default function VRControllers() {
   const worldGenerator = useRef<any>(null);
   const staticObjects = useRef<THREE.Object3D[]>([]);
   const lastSwordClashTime = useRef(0);
+  const lastAButtonTime = useRef<{ [key: string]: number }>({});
   
   // Momentum-based movement system
   const velocity = useRef(new THREE.Vector3(0, 0, 0));
@@ -606,6 +607,32 @@ export default function VRControllers() {
       });
     }
     
+    // Handle A button for 180-degree flip
+    const handleAButton = (controllerId: string) => {
+      const now = Date.now();
+      const lastTime = lastAButtonTime.current[controllerId] || 0;
+      
+      // Rate limiting: 500ms between flips
+      if (now - lastTime < 500) return;
+      
+      lastAButtonTime.current[controllerId] = now;
+      
+      console.log(`🔄 A BUTTON: Flipping view 180 degrees (${controllerId})`);
+      
+      // Rotate camera 180 degrees around Y axis (horizontal flip)
+      camera.rotateY(Math.PI);
+      
+      // Also rotate the worldGroup to maintain proper spatial relationship
+      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+      if (worldGroup) {
+        // Rotate around the camera position
+        const cameraPos = camera.position.clone();
+        worldGroup.position.sub(cameraPos);
+        worldGroup.rotateY(Math.PI);
+        worldGroup.position.add(cameraPos);
+      }
+    };
+
     // Use event-based trigger detection AND fallback to gamepad polling
     if (leftTriggerPressed.current) {
       console.log('🚀 FIRING LEFT BULLET (event-based)');
@@ -622,9 +649,14 @@ export default function VRControllers() {
       // Try all possible button mappings for Quest 3
       for (let i = 0; i < gamepad0.buttons.length; i++) {
         if (gamepad0.buttons[i]?.pressed) {
-          console.log(`🎮 Left controller button ${i} pressed - FIRING!`);
-          fireBullet(controller0, 'left');
-          break; // Only fire once per frame
+          // Button 4 is typically A button on Quest 3 controllers
+          if (i === 4) {
+            handleAButton('left');
+          } else {
+            console.log(`🎮 Left controller button ${i} pressed - FIRING!`);
+            fireBullet(controller0, 'left');
+          }
+          break; // Only process one button per frame
         }
       }
     }
@@ -633,9 +665,14 @@ export default function VRControllers() {
       // Try all possible button mappings for Quest 3
       for (let i = 0; i < gamepad1.buttons.length; i++) {
         if (gamepad1.buttons[i]?.pressed) {
-          console.log(`🎮 Right controller button ${i} pressed - FIRING!`);
-          fireBullet(controller1, 'right');
-          break; // Only fire once per frame
+          // Button 4 is typically A button on Quest 3 controllers
+          if (i === 4) {
+            handleAButton('right');
+          } else {
+            console.log(`🎮 Right controller button ${i} pressed - FIRING!`);
+            fireBullet(controller1, 'right');
+          }
+          break; // Only process one button per frame
         }
       }
     }
