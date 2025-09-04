@@ -397,18 +397,12 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
       }
     }
 
-    // Apply movement to worldGroup with boundary checking
+    // Apply movement to worldGroup
     if (velocity.current.length() > 0.01) {
       const moveVector = velocity.current.clone().multiplyScalar(deltaTime);
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
       if (worldGroup) {
-        const newPosition = worldGroup.position.clone().sub(moveVector);
-        
-        // Level boundaries: X: -75 to +75, Z: +50 to -150
-        newPosition.x = Math.max(-75, Math.min(75, newPosition.x));
-        newPosition.z = Math.max(-150, Math.min(50, newPosition.z));
-        
-        worldGroup.position.copy(newPosition);
+        worldGroup.position.sub(moveVector);
       }
     }
 

@@ -236,21 +236,15 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
       }
     }
     
-    // Apply velocity to camera position with boundary checking
+    // Apply velocity to camera position
     if (velocity.current.length() > 0.001) {
       const movement = velocity.current.clone().multiplyScalar(deltaTime);
       camera.position.add(movement);
       
-      // Also move the worldGroup with boundary checking
+      // Also move the worldGroup to maintain collision consistency
       const worldGroup = state.scene.getObjectByName('worldGroup') as THREE.Group;
       if (worldGroup) {
-        const newPosition = worldGroup.position.clone().sub(movement);
-        
-        // Level boundaries: X: -75 to +75, Z: +50 to -150  
-        newPosition.x = Math.max(-75, Math.min(75, newPosition.x));
-        newPosition.z = Math.max(-150, Math.min(50, newPosition.z));
-        
-        worldGroup.position.copy(newPosition);
+        worldGroup.position.sub(movement);
       }
     }
   });
