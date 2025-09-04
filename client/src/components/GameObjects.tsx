@@ -282,6 +282,11 @@ function TurretTower({ position }: { position: [number, number, number] }) {
               scene.remove(child);
               hitPlayerBullet = true;
               console.log('💥 Bullets canceled each other out!');
+              
+              // Play hit sound for bullet collision
+              import('../lib/stores/useAudio').then(({ useAudio }) => {
+                useAudio.getState().playHit();
+              });
             }
           }
         });

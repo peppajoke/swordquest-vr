@@ -617,6 +617,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
               child.userData.health -= 25; // 25 damage per hit, 4 hits to kill
               console.log(`🎯 Turret hit! Health: ${child.userData.health}/100`);
               
+              // Play hit sound
+              import('../lib/stores/useAudio').then(({ useAudio }) => {
+                useAudio.getState().playHit();
+              });
+              
               // Create hit effect
               addHitEffect([turretPos.x, turretPos.y + 1, turretPos.z]);
               
@@ -656,6 +661,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
           if (distance < 0.2) { // Slice bullet
             scene.remove(child);
             console.log('⚔️ Bullet sliced with sword!');
+            
+            // Play hit sound for bullet slice
+            import('../lib/stores/useAudio').then(({ useAudio }) => {
+              useAudio.getState().playHit();
+            });
+            
             // Create slash effect
             addHitEffect([bulletPos.x, bulletPos.y, bulletPos.z]);
           }

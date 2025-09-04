@@ -36,6 +36,14 @@ export default function VRGame() {
     const successSFX = new Audio('/sounds/success.mp3');
     successSFX.volume = 0.6;
     setSuccessSound(successSFX);
+    
+    // Auto-play background music after user interaction
+    const startAudio = () => {
+      bgMusic.play().catch(e => console.log('Background music will start after user interaction'));
+    };
+    
+    // Try to start audio, browsers require user interaction first
+    setTimeout(startAudio, 1000);
 
   }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound]);
 
