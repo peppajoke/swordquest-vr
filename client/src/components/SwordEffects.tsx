@@ -76,7 +76,8 @@ export default function SwordEffects() {
       return particle.life > 0;
     });
 
-    // Update geometry
+    // Update geometry - ensure position attribute exists
+    if (!geometry.attributes.position) return;
     const positions = geometry.attributes.position.array as Float32Array;
     let index = 0;
     particleSystem.current.forEach(particle => {

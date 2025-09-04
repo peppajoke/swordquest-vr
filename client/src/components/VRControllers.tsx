@@ -336,12 +336,14 @@ export default function VRControllers() {
     // Only move when holding at least one sword, speed increases with both swords
     if (swordsHeld > 0) {
       const speedMultiplier = swordsHeld; // 1x speed for one sword, 2x for both
-      const baseSpeed = gameSpeed * 0.3; // SLOWER: Reduce speed to 30% for VR comfort
+      const baseSpeed = gameSpeed * 0.6; // FASTER: Increase speed to 60% for better gameplay
       const actualSpeed = baseSpeed * speedMultiplier;
       
-      // Get the direction the player is facing
+      // Get the direction the player is facing - constrained to ground level (no vertical movement)
       const cameraDirection = new THREE.Vector3();
       camera.getWorldDirection(cameraDirection);
+      cameraDirection.y = 0; // Lock to ground level - no up/down movement
+      cameraDirection.normalize(); // Renormalize after removing Y component
       
       // FIX: WebXR movement - move world group, not entire scene
       if (gl.xr.getSession()) {
