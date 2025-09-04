@@ -263,6 +263,11 @@ function TurretTower({ position }: { position: [number, number, number] }) {
           useVRGame.getState().takeDamage(10);
         });
         
+        // Play player damage sound
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playPlayerDamage();
+        });
+        
         scene.remove(bullet.mesh);
         return false;
       }

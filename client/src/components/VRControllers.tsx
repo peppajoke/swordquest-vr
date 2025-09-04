@@ -169,9 +169,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         hitTarget.userData.health -= 25;
         console.log(`🎯 Turret hit! Health: ${hitTarget.userData.health}/100`);
         
-        // Play hit sound
+        // Play gun hit sound
         import('../lib/stores/useAudio').then(({ useAudio }) => {
-          useAudio.getState().playHit();
+          useAudio.getState().playGunHit();
         });
         
         // Create hit effect
@@ -208,6 +208,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     // Fire instant hit
     createInstantHit(controllerPos, controllerDir, scene);
+    
+    // Play gun shoot sound
+    import('../lib/stores/useAudio').then(({ useAudio }) => {
+      useAudio.getState().playGunShoot();
+    });
     
     // Consume ammo
     ammo.current--;
@@ -458,9 +463,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         burstSpeedMultiplier.current = boostStrength;
         burstSpeedDecay.current = currentTime + 3000;
         
-        // Play boost success sound
+        // Play boost sound
         import('../lib/stores/useAudio').then(({ useAudio }) => {
-          useAudio.getState().playSuccess();
+          useAudio.getState().playBoost();
         });
         
         const currentSpeed = velocity.current.length();
@@ -574,6 +579,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     // Movement system
     if (swordsHeld > 0 && fuel.current > 0) {
+      // Play acceleration sound (only occasionally to avoid spam)
+      if (Math.random() < 0.01) { // 1% chance per frame when accelerating
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playAcceleration();
+        });
+      }
       const speedMultiplier = swordsHeld;
       const fuelMultiplier = Math.max(0.3, fuel.current / maxFuel.current);
       const burstMultiplier = burstSpeedMultiplier.current;
@@ -661,9 +672,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
             scene.remove(child);
             console.log('⚔️ Bullet sliced with sword!');
             
-            // Play hit sound for bullet slice
+            // Play sword hit sound for bullet slice
             import('../lib/stores/useAudio').then(({ useAudio }) => {
-              useAudio.getState().playHit();
+              useAudio.getState().playSwordHit();
             });
             
             // Create slash effect

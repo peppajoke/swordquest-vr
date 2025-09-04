@@ -156,9 +156,9 @@ export const useVRGame = create<VRGameState>()(
           score: score + 10
         });
 
-        // Play hit sound
+        // Play sword hit sound
         import('../stores/useAudio').then(({ useAudio }) => {
-          useAudio.getState().playHit();
+          useAudio.getState().playSwordHit();
         });
 
         // Respawn individual target after 3 seconds
@@ -190,9 +190,9 @@ export const useVRGame = create<VRGameState>()(
           score: score + 20 // More points for pillars
         });
 
-        // Play explosion sound
+        // Play sword hit sound for pillar destruction
         import('../stores/useAudio').then(({ useAudio }) => {
-          useAudio.getState().playHit();
+          useAudio.getState().playSwordHit();
         });
 
         // Respawn pillar after 10 seconds
