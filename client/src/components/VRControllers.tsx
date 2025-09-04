@@ -169,13 +169,15 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
 
     if (!controller0 || !controller1) return;
 
-    // Store controller refs
+    // Store controller refs and hide controller models
     if (!controller0Ref.current) {
       controller0Ref.current = gl.xr.getController(0);
+      controller0Ref.current.visible = false; // Hide controller model
       scene.add(controller0Ref.current);
     }
     if (!controller1Ref.current) {
       controller1Ref.current = gl.xr.getController(1);
+      controller1Ref.current.visible = false; // Hide controller model
       scene.add(controller1Ref.current);
     }
 
@@ -200,24 +202,24 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     // Handle right hand items (controller0 = right hand)
     if (rightGrabbing.current) {
       // Show sword
-      if (!rightSwordRef.current?.parent) {
+      if (!rightSwordRef.current) {
         const sword = createSword();
         rightSwordRef.current = sword;
         controller0Obj.add(sword);
       }
       // Hide gun
-      if (rightGunRef.current?.parent) {
+      if (rightGunRef.current) {
         controller0Obj.remove(rightGunRef.current);
         rightGunRef.current = undefined;
       }
     } else {
       // Hide sword
-      if (rightSwordRef.current?.parent) {
+      if (rightSwordRef.current) {
         controller0Obj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
       }
       // Show gun
-      if (!rightGunRef.current?.parent) {
+      if (!rightGunRef.current) {
         const gun = createGun();
         rightGunRef.current = gun;
         controller0Obj.add(gun);
@@ -227,24 +229,24 @@ export default function VRControllers({ onFuelChange }: VRControllersProps) {
     // Handle left hand items (controller1 = left hand)
     if (leftGrabbing.current) {
       // Show sword
-      if (!leftSwordRef.current?.parent) {
+      if (!leftSwordRef.current) {
         const sword = createSword();
         leftSwordRef.current = sword;
         controller1Obj.add(sword);
       }
       // Hide gun
-      if (leftGunRef.current?.parent) {
+      if (leftGunRef.current) {
         controller1Obj.remove(leftGunRef.current);
         leftGunRef.current = undefined;
       }
     } else {
       // Hide sword
-      if (leftSwordRef.current?.parent) {
+      if (leftSwordRef.current) {
         controller1Obj.remove(leftSwordRef.current);
         leftSwordRef.current = undefined;
       }
       // Show gun
-      if (!leftGunRef.current?.parent) {
+      if (!leftGunRef.current) {
         const gun = createGun();
         leftGunRef.current = gun;
         controller1Obj.add(gun);
