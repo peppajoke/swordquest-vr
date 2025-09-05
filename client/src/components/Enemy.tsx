@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
+import HealthBar from './HealthBar';
 
 interface EnemyProps {
   type: 'grunt' | 'rifleman' | 'heavy' | 'assassin' | 'bomber' | 'sniper' | 'berserker' | 'shield' | 'mage' | 'boss' | 'drone' | 'wasp' | 'phoenix';
@@ -621,22 +622,13 @@ export default function Enemy({ type, position }: EnemyProps) {
         />
       </mesh>
       
-      {/* Health Bar */}
-      {health < maxHealth && (
-        <>
-          {/* Health Bar Background */}
-          <mesh position={[0, size[1] + 0.5, 0]}>
-            <boxGeometry args={[1.5, 0.1, 0.01]} />
-            <meshLambertMaterial color="#333333" />
-          </mesh>
-          
-          {/* Health Bar Fill */}
-          <mesh position={[-0.75 + (health / maxHealth) * 0.75, size[1] + 0.5, 0.005]}>
-            <boxGeometry args={[(health / maxHealth) * 1.5, 0.08, 0.01]} />
-            <meshLambertMaterial color={health > maxHealth * 0.5 ? '#00ff00' : health > maxHealth * 0.25 ? '#ffaa00' : '#ff0000'} />
-          </mesh>
-        </>
-      )}
+      {/* Health Bar Component */}
+      <HealthBar 
+        health={health} 
+        maxHealth={maxHealth} 
+        position={[position[0], position[1], position[2]]} 
+        enemyType={type}
+      />
       
       {/* Special Visual Effects */}
       {type === 'shield' && (
