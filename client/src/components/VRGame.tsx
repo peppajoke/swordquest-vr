@@ -5,11 +5,8 @@ import VRControllers from './VRControllers';
 import GameObjects from './GameObjects';
 import SwordEffects from './SwordEffects';
 import { VRDebugDisplay } from './VRDebugDisplay';
-import { KeyboardMouseControls } from './KeyboardMouseControls';
-import { ControlsInstructions } from './ControlsInstructions';
-import { DeathHandler } from './DeathHandler';
-import { LoadingScreen } from './LoadingScreen';
-import { DeathRoom } from './DeathRoom';
+import DesktopControls from './DesktopControls';
+import DesktopUI from './DesktopUI';
 import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
@@ -28,6 +25,7 @@ export default function VRGame() {
   const [leftClip, setLeftClip] = useState(12);
   const [rightClip, setRightClip] = useState(12);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
+  const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
     // Initialize audio store with sound files
@@ -104,8 +102,17 @@ export default function VRGame() {
       {/* VR Components - Stay in VR space, don't move with world */}
       <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} onLeftClipChange={setLeftClip} onRightClipChange={setRightClip} onJetpackChange={setJetpackEnabled} />
       
-      {/* Keyboard/Mouse Controls - Alternative to VR */}
-      <KeyboardMouseControls onFuelChange={setFuel} />
+      {/* Desktop Controls - WASD + Mouse alternative to VR */}
+      <DesktopControls 
+        onShoot={(hand) => {
+          console.log(`🔫 Desktop ${hand} gun fired!`);
+        }}
+        onSwordSwing={(hand) => {
+          setCurrentSwordHand(hand === 'left' ? 'right' : 'left');
+          console.log(`⚔️ Desktop ${hand} sword swing!`);
+        }}
+        onJetpackToggle={setJetpackEnabled}
+      />
       
       {/* VR Debug Display with HP/Fuel/Ammo - Visible in Quest 3 */}
       <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />
@@ -143,8 +150,13 @@ export default function VRGame() {
         </group>
       )}
       
-      {/* Death Handler for respawn */}
-      <DeathHandler />
+      {/* Auto-respawn when dead */}
+      {isDead && (
+        <mesh position={[0, 0, 0]} visible={false}>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshBasicMaterial color="transparent" />
+        </mesh>
+      )}
     </>
   );
 }

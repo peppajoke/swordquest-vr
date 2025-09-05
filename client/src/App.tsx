@@ -1,8 +1,9 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { VRButton, XR, createXRStore } from "@react-three/xr";
 import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
+import DesktopUI from "./components/DesktopUI";
 import "@fontsource/inter";
 import "./index.css";
 
@@ -19,6 +20,10 @@ const sessionInit = {
 };
 
 function App() {
+  const [fuel, setFuel] = useState(100);
+  const [jetpackEnabled, setJetpackEnabled] = useState(false);
+  const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
+
   return (
     <div
       style={{
@@ -75,6 +80,13 @@ function App() {
           </Suspense>
         </XR>
       </Canvas>
+      
+      {/* Desktop UI Overlay */}
+      <DesktopUI 
+        fuel={fuel}
+        jetpackEnabled={jetpackEnabled}
+        currentSwordHand={currentSwordHand}
+      />
     </div>
   );
 }
