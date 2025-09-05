@@ -413,6 +413,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       // Show sword
       if (!leftSwordRef.current) {
         const sword = createSword();
+        // Flip left-hand sword horizontally too
+        sword.rotation.y = Math.PI; // 180 degrees horizontal flip
         leftSwordRef.current = sword;
         controller1Obj.add(sword);
       }
