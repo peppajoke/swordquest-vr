@@ -8,27 +8,47 @@ import "./index.css";
 
 const store = createXRStore({
   hand: false, // Disable hand tracking - controllers only
+  controller: { left: false, right: false },
+  // optional: also disable hands/transient pointers if they pop in
+  transientPointer: false,
 });
 
+const sessionInit = {
+  requiredFeatures: [], // none
+  optionalFeatures: ["local-floor", "bounded-floor", "layers"], // omit 'hand-tracking'
+};
+
 function App() {
-  
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
       {/* VR Entry Button */}
-      <div style={{ 
-        position: 'absolute', 
-        top: '20px', 
-        left: '50%', 
-        transform: 'translateX(-50%)', 
-        zIndex: 1000,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: '10px 20px',
-        borderRadius: '8px',
-        color: 'white',
-        fontFamily: 'Inter, sans-serif'
-      }}>
-        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>VR Sword Fighting</h1>
-        <p style={{ margin: '0 0 15px 0', fontSize: '14px' }}>Squeeze controllers to spawn swords!</p>
+      <div
+        style={{
+          position: "absolute",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 1000,
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          padding: "10px 20px",
+          borderRadius: "8px",
+          color: "white",
+          fontFamily: "Inter, sans-serif",
+        }}
+      >
+        <h1 style={{ margin: "0 0 10px 0", fontSize: "24px" }}>
+          VR Sword Fighting
+        </h1>
+        <p style={{ margin: "0 0 15px 0", fontSize: "14px" }}>
+          Squeeze controllers to spawn swords!
+        </p>
         <VRButton store={store} />
       </div>
 
@@ -42,14 +62,14 @@ function App() {
           position: [0, 1.6, 3],
           fov: 75,
           near: 0.1,
-          far: 1000
+          far: 1000,
         }}
         gl={{
           antialias: true,
-          powerPreference: "high-performance"
+          powerPreference: "high-performance",
         }}
       >
-        <XR store={store} optionalFeatures={[]}>
+        <XR store={store} optionalFeatures={[]} sessionInit={sessionInit}>
           <Suspense fallback={null}>
             <VRGame />
           </Suspense>
