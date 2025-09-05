@@ -101,10 +101,10 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
       const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
 
-      // Position in top left
+      // Position in top right
       const debugPosition = cameraPosition.clone()
         .add(forward.multiplyScalar(1.5))
-        .add(right.multiplyScalar(-1.2))
+        .add(right.multiplyScalar(1.2))
         .add(up.multiplyScalar(0.8));
 
       groupRef.current.position.copy(debugPosition);
