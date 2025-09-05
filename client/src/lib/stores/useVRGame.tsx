@@ -137,10 +137,13 @@ export const useVRGame = create<VRGameState>()(
           score: score + 10
         });
 
-        // Play sword hit sound
-        import('../stores/useAudio').then(({ useAudio }) => {
-          useAudio.getState().playSwordHit();
-        });
+        // Play sword hit sound - direct access to avoid async issues
+        try {
+          const audioStore = require('../stores/useAudio').useAudio;
+          audioStore.getState().playSwordHit();
+        } catch (error) {
+          console.log('🔊 Sword hit sound error:', error);
+        }
 
         // Respawn individual target after 3 seconds
         setTimeout(() => {
@@ -172,18 +175,19 @@ export const useVRGame = create<VRGameState>()(
         });
 
         // Play sword hit sound for pillar destruction
-        import('../stores/useAudio').then(({ useAudio }) => {
-          useAudio.getState().playSwordHit();
-        });
+        try {
+          const audioStore = require('../stores/useAudio').useAudio;
+          audioStore.getState().playSwordHit();
+        } catch (error) {
+          console.log('🔊 Sword hit sound error:', error);
+        }
 
-        // Respawn pillar after 10 seconds
+        // Remove pillar completely after 2 seconds
         setTimeout(() => {
           set(state => ({
-            pillars: state.pillars.map(p => 
-              p.id === id ? { ...p, destroyed: false } : p
-            )
+            pillars: state.pillars.filter(p => p.id !== id)
           }));
-        }, 10000);
+        }, 2000);
       }
     },
 

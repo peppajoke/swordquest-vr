@@ -1414,9 +1414,12 @@ export default function VRControllers({
               console.log("⚔️ Bullet sliced with sword!");
 
               // Play sword hit sound for bullet slice
-              import("../lib/stores/useAudio").then(({ useAudio }) => {
-                useAudio.getState().playSwordHit();
-              });
+              try {
+                const audioStore = require('../lib/stores/useAudio').useAudio;
+                audioStore.getState().playSwordHit();
+              } catch (error) {
+                console.log('🔊 Sword hit sound error:', error);
+              }
 
               // Create slash effect
               addHitEffect([bulletPos.x, bulletPos.y, bulletPos.z]);
@@ -1486,9 +1489,12 @@ export default function VRControllers({
               );
 
               // Play sword hit sound
-              import("../lib/stores/useAudio").then(({ useAudio }) => {
-                useAudio.getState().playSwordHit();
-              });
+              try {
+                const audioStore = require('../lib/stores/useAudio').useAudio;
+                audioStore.getState().playSwordHit();
+              } catch (error) {
+                console.log('🔊 Sword hit sound error:', error);
+              }
 
               // Create hit effect
               addHitEffect([turretPos.x, turretPos.y, turretPos.z]);
@@ -1512,9 +1518,12 @@ export default function VRControllers({
               console.log("⚔️ Slashed Play Again box - respawning!");
 
               // Play sword hit sound
-              import("../lib/stores/useAudio").then(({ useAudio }) => {
-                useAudio.getState().playSwordHit();
-              });
+              try {
+                const audioStore = require('../lib/stores/useAudio').useAudio;
+                audioStore.getState().playSwordHit();
+              } catch (error) {
+                console.log('🔊 Sword hit sound error:', error);
+              }
 
               // Exit death room and respawn
               import("../lib/stores/useVRGame").then(({ useVRGame }) => {
