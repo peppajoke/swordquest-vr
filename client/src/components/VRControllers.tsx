@@ -37,8 +37,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const vrInitialized = useRef(false);
   const lastAButtonPressed = useRef(false);
   const lastXButtonPressed = useRef(false);
+  const lastYButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
+  const rightSwordRotationMode = useRef(0); // 0 = standard, 1 = side
   // Controller sync status tracking
   const controllerSyncStatus = useRef({
     scanning: true,
@@ -568,6 +570,37 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         }
       }
       lastBButtonPressed.current = bButtonPressed;
+      
+      // Y button on RIGHT physical hand toggles RIGHT sword rotation mode
+      const yButtonPressed = rightGamepad.buttons[4]?.pressed || false;
+      if (yButtonPressed && !lastYButtonPressed.current && rightSwordRef.current) {
+        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 2;
+        
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode: x15, y30, z15 (converted to radians)
+          rightSwordRef.current.rotation.set(
+            15 * Math.PI / 180,  // x15 degrees
+            30 * Math.PI / 180,  // y30 degrees  
+            15 * Math.PI / 180   // z15 degrees
+          );
+          console.log('🗡️ RIGHT sword set to STANDARD mode (x15°, y30°, z15°)');
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`🗡️ RIGHT sword: STANDARD mode`);
+          }
+        } else {
+          // Side mode: x90, y0, z-75 (converted to radians)
+          rightSwordRef.current.rotation.set(
+            90 * Math.PI / 180,   // x90 degrees
+            0 * Math.PI / 180,    // y0 degrees
+            -75 * Math.PI / 180   // z-75 degrees  
+          );
+          console.log('🗡️ RIGHT sword set to SIDE mode (x90°, y0°, z-75°)');
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`🗡️ RIGHT sword: SIDE mode`);
+          }
+        }
+      }
+      lastYButtonPressed.current = yButtonPressed;
     }
     
     // THUMBSTICK INPUT
@@ -675,12 +708,28 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
         const sword = createSword();
-        sword.rotation.set(0, 0, 0);
+        // Set initial rotation based on current mode
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode: x15, y30, z15
+          sword.rotation.set(
+            15 * Math.PI / 180,
+            30 * Math.PI / 180,
+            15 * Math.PI / 180
+          );
+        } else {
+          // Side mode: x90, y0, z-75
+          sword.rotation.set(
+            90 * Math.PI / 180,
+            0 * Math.PI / 180,
+            -75 * Math.PI / 180
+          );
+        }
         rightSwordRef.current = sword;
         rightControllerObj.add(sword);
         
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`🗡️ RIGHT sword spawned`);
+          (window as any).vrDebugLog(`🗡️ RIGHT sword spawned in ${rightSwordRotationMode.current === 0 ? 'STANDARD' : 'SIDE'} mode`);
+          (window as any).vrDebugLog(`Press Y button to toggle rotation modes`);
         }
       }
     } else {
