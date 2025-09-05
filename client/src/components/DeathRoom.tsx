@@ -7,7 +7,7 @@ import { useVRGame } from '../lib/stores/useVRGame';
 export function DeathRoom() {
   const playAgainBoxRef = useRef<THREE.Group>(null);
   const roomRef = useRef<THREE.Group>(null);
-  const { exitDeathRoom } = useVRGame();
+  const { exitDeathRoom, gameStarted, isDead } = useVRGame();
   const { scene } = useThree();
 
   useFrame(() => {
@@ -98,7 +98,7 @@ export function DeathRoom() {
           />
         </mesh>
         
-        {/* Text */}
+        {/* Text - changes based on game state */}
         <Text
           position={[0, 0, 0.2]}
           fontSize={0.3}
@@ -107,7 +107,7 @@ export function DeathRoom() {
           anchorY="middle"
           font="/fonts/Inter-Bold.woff"
         >
-          PLAY AGAIN
+          {!gameStarted ? "START GAME" : "PLAY AGAIN"}
         </Text>
         
         <Text
@@ -122,17 +122,30 @@ export function DeathRoom() {
         </Text>
       </group>
       
-      {/* Death message */}
+      {/* Title message - changes based on game state */}
       <Text
         position={[0, 3.5, -2]}
         fontSize={0.4}
-        color="#ff4444"
+        color={!gameStarted ? "#4499ff" : "#ff4444"}
         anchorX="center"
         anchorY="middle"
         font="/fonts/Inter-Bold.woff"
       >
-        YOU DIED
+        {!gameStarted ? "VR SWORD FIGHTER" : "YOU DIED"}
       </Text>
+      
+      {!gameStarted && (
+        <Text
+          position={[0, 3, -2]}
+          fontSize={0.2}
+          color="#88ccff"
+          anchorX="center"
+          anchorY="middle"
+          font="/fonts/Inter-Regular.woff"
+        >
+          Ready for combat?
+        </Text>
+      )}
     </group>
   );
 }

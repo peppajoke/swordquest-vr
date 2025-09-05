@@ -40,6 +40,7 @@ interface VRGameState {
   isDead: boolean;
   gameOver: boolean;
   inDeathRoom: boolean;
+  gameStarted: boolean;
   
   // Endless runner mechanics
   gameSpeed: number;
@@ -71,6 +72,7 @@ interface VRGameState {
   setGameOver: (gameOver: boolean) => void;
   enterDeathRoom: () => void;
   exitDeathRoom: () => void;
+  startGame: () => void;
 }
 
 const createInitialTargets = (): Target[] => [];
@@ -119,7 +121,8 @@ export const useVRGame = create<VRGameState>()(
     maxHealth: 100,
     isDead: false,
     gameOver: false,
-    inDeathRoom: false,
+    inDeathRoom: true,
+    gameStarted: false,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -143,7 +146,9 @@ export const useVRGame = create<VRGameState>()(
         gameStartTime: Date.now(),
         distanceTraveled: 0,
         lastSpawnZ: -10,
-        nextTargetId: 7
+        nextTargetId: 7,
+        inDeathRoom: true,
+        gameStarted: false
       });
     },
 
@@ -408,14 +413,33 @@ export const useVRGame = create<VRGameState>()(
     },
     
     exitDeathRoom: () => {
+      const { gameStarted } = get();
+      if (!gameStarted) {
+        // First time starting the game
+        get().startGame();
+      } else {
+        // Respawning after death
+        set({
+          inDeathRoom: false,
+          isDead: false,
+          health: 100,
+          gameOver: false,
+          score: 0
+        });
+        console.log('🔄 Exiting death room and respawning!');
+      }
+    },
+    
+    startGame: () => {
       set({
         inDeathRoom: false,
         isDead: false,
         health: 100,
         gameOver: false,
-        score: 0
+        score: 0,
+        gameStarted: true
       });
-      console.log('🔄 Exiting death room and respawning!');
+      console.log('🎮 Game Started! Welcome to VR Sword Fighter!');
     }
   }))
 );
