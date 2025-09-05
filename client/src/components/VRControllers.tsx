@@ -35,7 +35,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const vrInitialized = useRef(false);
   const lastAButtonPressed = useRef(false);
   const lastXButtonPressed = useRef(false);
-  const rightSwordRotation = useRef(0);
+  const rightSwordMode = useRef<'side' | 'forward'>('side'); // Two modes: side (default) or forward
   const leftSwordRotation = useRef(0);
 
   // Movement and fuel system refs
@@ -395,12 +395,21 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
       lastBButtonPressed.current = bButtonPressed;
       
-      // A button for right sword rotation (button index 4 is typically A button)
+      // A button for right sword mode toggle (button index 4 is typically A button)
       const aButtonPressed = gamepad1.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        rightSwordRotation.current += Math.PI / 2; // Rotate 90 degrees
-        rightSwordRef.current.rotation.z = rightSwordRotation.current;
-        console.log('🔄 Right sword rotated 90 degrees');
+        // Toggle between side and forward modes
+        rightSwordMode.current = rightSwordMode.current === 'side' ? 'forward' : 'side';
+        
+        if (rightSwordMode.current === 'forward') {
+          // Forward mode: point sword directly ahead
+          rightSwordRef.current.rotation.set(0, Math.PI, -Math.PI / 2); // Point forward, flipped
+          console.log('⚔️ Right sword: FORWARD mode');
+        } else {
+          // Side mode: default orientation (side slash)
+          rightSwordRef.current.rotation.set(0, Math.PI, 0); // Default side orientation, flipped
+          console.log('⚔️ Right sword: SIDE mode');
+        }
       }
       lastAButtonPressed.current = aButtonPressed;
     }
@@ -467,9 +476,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       // Show sword
       if (!rightSwordRef.current) {
         const sword = createSword();
-        // Flip right-hand sword horizontally
-        sword.rotation.y = Math.PI; // 180 degrees horizontal flip
-        sword.rotation.z = rightSwordRotation.current; // Apply any existing rotation
+        // Apply rotation based on current mode
+        if (rightSwordMode.current === 'forward') {
+          // Forward mode: point sword directly ahead
+          sword.rotation.set(0, Math.PI, -Math.PI / 2); // Point forward, flipped
+        } else {
+          // Side mode: default orientation (side slash)
+          sword.rotation.set(0, Math.PI, 0); // Default side orientation, flipped
+        }
         rightSwordRef.current = sword;
         controller1Obj.add(sword);
       }
