@@ -426,11 +426,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
     }
     
-    // Set up event listeners to detect handedness (only once)
+    // after creating controllers/grips (once)
     if (!controllersSetup.current) {
       controllersSetup.current = true;
-      
-      // Add rehide listeners for connected/disconnected
       [controller0Ref, controller1Ref, controllerGrip0Ref, controllerGrip1Ref].forEach(r => {
         r.current?.addEventListener('connected', rehide as any);
         r.current?.addEventListener('disconnected', rehide as any);
@@ -519,6 +517,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if ((controllerGrip0Ref.current || controllerGrip1Ref.current) && !hiddenXRDefaultsRef.current) {
       hideDefaultXRVisuals();
       hiddenXRDefaultsRef.current = true;
+    }
+    
+    // Continuous hiding to catch any dynamically added controller models
+    if (controller0Ref.current || controller1Ref.current || controllerGrip0Ref.current || controllerGrip1Ref.current) {
+      hideDefaultXRVisuals();
     }
 
     /*
