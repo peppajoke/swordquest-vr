@@ -303,11 +303,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     const inputSources = Array.from(session.inputSources);
     
-    // ⚠️ CRITICAL: DO NOT CHANGE THESE HAND ASSIGNMENTS! ⚠️
-    // These mappings are CORRECT and have been verified multiple times:
-    const controller0 = inputSources.find(input => input.handedness === 'right'); // Controller 0 = RIGHT hand ✓
-    const controller1 = inputSources.find(input => input.handedness === 'left');  // Controller 1 = LEFT hand ✓
-    // ⚠️ NEVER swap these - they work correctly as-is! ⚠️
+    // Fixed hand assignments - swapping to correct the mapping
+    const controller0 = inputSources.find(input => input.handedness === 'left');  // Controller 0 = LEFT hand
+    const controller1 = inputSources.find(input => input.handedness === 'right'); // Controller 1 = RIGHT hand
     
     // 🚨 TRIGGER ASSIGNMENT FIX: The triggers are intentionally CROSSED/SWAPPED! 🚨
     // This is INTENTIONAL and REQUIRED for correct hand mapping in VR!
@@ -360,12 +358,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const gamepad1 = controller1.gamepad;
     
     if (gamepad0 && gamepad0.buttons.length > 1) {
-      rightGrabbing.current = gamepad0.buttons[1].pressed; // Right hand (controller0) grip
-      rightTrigger.current = gamepad0.buttons[0].pressed;  // Right controller (0) fires RIGHT gun - FIXED!
+      leftGrabbing.current = gamepad0.buttons[1].pressed;  // Left hand (controller0) grip
+      leftTrigger.current = gamepad0.buttons[0].pressed;   // Left controller (0) fires LEFT gun
     }
     if (gamepad1 && gamepad1.buttons.length > 1) {
-      leftGrabbing.current = gamepad1.buttons[1].pressed; // Left hand (controller1) grip
-      leftTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires LEFT gun - FIXED!
+      rightGrabbing.current = gamepad1.buttons[1].pressed; // Right hand (controller1) grip
+      rightTrigger.current = gamepad1.buttons[0].pressed;  // Right controller (1) fires RIGHT gun
     }
     
     // Left stick movement (free locomotion)
@@ -692,17 +690,17 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     // Gun firing logic - always available
     
-    // RIGHT GUN FIRING (controller0 = RIGHT hand)
-    if (rightTrigger.current && !lastRightTrigger.current) {
-      fireInstantBullet(controller0Obj, 'right', scene);
-    }
-    lastRightTrigger.current = rightTrigger.current;
-    
-    // LEFT GUN FIRING (controller1 = LEFT hand)
+    // LEFT GUN FIRING (controller0 = LEFT hand)
     if (leftTrigger.current && !lastLeftTrigger.current) {
-      fireInstantBullet(controller1Obj, 'left', scene);
+      fireInstantBullet(controller0Obj, 'left', scene);
     }
     lastLeftTrigger.current = leftTrigger.current;
+    
+    // RIGHT GUN FIRING (controller1 = RIGHT hand)
+    if (rightTrigger.current && !lastRightTrigger.current) {
+      fireInstantBullet(controller1Obj, 'right', scene);
+    }
+    lastRightTrigger.current = rightTrigger.current;
     
     // No bullet movement needed - using instant hit system
     
