@@ -685,17 +685,21 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
     }
 
-    // Right stick camera rotation
+    // Right stick smooth turning (rotate world instead of camera in VR)
     if (Math.abs(rightStickX) > 0.1 || Math.abs(rightStickY) > 0.1) {
-      // Apply smooth camera rotation based on right stick input
-      const rotationSpeed = 0.02;
-      
-      // Horizontal rotation (yaw)
-      camera.rotation.y -= rightStickX * rotationSpeed;
-      
-      // Vertical rotation (pitch) with limits to prevent flipping
-      camera.rotation.x -= rightStickY * rotationSpeed;
-      camera.rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, camera.rotation.x)); // Limit to ±60 degrees
+      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+      if (worldGroup) {
+        const turnSpeed = 2.0; // degrees per frame
+        
+        // Horizontal turning (yaw) - rotate world around Y axis
+        if (Math.abs(rightStickX) > 0.1) {
+          const yawRotation = rightStickX * turnSpeed * (Math.PI / 180); // Convert to radians
+          worldGroup.rotateY(-yawRotation); // Negative for intuitive controls
+          console.log(`🔄 Smooth turn: ${(rightStickX * turnSpeed).toFixed(1)}°`);
+        }
+        
+        // Note: No vertical rotation in VR as it causes motion sickness
+      }
     }
 
     // Left stick free movement (slower speed)
