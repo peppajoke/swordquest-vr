@@ -637,10 +637,15 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
           rightSwordRef.current.rotation.set(xRotation, yRotation, zRotation);
         }
         
-        // Apply to left sword if it exists - try different mirroring approaches
+        // Apply to left sword if it exists - mirror Z rotation with standard mode fix
         if (leftSwordRef.current) {
-          // Try mirroring Z rotation (most common for left/right mirroring)
-          leftSwordRef.current.rotation.set(xRotation, yRotation, -zRotation);
+          if (rightSwordRotationMode.current === 0) {
+            // Standard mode: flip Z and add 180° to point up instead of down
+            leftSwordRef.current.rotation.set(xRotation, yRotation, -zRotation + Math.PI);
+          } else {
+            // Side mode: just mirror Z (this is already perfect)
+            leftSwordRef.current.rotation.set(xRotation, yRotation, -zRotation);
+          }
         }
         
         console.log(`🗡️ BOTH swords ${modeName} mode (config ${configNumber}): X${xIndex * 45}° Y${yIndex * 45}° Z${zIndex * 45}°`);
@@ -698,13 +703,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         const sword = createSword();
         sword.scale.x = -1; // Mirror for left hand dual-wielding
         
-        // Set initial rotation to standard mode (config 23) - mirrored Z
+        // Set initial rotation to standard mode (config 23) - mirrored Z + 180° fix
         const zIndex = 22 % 8;  // Config 23 = index 22
         const yIndex = Math.floor(22 / 8) % 8;
         const xIndex = Math.floor(22 / 64) % 8;
         const xRotation = (xIndex * 45) * Math.PI / 180;
         const yRotation = (yIndex * 45) * Math.PI / 180;
-        const zRotation = -(zIndex * 45) * Math.PI / 180; // Mirror Z rotation
+        const zRotation = -(zIndex * 45) * Math.PI / 180 + Math.PI; // Mirror Z + 180° to point up
         sword.rotation.set(xRotation, yRotation, zRotation);
         
         leftSwordRef.current = sword;
