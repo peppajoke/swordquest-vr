@@ -6,15 +6,33 @@ interface DesktopSwordVisualProps {
   isSwinging: boolean;
   hand: 'left' | 'right';
   onSwingComplete: () => void;
+  isVisible?: boolean;
 }
 
-export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete }: DesktopSwordVisualProps) {
+export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, isVisible = true }: DesktopSwordVisualProps) {
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const swingProgress = useRef(0);
+  const randomDirection = useRef(new THREE.Vector3());
+  const baseRotation = useRef(new THREE.Euler());
+  
+  // Initialize random swing direction when swinging starts
+  const initializeRandomSwing = () => {
+    randomDirection.current.set(
+      (Math.random() - 0.5) * 2, // Random X direction
+      (Math.random() - 0.5) * 2, // Random Y direction  
+      (Math.random() - 0.5) * 2  // Random Z direction
+    ).normalize();
+    
+    baseRotation.current.set(
+      Math.random() * Math.PI * 0.5, // Random base X rotation
+      Math.random() * Math.PI * 0.5, // Random base Y rotation
+      Math.random() * Math.PI * 0.5  // Random base Z rotation
+    );
+  };
 
   useFrame((state, deltaTime) => {
-    if (!groupRef.current || !isSwinging) return;
+    if (!groupRef.current) return;
 
     // Get camera position and direction
     const cameraPos = camera.position.clone();
@@ -32,30 +50,41 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete }
     
     groupRef.current.position.copy(swordPos);
 
-    // Animate swing
-    swingProgress.current += deltaTime * 8; // Swing speed
-    
-    if (swingProgress.current >= 1) {
+    if (isSwinging) {
+      // Initialize random direction if starting new swing
+      if (swingProgress.current === 0) {
+        initializeRandomSwing();
+      }
+      
+      // Animate swing with random directions
+      swingProgress.current += deltaTime * 6; // Continuous swing speed
+      
+      if (swingProgress.current >= 1) {
+        swingProgress.current = 0;
+        // Generate new random direction for next swing cycle
+        initializeRandomSwing();
+      }
+
+      // Apply random rotational swinging in all directions
+      const swingIntensity = Math.sin(swingProgress.current * Math.PI) * 0.8;
+      groupRef.current.rotation.x = baseRotation.current.x + randomDirection.current.x * swingIntensity;
+      groupRef.current.rotation.y = baseRotation.current.y + randomDirection.current.y * swingIntensity;
+      groupRef.current.rotation.z = baseRotation.current.z + randomDirection.current.z * swingIntensity;
+      
+      // Scale effect during swing
+      const scale = 1 + Math.sin(swingProgress.current * Math.PI) * 0.3;
+      groupRef.current.scale.setScalar(scale);
+    } else {
+      // Reset to idle position when not swinging
       swingProgress.current = 0;
-      onSwingComplete();
-      return;
+      groupRef.current.rotation.x = -Math.PI / 8;
+      groupRef.current.rotation.y = hand === 'left' ? Math.PI / 6 : -Math.PI / 6;
+      groupRef.current.rotation.z = 0;
+      groupRef.current.scale.setScalar(1);
     }
-
-    // Calculate swing arc (from right to left for right hand, left to right for left hand)
-    const swingAngle = hand === 'right' 
-      ? Math.PI / 4 - (swingProgress.current * Math.PI / 2) // Right to left
-      : -Math.PI / 4 + (swingProgress.current * Math.PI / 2); // Left to right
-
-    // Apply rotation
-    groupRef.current.rotation.y = swingAngle;
-    groupRef.current.rotation.x = -Math.PI / 6; // Slight downward angle
-    
-    // Scale effect during swing
-    const scale = 1 + Math.sin(swingProgress.current * Math.PI) * 0.2;
-    groupRef.current.scale.setScalar(scale);
   });
 
-  if (!isSwinging) return null;
+  if (!isVisible) return null;
 
   return (
     <group ref={groupRef}>

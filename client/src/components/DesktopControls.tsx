@@ -52,6 +52,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   const [swingingHand, setSwingingHand] = useState<'left' | 'right'>('right');
   const lastSwordSwing = useRef(0);
   const swingCooldown = 500; // 0.5 seconds between swings
+  const [rightMouseDown, setRightMouseDown] = useState(false);
+  const lastSwordDamage = useRef(0);
+  const swordDamageCooldown = 200; // Damage every 0.2 seconds while swinging
   
   // Gun shooting state
   const lastShot = useRef(0);
@@ -127,13 +130,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     console.log(`🔫 Desktop gun fired! Ammo: ${ammo - 1}/${maxAmmo}${hitSomething ? ' - HIT!' : ''}`);
   };
   
-  // Desktop sword swing function
-  const performDesktopSwordSwing = () => {
-    // Start visual swing animation
-    setIsSwinging(true);
-    setSwingingHand(currentSwordHand);
-    
-    // Get camera position and direction for sword swing
+  // Continuous sword damage detection
+  const checkSwordDamage = () => {
+    // Get camera position and direction for sword swing area
     const cameraPos = camera.position.clone();
     const cameraDir = new THREE.Vector3(0, 0, -1);
     cameraDir.applyQuaternion(camera.quaternion);
@@ -141,31 +140,30 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     // Sword swing area in front of player
     const swingPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(1.2));
     
-    // Create sword swing effect
-    addHitEffect([swingPos.x, swingPos.y, swingPos.z]);
-    
-    // Play sword sound
-    playSwordHit();
-    
     // Check for enemies in swing range
+    let hitAnyEnemy = false;
     scene.traverse((child) => {
       if (child.userData.isEnemy && !child.userData.isDead) {
         const enemyPos = new THREE.Vector3();
         child.getWorldPosition(enemyPos);
         
         const distance = swingPos.distanceTo(enemyPos);
-        if (distance < 1.5) {
-          const swordDamage = 45;
+        if (distance < 1.8) { // Slightly larger range for continuous swinging
+          const swordDamage = 25; // Lower damage for continuous hits
           if (child.userData.takeDamage) {
             child.userData.takeDamage(swordDamage);
           }
           console.log(`⚔️ Desktop ${currentSwordHand} sword hit ${child.userData.enemyType}! ${swordDamage} damage`);
           addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
+          hitAnyEnemy = true;
         }
       }
     });
     
-    console.log(`⚔️ Desktop ${currentSwordHand} sword swing!`);
+    // Play sound if we hit something
+    if (hitAnyEnemy) {
+      playSwordHit();
+    }
   };
   
   useEffect(() => {
@@ -253,14 +251,21 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           fireDesktopBullet();
           lastShot.current = currentTime;
         }
-      } else if (event.button === 2) { // Right click - sword swing
-        if (currentTime > lastSwordSwing.current + swingCooldown) {
-          performDesktopSwordSwing();
-          lastSwordSwing.current = currentTime;
-          
-          // Alternate between swords
-          setCurrentSwordHand(currentSwordHand === 'left' ? 'right' : 'left');
+      } else if (event.button === 2) { // Right click - start continuous sword swinging
+        if (!rightMouseDown) {
+          setRightMouseDown(true);
+          setIsSwinging(true);
+          setSwingingHand(currentSwordHand);
+          console.log('⚔️ Desktop sword swinging started!');
         }
+      }
+    };
+    
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 2) { // Right click release - stop sword swinging
+        setRightMouseDown(false);
+        setIsSwinging(false);
+        console.log('⚔️ Desktop sword swinging stopped!');
       }
     };
     
@@ -283,6 +288,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     document.addEventListener('click', handleClick);
     document.addEventListener('contextmenu', handleContextMenu);
@@ -292,6 +298,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       document.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('contextmenu', handleContextMenu);
@@ -390,18 +397,26 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     
     // Ceiling check
     camera.position.y = Math.min(18, camera.position.y);
+    
+    // Continuous sword damage detection while swinging
+    if (isSwinging && rightMouseDown) {
+      const currentTime = Date.now();
+      if (currentTime > lastSwordDamage.current + swordDamageCooldown) {
+        checkSwordDamage();
+        lastSwordDamage.current = currentTime;
+      }
+    }
   });
   
   return (
     <>
-      {/* Import and render sword visual */}
-      {isSwinging && (
-        <DesktopSwordVisual 
-          isSwinging={isSwinging}
-          hand={swingingHand}
-          onSwingComplete={() => setIsSwinging(false)}
-        />
-      )}
+      {/* Always visible desktop sword - swings when right-click held */}
+      <DesktopSwordVisual 
+        isSwinging={isSwinging}
+        hand={swingingHand}
+        onSwingComplete={() => {}} // No longer needed since we control via mouse
+        isVisible={true}
+      />
     </>
   );
 }
