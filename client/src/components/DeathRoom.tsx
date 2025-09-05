@@ -43,51 +43,17 @@ export function DeathRoom() {
 
   return (
     <group ref={roomRef}>
-      {/* Death Room Environment */}
-      {/* Dark room walls */}
-      <mesh position={[0, 2, -3]} receiveShadow>
-        <boxGeometry args={[8, 4, 0.1]} />
-        <meshLambertMaterial color="#1a1a1a" />
-      </mesh>
-      <mesh position={[-4, 2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <boxGeometry args={[6, 4, 0.1]} />
-        <meshLambertMaterial color="#1a1a1a" />
-      </mesh>
-      <mesh position={[4, 2, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <boxGeometry args={[6, 4, 0.1]} />
-        <meshLambertMaterial color="#1a1a1a" />
+      {/* Simple floor */}
+      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 20]} />
+        <meshLambertMaterial color="#444444" />
       </mesh>
       
-      {/* Floor */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[8, 6]} />
-        <meshLambertMaterial color="#333333" />
-      </mesh>
-      
-      {/* Ceiling */}
-      <mesh position={[0, 4, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[8, 6]} />
-        <meshLambertMaterial color="#222222" />
-      </mesh>
-      
-      {/* Bright lighting for visibility */}
-      <pointLight 
-        position={[0, 3, 0]} 
-        intensity={3} 
-        color="#ffffff" 
-        distance={15}
-      />
-      <pointLight 
-        position={[-2, 2, -1]} 
+      {/* Strong lighting */}
+      <directionalLight 
+        position={[5, 10, 5]} 
         intensity={2} 
-        color="#4499ff" 
-        distance={10}
-      />
-      <pointLight 
-        position={[2, 2, -1]} 
-        intensity={2} 
-        color="#ff6600" 
-        distance={10}
+        color="#ffffff"
       />
       
       {/* Play Again Box - Large slashable target */}
