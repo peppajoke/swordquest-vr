@@ -204,6 +204,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     // Invert the direction - VR controllers point backwards by default
     controllerDir.negate();
     
+    // Adjust shooting direction 45 degrees down to compensate for gun being rotated up
+    const downwardAdjustment = new THREE.Vector3(0, -Math.sin(Math.PI / 4), Math.cos(Math.PI / 4));
+    controllerDir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4); // Rotate 45 degrees down around X-axis
+    
     // Adjust gun position to barrel tip
     controllerPos.add(controllerDir.clone().multiplyScalar(0.25));
     
@@ -285,8 +289,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     body.position.y = 0.02;
     gun.add(body);
     
-    // Rotate entire gun forward (90 degrees downward + 180 degrees forward)
-    gun.rotation.x = Math.PI / 2 + Math.PI; // 90 degrees downward + 180 degrees forward
+    // Rotate entire gun forward and up 45 degrees (90 degrees downward + 180 degrees forward - 45 degrees up)
+    gun.rotation.x = Math.PI / 2 + Math.PI - Math.PI / 4; // 90 degrees downward + 180 degrees forward - 45 degrees up
     
     return gun;
   }
