@@ -548,6 +548,18 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       
       // X button on LEFT physical hand toggles LEFT sword rotation mode
       const xButtonPressed = leftGamepad.buttons[3]?.pressed || false;
+      
+      // Debug X button
+      if (xButtonPressed && !lastXButtonPressed.current) {
+        console.log('🎮 LEFT X button pressed!');
+        if (!leftSwordRef.current) {
+          console.log('❌ No left sword spawned - grip to spawn sword first');
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`❌ Spawn left sword first (grip button)`);
+          }
+        }
+      }
+      
       if (xButtonPressed && !lastXButtonPressed.current && leftSwordRef.current) {
         // Toggle between standard mode (config 23) and side mode (config 71) - horizontally flipped
         leftSwordRotationMode.current = (leftSwordRotationMode.current + 1) % 2;
