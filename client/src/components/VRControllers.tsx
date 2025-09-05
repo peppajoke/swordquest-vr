@@ -524,29 +524,52 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         
         let description = "RESET - Neutral position";
         
+        /*
+         * USER CALIBRATION RESULTS (arm extended forward):
+         * 
+         * X rotation (pitch - up/down tilt):
+         * - X+45° = tip points at user's face (DOWN from user perspective)
+         * - X-45° = tip points directly up
+         * 
+         * Y rotation (yaw - left/right twist):  
+         * - Y+45° = blade twists left, tip points above head to the left
+         * - Y+180° = blade flips completely, tip points directly overhead
+         * 
+         * Z rotation (roll - clockwise/counter-clockwise):
+         * - Z+45° = tip points above head (rolls the blade)
+         * 
+         * TRANSLATION GUIDE:
+         * - "tip up" = negative X rotation  
+         * - "tip down/toward face" = positive X rotation
+         * - "twist left" = positive Y rotation
+         * - "twist right" = negative Y rotation  
+         * - "roll clockwise" = positive Z rotation
+         * - "roll counter-clockwise" = negative Z rotation
+         */
+        
         switch (rotationTestStep.current) {
           case 0:
             // Neutral - already reset above
             break;
           case 1:
             rightSwordRef.current.rotation.x = Math.PI / 4;
-            description = "X+45° - I think this points the tip DOWN";
+            description = "X+45° - tip points at your FACE (down from your view)";
             break;
           case 2:
             rightSwordRef.current.rotation.x = -Math.PI / 4;
-            description = "X-45° - I think this points the tip UP";
+            description = "X-45° - tip points DIRECTLY UP";
             break;
           case 3:
             rightSwordRef.current.rotation.y = Math.PI / 4;
-            description = "Y+45° - I think this twists the blade to the RIGHT";
+            description = "Y+45° - blade twists LEFT, tip above head to left";
             break;
           case 4:
             rightSwordRef.current.rotation.z = Math.PI / 4;
-            description = "Z+45° - I think this rolls the blade CLOCKWISE";
+            description = "Z+45° - blade rolls, tip points above head";
             break;
           case 5:
             rightSwordRef.current.rotation.y = Math.PI;
-            description = "Y+180° - I think this FLIPS the blade around";
+            description = "Y+180° - blade flips completely, tip DIRECTLY OVERHEAD";
             break;
         }
         
