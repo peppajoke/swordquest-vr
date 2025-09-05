@@ -32,6 +32,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   const jetpackEnabled = useRef(true);
   const lastBButtonPressed = useRef(false);
   const vrInitialized = useRef(false);
+  const lastAButtonPressed = useRef(false);
+  const lastXButtonPressed = useRef(false);
+  const rightSwordRotation = useRef(0);
+  const leftSwordRotation = useRef(0);
 
   // Movement and fuel system refs
   const velocity = useRef(new THREE.Vector3());
@@ -365,6 +369,15 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     if (gamepad0 && gamepad0.buttons.length > 1) {
       leftGrabbing.current = gamepad0.buttons[1].pressed;  // Left hand (controller0) grip
       leftTrigger.current = gamepad0.buttons[0].pressed;   // Left controller (0) fires LEFT gun
+      
+      // X button for left sword rotation (button index 3 is typically X button)
+      const xButtonPressed = gamepad0.buttons[3]?.pressed || false;
+      if (xButtonPressed && !lastXButtonPressed.current && leftSwordRef.current) {
+        leftSwordRotation.current += Math.PI / 2; // Rotate 90 degrees
+        leftSwordRef.current.rotation.z = leftSwordRotation.current;
+        console.log('🔄 Left sword rotated 90 degrees');
+      }
+      lastXButtonPressed.current = xButtonPressed;
     }
     if (gamepad1 && gamepad1.buttons.length > 1) {
       rightGrabbing.current = gamepad1.buttons[1].pressed; // Right hand (controller1) grip
@@ -377,6 +390,15 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         console.log(jetpackEnabled.current ? '🚀 Jetpack ENABLED' : '🚫 Jetpack DISABLED');
       }
       lastBButtonPressed.current = bButtonPressed;
+      
+      // A button for right sword rotation (button index 4 is typically A button)
+      const aButtonPressed = gamepad1.buttons[4]?.pressed || false;
+      if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
+        rightSwordRotation.current += Math.PI / 2; // Rotate 90 degrees
+        rightSwordRef.current.rotation.z = rightSwordRotation.current;
+        console.log('🔄 Right sword rotated 90 degrees');
+      }
+      lastAButtonPressed.current = aButtonPressed;
     }
     
     // Left stick movement (free locomotion) - LEFT CONTROLLER (gamepad0)
@@ -416,6 +438,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         const sword = createSword();
         // Flip left-hand sword horizontally
         sword.scale.x = -1; // Flip horizontally using scale instead of rotation
+        sword.rotation.z = leftSwordRotation.current; // Apply any existing rotation
         leftSwordRef.current = sword;
         controller0Obj.add(sword);
       }
@@ -442,6 +465,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         const sword = createSword();
         // Flip right-hand sword horizontally
         sword.rotation.y = Math.PI; // 180 degrees horizontal flip
+        sword.rotation.z = rightSwordRotation.current; // Apply any existing rotation
         rightSwordRef.current = sword;
         controller1Obj.add(sword);
       }
