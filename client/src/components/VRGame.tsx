@@ -17,17 +17,50 @@ import { useAudio } from '../lib/stores/useAudio';
 export default function VRGame() {
   const { scene } = useThree();
   const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
-  // Audio setup is handled by App.tsx preloading
+  const { 
+    setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
+    setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
+    setBoostSound, setGunAmmoSound 
+  } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
-  // Loading is now handled by App.tsx
 
   useEffect(() => {
-    // Audio is preloaded by App.tsx before this component renders
+    // Initialize audio store with sound files
+    const loadAudio = async () => {
+      try {
+        const hitSound = new Audio('/sounds/hit.mp3');
+        const successSound = new Audio('/sounds/success.mp3');
+        const swordHitSound = new Audio('/sounds/sword_hit.mp3');
+        const gunShootSound = new Audio('/sounds/gun_shoot.mp3');
+        const gunHitSound = new Audio('/sounds/gun_hit.mp3');
+        const playerDamageSound = new Audio('/sounds/player_damage.mp3');
+        const accelerationSound = new Audio('/sounds/acceleration.mp3');
+        const boostSound = new Audio('/sounds/boost.mp3');
+        const gunAmmoSound = new Audio('/sounds/gun_ammo.mp3');
+        
+        // Set all sounds in the store
+        setHitSound(hitSound);
+        setSuccessSound(successSound);
+        setSwordHitSound(swordHitSound);
+        setGunShootSound(gunShootSound);
+        setGunHitSound(gunHitSound);
+        setPlayerDamageSound(playerDamageSound);
+        setAccelerationSound(accelerationSound);
+        setBoostSound(boostSound);
+        setGunAmmoSound(gunAmmoSound);
+        
+        console.log('🔊 Audio system initialized!');
+      } catch (error) {
+        console.error('❌ Failed to load audio:', error);
+      }
+    };
+
+    loadAudio();
     initializeGame();
     console.log('🎮 VRGame fully loaded and ready!');
-  }, [initializeGame]);
+  }, [initializeGame, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
 
   // Game is now fully loaded when this component renders
   return (
