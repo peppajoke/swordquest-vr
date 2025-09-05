@@ -1,71 +1,14 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense } from "react";
 import { VRButton, XR, createXRStore } from "@react-three/xr";
 import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
-import { LoadingScreen } from "./components/LoadingScreen";
 import "@fontsource/inter";
 import "./index.css";
 
 const store = createXRStore();
 
 function App() {
-  const [isGameLoaded, setIsGameLoaded] = useState(false);
-  const [gameInstance, setGameInstance] = useState<JSX.Element | null>(null);
-  
-  // Preload game systems
-  const handleLoadingComplete = async () => {
-    // Preload all audio files
-    const audioPromises = [
-      new Promise(resolve => {
-        const audio = new Audio('/sounds/hit.mp3');
-        audio.addEventListener('canplaythrough', resolve, { once: true });
-        audio.addEventListener('error', resolve, { once: true });
-        audio.load();
-      }),
-      new Promise(resolve => {
-        const audio = new Audio('/sounds/success.mp3');
-        audio.addEventListener('canplaythrough', resolve, { once: true });
-        audio.addEventListener('error', resolve, { once: true });
-        audio.load();
-      }),
-      new Promise(resolve => {
-        const audio = new Audio('/sounds/sword_hit.mp3');
-        audio.addEventListener('canplaythrough', resolve, { once: true });
-        audio.addEventListener('error', resolve, { once: true });
-        audio.load();
-      }),
-      new Promise(resolve => {
-        const audio = new Audio('/sounds/gun_shoot.mp3');
-        audio.addEventListener('canplaythrough', resolve, { once: true });
-        audio.addEventListener('error', resolve, { once: true });
-        audio.load();
-      }),
-      new Promise(resolve => {
-        const audio = new Audio('/sounds/gun_hit.mp3');
-        audio.addEventListener('canplaythrough', resolve, { once: true });
-        audio.addEventListener('error', resolve, { once: true });
-        audio.load();
-      })
-    ];
-    
-    // Wait for all audio to preload
-    await Promise.allSettled(audioPromises);
-    
-    // Create the game instance
-    const game = <VRGame />;
-    setGameInstance(game);
-    
-    // Shorter delay - VR controllers will initialize themselves properly
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setIsGameLoaded(true);
-  };
-  
-  // Show loading screen first, then load game
-  if (!isGameLoaded) {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
-  }
   
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -106,7 +49,7 @@ function App() {
       >
         <XR store={store}>
           <Suspense fallback={null}>
-            {gameInstance}
+            <VRGame />
           </Suspense>
         </XR>
       </Canvas>
