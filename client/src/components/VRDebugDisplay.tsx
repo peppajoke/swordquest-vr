@@ -32,7 +32,8 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
     errorLogs: [] // Initialize errorLogs
   });
 
-  const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true';
+  // Check for debug mode from environment variables
+  const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true' || import.meta.env.DEBUG_MODE === 'true';
 
   useEffect(() => {
     // Create global debug system for Quest 3
@@ -45,12 +46,21 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
       };
 
       // Add a global error handler to capture uncaught exceptions
+      const originalErrorHandler = (window as any).onerror;
       (window as any).onerror = (message: string, source: string, lineno: number, colno: number, error: Error) => {
-        if (debugMode) {
-          setDebugData(prev => ({
-            ...prev,
-            errorLogs: [...prev.errorLogs.slice(-3), `${new Date().toLocaleTimeString()}: ${message} (at ${source}:${lineno}:${colno})`]
-          }));
+        try {
+          if (debugMode) {
+            setDebugData(prev => ({
+              ...prev,
+              errorLogs: [...prev.errorLogs.slice(-3), `${new Date().toLocaleTimeString()}: ${message} (at ${source}:${lineno}:${colno})`]
+            }));
+          }
+        } catch (e) {
+          console.error('Debug display error:', e);
+        }
+        // Call original handler if it existed
+        if (originalErrorHandler) {
+          return originalErrorHandler(message, source, lineno, colno, error);
         }
         // Return false to prevent the default browser error handling
         return false;
@@ -66,8 +76,12 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
 
       return () => {
         clearInterval(interval);
-        // Clean up global error handler
-        (window as any).onerror = null;
+        // Restore original error handler instead of setting to null
+        if (originalErrorHandler) {
+          (window as any).onerror = originalErrorHandler;
+        } else {
+          (window as any).onerror = null;
+        }
       };
     }
   }, [debugMode]); // Re-run effect if debugMode changes
