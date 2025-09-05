@@ -558,21 +558,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
       rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
-      // A button captures current sword orientation
+      // A button captures current controller orientation  
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
-      if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        const rotation = rightSwordRef.current.rotation;
+      if (aButtonPressed && !lastAButtonPressed.current && rightControllerObj) {
+        // Get the world rotation of the controller (which represents where you're pointing)
+        const controllerRotation = rightControllerObj.rotation;
         const rotationData = {
-          x: Number(rotation.x.toFixed(3)),
-          y: Number(rotation.y.toFixed(3)),
-          z: Number(rotation.z.toFixed(3))
+          x: Number(controllerRotation.x.toFixed(3)),
+          y: Number(controllerRotation.y.toFixed(3)),
+          z: Number(controllerRotation.z.toFixed(3))
         };
         
-        console.log('🗡️ CAPTURED SWORD ROTATION:', rotationData);
+        console.log('🎮 CAPTURED CONTROLLER ROTATION:', rotationData);
         
         // Display on VR overlay
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`📐 CAPTURED ROTATION:`);
+          (window as any).vrDebugLog(`📐 CAPTURED CONTROLLER ROTATION:`);
           (window as any).vrDebugLog(`X: ${rotationData.x} (${(rotationData.x * 180 / Math.PI).toFixed(1)}°)`);
           (window as any).vrDebugLog(`Y: ${rotationData.y} (${(rotationData.y * 180 / Math.PI).toFixed(1)}°)`);
           (window as any).vrDebugLog(`Z: ${rotationData.z} (${(rotationData.z * 180 / Math.PI).toFixed(1)}°)`);
