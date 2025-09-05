@@ -39,7 +39,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const lastXButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
-  const rightSwordMode = useRef<'side' | 'standard'>('side'); // Track sword mode for right hand
+  const rotationTestStep = useRef(0); // Track which rotation test we're on
   
   /*
    * ========================================================================
@@ -504,24 +504,51 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
       rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
-      // A button on RIGHT physical hand toggles between side/standard modes (button index 4 on right controller)
+      // A button on RIGHT physical hand cycles through rotation tests (button index 4 on right controller)
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        // Toggle between side and standard modes
-        if (rightSwordMode.current === 'side') {
-          rightSwordMode.current = 'standard';
-          // Standard mode: 45 degrees upward from straight down
-          rightSwordRef.current.rotation.y = 0; // Reset Y rotation
-          rightSwordRef.current.rotation.z = Math.PI / 2; // Base rotation
-          rightSwordRef.current.rotation.x = -Math.PI / 4; // 45 degrees upward around X axis
-          console.log('🔄 RIGHT hand sword: STANDARD mode (45 degrees upward)');
-        } else {
-          rightSwordMode.current = 'side';
-          // Side mode: flipped 180 degrees horizontally
-          rightSwordRef.current.rotation.y = 0; // Reset Y rotation  
-          rightSwordRef.current.rotation.z = Math.PI / 2 + Math.PI; // Flipped 180 degrees
-          console.log('🔄 RIGHT hand sword: SIDE mode (flipped 180 degrees)');
+        rotationTestStep.current = (rotationTestStep.current + 1) % 6;
+        
+        // Reset to base position first
+        rightSwordRef.current.rotation.x = 0;
+        rightSwordRef.current.rotation.y = 0;
+        rightSwordRef.current.rotation.z = 0;
+        
+        let description = "RESET - Neutral position";
+        
+        switch (rotationTestStep.current) {
+          case 0:
+            // Neutral - already reset above
+            break;
+          case 1:
+            rightSwordRef.current.rotation.x = Math.PI / 4;
+            description = "X+45° - I think this points the tip DOWN";
+            break;
+          case 2:
+            rightSwordRef.current.rotation.x = -Math.PI / 4;
+            description = "X-45° - I think this points the tip UP";
+            break;
+          case 3:
+            rightSwordRef.current.rotation.y = Math.PI / 4;
+            description = "Y+45° - I think this twists the blade to the RIGHT";
+            break;
+          case 4:
+            rightSwordRef.current.rotation.z = Math.PI / 4;
+            description = "Z+45° - I think this rolls the blade CLOCKWISE";
+            break;
+          case 5:
+            rightSwordRef.current.rotation.y = Math.PI;
+            description = "Y+180° - I think this FLIPS the blade around";
+            break;
         }
+        
+        // Log to VR debug display
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`STEP ${rotationTestStep.current + 1}/6: ${description}`);
+          (window as any).vrDebugLog(`Tell me: What do you actually see?`);
+        }
+        
+        console.log(`🔄 ROTATION TEST ${rotationTestStep.current + 1}/6: ${description}`);
       }
       lastAButtonPressed.current = aButtonPressed;
       
