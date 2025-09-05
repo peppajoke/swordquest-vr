@@ -29,6 +29,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   const rightTrigger = useRef(false);
   const lastLeftTrigger = useRef(false);
   const lastRightTrigger = useRef(false);
+  const jetpackEnabled = useRef(true);
+  const lastBButtonPressed = useRef(false);
 
   // Movement and fuel system refs
   const velocity = useRef(new THREE.Vector3());
@@ -364,6 +366,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     if (gamepad1 && gamepad1.buttons.length > 1) {
       rightGrabbing.current = gamepad1.buttons[1].pressed; // Right hand (controller1) grip
       rightTrigger.current = gamepad1.buttons[0].pressed;  // Right controller (1) fires RIGHT gun
+      
+      // B button toggle for jetpack (button index 5 is typically B button)
+      const bButtonPressed = gamepad1.buttons[5]?.pressed || false;
+      if (bButtonPressed && !lastBButtonPressed.current) {
+        jetpackEnabled.current = !jetpackEnabled.current;
+        console.log(jetpackEnabled.current ? '🚀 Jetpack ENABLED' : '🚫 Jetpack DISABLED');
+      }
+      lastBButtonPressed.current = bButtonPressed;
     }
     
     // Left stick movement (free locomotion)
@@ -480,8 +490,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       handDirection.normalize();
     }
     
-    // Burst speed timing system
-    const currentlyAccelerating = swordsHeld > 0 && fuel.current > 0;
+    // Burst speed timing system (only if jetpack is enabled)
+    const currentlyAccelerating = swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current;
     
     if (currentlyAccelerating && !wasAcceleratingPreviously.current) {
       const stopDuration = currentTime - lastStoppedAccelerating.current;
@@ -528,8 +538,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
     }
     
-    // Update fuel system
-    if (swordsHeld > 0 && fuel.current > 0) {
+    // Update fuel system (only if jetpack enabled)
+    if (swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current) {
       fuel.current -= fuelDrainRate.current * deltaTime;
       if (fuel.current <= 0) {
         fuel.current = 0;
@@ -585,7 +595,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     // Movement system
     const wasAccelerating = isAccelerating.current;
-    isAccelerating.current = swordsHeld > 0 && fuel.current > 0;
+    isAccelerating.current = swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current;
     
     if (isAccelerating.current) {
       // Start acceleration sound if not already playing
