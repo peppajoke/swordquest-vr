@@ -41,6 +41,7 @@ interface VRGameState {
   gameOver: boolean;
   inDeathRoom: boolean;
   gameStarted: boolean;
+  gameResetKey: number;
   
   // Endless runner mechanics
   gameSpeed: number;
@@ -95,6 +96,7 @@ export const useVRGame = create<VRGameState>()(
     gameOver: false,
     inDeathRoom: false,
     gameStarted: true,
+    gameResetKey: 0,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -367,14 +369,16 @@ export const useVRGame = create<VRGameState>()(
     },
     
     respawn: () => {
-      set({
+      // Full game reset - reset everything including enemies
+      set((state) => ({
         health: 100,
         isDead: false,
         gameOver: false,
         score: 0,
-        inDeathRoom: false
-      });
-      console.log('🔄 Respawned!');
+        inDeathRoom: false,
+        gameResetKey: (state.gameResetKey || 0) + 1 // Force enemy reset
+      }));
+      console.log('🔄 Game Reset! All enemies restored.');
     },
     
     setGameOver: (gameOver: boolean) => {

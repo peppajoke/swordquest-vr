@@ -19,7 +19,20 @@ export default function Enemy({ type, position }: EnemyProps) {
   const [rageMode, setRageMode] = useState(false);
   const [teleportCooldown, setTeleportCooldown] = useState(0);
   
-  const { addHitEffect } = useVRGame();
+  const { addHitEffect, gameResetKey } = useVRGame();
+  
+  // Reset enemy when game resets
+  useEffect(() => {
+    if (gameResetKey > 0) {
+      setHealth(getMaxHealth(type));
+      setIsDead(false);
+      setLastAttack(0);
+      setIsAttacking(false);
+      setRageMode(false);
+      setTeleportCooldown(0);
+      console.log(`🔄 ${type} enemy reset!`);
+    }
+  }, [gameResetKey, type]);
   
   function getMaxHealth(enemyType: string): number {
     switch (enemyType) {
