@@ -908,14 +908,35 @@ export default function VRControllers({
         const sword = createSword();
         sword.scale.x = -1; // Mirror for left hand dual-wielding
 
-        // Set initial rotation to standard mode (config 23) - mirrored Z + 180° fix
-        const zIndex = 22 % 8; // Config 23 = index 22
-        const yIndex = Math.floor(22 / 8) % 8;
-        const xIndex = Math.floor(22 / 64) % 8;
+        // Set rotation to remembered mode (either standard or side)
+        let configNumber, xIndex, yIndex, zIndex;
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode = config 23 (22 in 0-based indexing)
+          configNumber = 23;
+          zIndex = 22 % 8;
+          yIndex = Math.floor(22 / 8) % 8;
+          xIndex = Math.floor(22 / 64) % 8;
+        } else {
+          // Side mode = config 71 (70 in 0-based indexing)
+          configNumber = 71;
+          zIndex = 70 % 8;
+          yIndex = Math.floor(70 / 8) % 8;
+          xIndex = Math.floor(70 / 64) % 8;
+        }
+        
         const xRotation = (xIndex * 45 * Math.PI) / 180;
         const yRotation = (yIndex * 45 * Math.PI) / 180;
-        const zRotation = (-(zIndex * 45) * Math.PI) / 180 + Math.PI; // Mirror Z + 180° to point up
-        sword.rotation.set(xRotation, yRotation, zRotation);
+        
+        // Apply mirrored rotation for left hand
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode: mirror Z and add 180° to point up instead of down
+          const zRotation = (-(zIndex * 45) * Math.PI) / 180 + Math.PI;
+          sword.rotation.set(xRotation, yRotation, zRotation);
+        } else {
+          // Side mode: just mirror Z (this is already perfect)
+          const zRotation = (-(zIndex * 45) * Math.PI) / 180;
+          sword.rotation.set(xRotation, yRotation, zRotation);
+        }
 
         leftSwordRef.current = sword;
         leftControllerObj.add(sword); // Attach to LEFT physical hand
@@ -939,10 +960,22 @@ export default function VRControllers({
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
         const sword = createSword();
-        // Set initial rotation to standard mode (config 23)
-        const zIndex = 22 % 8; // Config 23 = index 22
-        const yIndex = Math.floor(22 / 8) % 8;
-        const xIndex = Math.floor(22 / 64) % 8;
+        // Set rotation to remembered mode (either standard or side)
+        let configNumber, xIndex, yIndex, zIndex;
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode = config 23 (22 in 0-based indexing)
+          configNumber = 23;
+          zIndex = 22 % 8;
+          yIndex = Math.floor(22 / 8) % 8;
+          xIndex = Math.floor(22 / 64) % 8;
+        } else {
+          // Side mode = config 71 (70 in 0-based indexing)
+          configNumber = 71;
+          zIndex = 70 % 8;
+          yIndex = Math.floor(70 / 8) % 8;
+          xIndex = Math.floor(70 / 64) % 8;
+        }
+        
         const xRotation = (xIndex * 45 * Math.PI) / 180;
         const yRotation = (yIndex * 45 * Math.PI) / 180;
         const zRotation = (zIndex * 45 * Math.PI) / 180;
