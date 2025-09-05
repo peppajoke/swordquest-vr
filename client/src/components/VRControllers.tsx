@@ -506,8 +506,16 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       
       // A button on RIGHT physical hand cycles through rotation tests (button index 4 on right controller)
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
+      
+      // Debug button state
+      if (aButtonPressed !== lastAButtonPressed.current) {
+        console.log(`🎮 A button state changed: ${aButtonPressed}, sword exists: ${!!rightSwordRef.current}`);
+      }
+      
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
         rotationTestStep.current = (rotationTestStep.current + 1) % 6;
+        
+        console.log(`🔄 Starting rotation test step ${rotationTestStep.current + 1}/6`);
         
         // Reset to base position first
         rightSwordRef.current.rotation.x = 0;
@@ -549,6 +557,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         }
         
         console.log(`🔄 ROTATION TEST ${rotationTestStep.current + 1}/6: ${description}`);
+        console.log(`Applied rotation: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`);
       }
       lastAButtonPressed.current = aButtonPressed;
       
