@@ -376,20 +376,20 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       lastBButtonPressed.current = bButtonPressed;
     }
     
-    // Left stick movement (free locomotion)
+    // Left stick movement (free locomotion) - LEFT CONTROLLER (gamepad0)
     let leftStickX = 0;
     let leftStickY = 0;
-    if (gamepad1 && gamepad1.axes && gamepad1.axes.length >= 4) {
-      leftStickX = gamepad1.axes[2] || 0; // X-axis (left/right)
-      leftStickY = gamepad1.axes[3] || 0; // Y-axis (forward/back)
+    if (gamepad0 && gamepad0.axes && gamepad0.axes.length >= 4) {
+      leftStickX = gamepad0.axes[2] || 0; // X-axis (left/right)
+      leftStickY = gamepad0.axes[3] || 0; // Y-axis (forward/back)
     }
     
-    // Right stick camera control
+    // Right stick camera control - RIGHT CONTROLLER (gamepad1)
     let rightStickX = 0;
     let rightStickY = 0;
-    if (gamepad0 && gamepad0.axes && gamepad0.axes.length >= 4) {
-      rightStickX = gamepad0.axes[2] || 0; // X-axis (look left/right)
-      rightStickY = gamepad0.axes[3] || 0; // Y-axis (look up/down)
+    if (gamepad1 && gamepad1.axes && gamepad1.axes.length >= 4) {
+      rightStickX = gamepad1.axes[2] || 0; // X-axis (look left/right)
+      rightStickY = gamepad1.axes[3] || 0; // Y-axis (look up/down)
     }
 
     // Use grip controllers for weapon attachment (they track hand pose better)
