@@ -398,12 +398,38 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     if (!controller0Obj || !controller1Obj) return;
 
-    // ✓ RIGHT HAND ITEMS (controller0 = RIGHT hand - CORRECT!)
+    // LEFT HAND ITEMS (controller0 = LEFT hand)
+    // Always show gun
+    if (!leftGunRef.current) {
+      const gun = createGun();
+      leftGunRef.current = gun;
+      controller0Obj.add(gun);
+    }
+    
+    // Show/hide sword based on grip
+    if (leftGrabbing.current) {
+      // Show sword
+      if (!leftSwordRef.current) {
+        const sword = createSword();
+        // Flip left-hand sword horizontally
+        sword.rotation.y = Math.PI; // 180 degrees horizontal flip
+        leftSwordRef.current = sword;
+        controller0Obj.add(sword);
+      }
+    } else {
+      // Hide sword
+      if (leftSwordRef.current) {
+        controller0Obj.remove(leftSwordRef.current);
+        leftSwordRef.current = undefined;
+      }
+    }
+
+    // RIGHT HAND ITEMS (controller1 = RIGHT hand)
     // Always show gun
     if (!rightGunRef.current) {
       const gun = createGun();
       rightGunRef.current = gun;
-      controller0Obj.add(gun);
+      controller1Obj.add(gun);
     }
     
     // Show/hide sword based on grip
@@ -414,39 +440,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         // Flip right-hand sword horizontally
         sword.rotation.y = Math.PI; // 180 degrees horizontal flip
         rightSwordRef.current = sword;
-        controller0Obj.add(sword);
-      }
-    } else {
-      // Hide sword
-      if (rightSwordRef.current) {
-        controller0Obj.remove(rightSwordRef.current);
-        rightSwordRef.current = undefined;
-      }
-    }
-
-    // ✓ LEFT HAND ITEMS (controller1 = LEFT hand - CORRECT!)
-    // Always show gun
-    if (!leftGunRef.current) {
-      const gun = createGun();
-      leftGunRef.current = gun;
-      controller1Obj.add(gun);
-    }
-    
-    // Show/hide sword based on grip
-    if (leftGrabbing.current) {
-      // Show sword
-      if (!leftSwordRef.current) {
-        const sword = createSword();
-        // Flip left-hand sword horizontally too
-        sword.rotation.y = Math.PI; // 180 degrees horizontal flip
-        leftSwordRef.current = sword;
         controller1Obj.add(sword);
       }
     } else {
       // Hide sword
-      if (leftSwordRef.current) {
-        controller1Obj.remove(leftSwordRef.current);
-        leftSwordRef.current = undefined;
+      if (rightSwordRef.current) {
+        controller1Obj.remove(rightSwordRef.current);
+        rightSwordRef.current = undefined;
       }
     }
 
@@ -459,23 +459,23 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     let handDirection = new THREE.Vector3();
     let validDirections = 0;
     
-    // Get direction from right controller if available
-    if (controller0Obj && rightSwordRef.current) {
-      const rightDirection = new THREE.Vector3();
-      controller0Obj.getWorldDirection(rightDirection);
-      rightDirection.y = 0;
-      rightDirection.normalize();
-      handDirection.add(rightDirection);
-      validDirections++;
-    }
-    
     // Get direction from left controller if available
-    if (controller1Obj && leftSwordRef.current) {
+    if (controller0Obj && leftSwordRef.current) {
       const leftDirection = new THREE.Vector3();
-      controller1Obj.getWorldDirection(leftDirection);
+      controller0Obj.getWorldDirection(leftDirection);
       leftDirection.y = 0;
       leftDirection.normalize();
       handDirection.add(leftDirection);
+      validDirections++;
+    }
+    
+    // Get direction from right controller if available
+    if (controller1Obj && rightSwordRef.current) {
+      const rightDirection = new THREE.Vector3();
+      controller1Obj.getWorldDirection(rightDirection);
+      rightDirection.y = 0;
+      rightDirection.normalize();
+      handDirection.add(rightDirection);
       validDirections++;
     }
     
