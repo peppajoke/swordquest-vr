@@ -268,27 +268,60 @@ export default function VRControllers({
             .addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
         });
 
-        // Remove pillar with explosion animation
-        const explosionScale = { x: 1, y: 1, z: 1 };
-        const animate = () => {
-          explosionScale.x += 0.1;
-          explosionScale.y += 0.1;
-          explosionScale.z += 0.1;
-          hitTarget.scale.set(
-            explosionScale.x,
-            explosionScale.y,
-            explosionScale.z,
-          );
-          hitTarget.rotation.x += 0.2;
-          hitTarget.rotation.z += 0.2;
-
-          if (explosionScale.x < 2) {
-            requestAnimationFrame(animate);
+        // Launch pillar flying in the air with physics
+        const initialPos = new THREE.Vector3();
+        hitTarget.getWorldPosition(initialPos);
+        
+        // Random flying direction with upward bias
+        const flyDirection = new THREE.Vector3(
+          (Math.random() - 0.5) * 10, // Random X velocity
+          8 + Math.random() * 5,      // Strong upward velocity
+          (Math.random() - 0.5) * 10  // Random Z velocity
+        );
+        
+        let velocity = flyDirection.clone();
+        const gravity = new THREE.Vector3(0, -15, 0); // Gravity acceleration
+        const angularVelocity = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.3,
+          (Math.random() - 0.5) * 0.3,
+          (Math.random() - 0.5) * 0.3
+        );
+        
+        const startTime = Date.now();
+        const flyAnimation = () => {
+          const deltaTime = 0.016; // ~60fps
+          const elapsed = (Date.now() - startTime) / 1000;
+          
+          // Apply gravity to velocity
+          velocity.add(gravity.clone().multiplyScalar(deltaTime));
+          
+          // Update position
+          hitTarget.position.add(velocity.clone().multiplyScalar(deltaTime));
+          
+          // Add spinning rotation
+          hitTarget.rotation.x += angularVelocity.x;
+          hitTarget.rotation.y += angularVelocity.y;
+          hitTarget.rotation.z += angularVelocity.z;
+          
+          // Fade out after 1 second
+          if (elapsed > 1.0) {
+            const fadeProgress = Math.min((elapsed - 1.0) / 0.5, 1.0); // 0.5 second fade
+            const opacity = 1.0 - fadeProgress;
+            
+            if (hitTarget.material && 'opacity' in hitTarget.material) {
+              hitTarget.material.transparent = true;
+              hitTarget.material.opacity = opacity;
+            }
+          }
+          
+          // Remove after 2.5 seconds total
+          if (elapsed < 2.5) {
+            requestAnimationFrame(flyAnimation);
           } else {
             hitTarget.parent?.remove(hitTarget);
           }
         };
-        animate();
+        flyAnimation();
       } else if (hitTarget.userData.isTurret && hitTarget.userData.health > 0) {
         // Hit turret - damage it
         hitTarget.userData.health -= 25;
