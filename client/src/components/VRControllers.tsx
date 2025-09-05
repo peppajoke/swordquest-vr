@@ -654,11 +654,28 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
           }
         }
         
-        console.log(`🗡️ BOTH swords ${modeName} mode (config ${configNumber}): X${xIndex * 45}° Y${yIndex * 45}° Z${zIndex * 45}°`);
+        // Enable jetpack when switching to side mode, disable for standard mode
+        if (rightSwordRotationMode.current === 1) {
+          // Side mode - enable jetpack
+          jetpackEnabled.current = true;
+          console.log(`🗡️ BOTH swords ${modeName} mode + 🚀 Jetpack ENABLED`);
+          if (onJetpackChange) {
+            onJetpackChange(true);
+          }
+        } else {
+          // Standard mode - disable jetpack
+          jetpackEnabled.current = false;
+          console.log(`🗡️ BOTH swords ${modeName} mode + 🚫 Jetpack DISABLED`);
+          if (onJetpackChange) {
+            onJetpackChange(false);
+          }
+        }
+        
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
           (window as any).vrDebugLog(`🗡️ BOTH swords: ${modeName} mode`);
           (window as any).vrDebugLog(`Right: X:${xIndex * 45}° Y:${yIndex * 45}° Z:${zIndex * 45}°`);
           (window as any).vrDebugLog(`Left: X:${xIndex * 45}° Y:${yIndex * 45}° Z:${-(zIndex * 45)}°`);
+          (window as any).vrDebugLog(`🚀 Jetpack: ${jetpackEnabled.current ? 'ENABLED' : 'DISABLED'}`);
         }
       } else {
         // If no sword spawned, capture controller rotation
