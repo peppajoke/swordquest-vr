@@ -510,16 +510,16 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         // Toggle between side and standard modes
         if (rightSwordMode.current === 'side') {
           rightSwordMode.current = 'standard';
-          // Standard mode: side position + 45 degrees upward
+          // Standard mode: flipped 180 degrees from side
           rightSwordRef.current.rotation.y = 0; // Reset Y rotation
-          rightSwordRef.current.rotation.z = Math.PI / 2 - Math.PI / 4; // Side position (π/2) minus 45 degrees to point upward
-          console.log('🔄 RIGHT hand sword: STANDARD mode (upward 45 degrees)');
+          rightSwordRef.current.rotation.z = Math.PI / 2 - Math.PI / 4 + Math.PI; // Flipped 180 degrees
+          console.log('🔄 RIGHT hand sword: STANDARD mode (flipped 180 degrees)');
         } else {
           rightSwordMode.current = 'side';
-          // Side mode: pointing to the right (perfect position)
+          // Side mode: flipped 180 degrees horizontally
           rightSwordRef.current.rotation.y = 0; // Reset Y rotation  
-          rightSwordRef.current.rotation.z = Math.PI / 2; // Point to the right (perfect as it was)
-          console.log('🔄 RIGHT hand sword: SIDE mode (pointing right)');
+          rightSwordRef.current.rotation.z = Math.PI / 2 + Math.PI; // Flipped 180 degrees
+          console.log('🔄 RIGHT hand sword: SIDE mode (flipped 180 degrees)');
         }
       }
       lastAButtonPressed.current = aButtonPressed;
@@ -620,10 +620,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         // Set initial rotation based on current mode (default is side mode)
         if (rightSwordMode.current === 'side') {
           sword.rotation.y = 0;
-          sword.rotation.z = Math.PI / 2; // Side mode: pointing right (perfect setting)
+          sword.rotation.z = Math.PI / 2 + Math.PI; // Side mode: flipped 180 degrees
         } else {
           sword.rotation.y = 0;
-          sword.rotation.z = Math.PI / 2 - Math.PI / 4; // Standard mode: side position minus 45 degrees to point upward
+          sword.rotation.z = Math.PI / 2 - Math.PI / 4 + Math.PI; // Standard mode: flipped 180 degrees
         }
         rightSwordRef.current = sword;
         rightControllerObj.add(sword); // Attach to RIGHT physical hand
