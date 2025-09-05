@@ -1161,62 +1161,76 @@ export default function VRControllers({
       onRightClipChange(rightClip.current);
     }
 
-    // No auto-recharge - reload at shoulder instead
+    // No auto-recharge - reload when guns leave line of sight instead
 
-    // Check for shoulder reload for left gun
+    // Check for line-of-sight reload for left gun
     if (leftControllerObj && leftClip.current < maxClipSize.current) {
       leftControllerObj.getWorldPosition(tempVector);
-      // Check if left controller is near left shoulder (approximately chest height and left side)
-      const shoulderHeight = camera.position.y - 0.3; // About shoulder level
-      const shoulderLeft = camera.position.x - 0.2; // Left side of body
-
-      if (
-        tempVector.y > shoulderHeight &&
-        tempVector.x < shoulderLeft &&
-        tempVector.z > camera.position.z - 0.3 &&
-        tempVector.z < camera.position.z + 0.1
-      ) {
+      
+      // Calculate if gun is in line of sight
+      const cameraPosition = camera.position.clone();
+      const cameraDirection = new THREE.Vector3(0, 0, -1);
+      cameraDirection.applyQuaternion(camera.quaternion);
+      
+      // Vector from camera to controller
+      const controllerDirection = tempVector.clone().sub(cameraPosition).normalize();
+      
+      // Check if controller is within field of view (dot product > 0.3 means roughly 70° FOV)
+      const dotProduct = cameraDirection.dot(controllerDirection);
+      const inLineOfSight = dotProduct > 0.3;
+      
+      if (!inLineOfSight) {
         if (!leftReloading.current) {
           leftReloading.current = true;
           leftClip.current = maxClipSize.current; // Reload clip
           console.log(
-            `🔄 LEFT gun reloaded! Clip: ${leftClip.current}/${maxClipSize.current}`,
+            `🔄 LEFT gun reloaded! (out of sight) Clip: ${leftClip.current}/${maxClipSize.current}`,
           );
           
           // Play reload sound
-          import('../lib/stores/useAudio').then(({ useAudio }) => {
-            useAudio.getState().playReload();
-          });
+          try {
+            const audioStore = require('../lib/stores/useAudio').useAudio;
+            audioStore.getState().playReload();
+          } catch (error) {
+            console.log('🔊 Reload sound error:', error);
+          }
         }
       } else {
         leftReloading.current = false;
       }
     }
 
-    // Check for shoulder reload for right gun
+    // Check for line-of-sight reload for right gun
     if (rightControllerObj && rightClip.current < maxClipSize.current) {
       rightControllerObj.getWorldPosition(tempVector);
-      // Check if right controller is near right shoulder
-      const shoulderHeight = camera.position.y - 0.3;
-      const shoulderRight = camera.position.x + 0.2; // Right side of body
-
-      if (
-        tempVector.y > shoulderHeight &&
-        tempVector.x > shoulderRight &&
-        tempVector.z > camera.position.z - 0.3 &&
-        tempVector.z < camera.position.z + 0.1
-      ) {
+      
+      // Calculate if gun is in line of sight
+      const cameraPosition = camera.position.clone();
+      const cameraDirection = new THREE.Vector3(0, 0, -1);
+      cameraDirection.applyQuaternion(camera.quaternion);
+      
+      // Vector from camera to controller
+      const controllerDirection = tempVector.clone().sub(cameraPosition).normalize();
+      
+      // Check if controller is within field of view (dot product > 0.3 means roughly 70° FOV)
+      const dotProduct = cameraDirection.dot(controllerDirection);
+      const inLineOfSight = dotProduct > 0.3;
+      
+      if (!inLineOfSight) {
         if (!rightReloading.current) {
           rightReloading.current = true;
           rightClip.current = maxClipSize.current; // Reload clip
           console.log(
-            `🔄 RIGHT gun reloaded! Clip: ${rightClip.current}/${maxClipSize.current}`,
+            `🔄 RIGHT gun reloaded! (out of sight) Clip: ${rightClip.current}/${maxClipSize.current}`,
           );
           
           // Play reload sound
-          import('../lib/stores/useAudio').then(({ useAudio }) => {
-            useAudio.getState().playReload();
-          });
+          try {
+            const audioStore = require('../lib/stores/useAudio').useAudio;
+            audioStore.getState().playReload();
+          } catch (error) {
+            console.log('🔊 Reload sound error:', error);
+          }
         }
       } else {
         rightReloading.current = false;
