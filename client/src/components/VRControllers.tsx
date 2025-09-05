@@ -272,23 +272,27 @@ export default function VRControllers({
             .addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
         });
 
-        // Launch pillar flying in the air with physics
+        // Launch pillar flying in the air with EXTREME physics
         const initialPos = new THREE.Vector3();
         hitTarget.getWorldPosition(initialPos);
         
-        // MASSIVE flying direction - make them go FLYING!
+        // ULTRA MASSIVE flying direction - EXPLOSIVE LAUNCH!
         const flyDirection = new THREE.Vector3(
-          (Math.random() - 0.5) * 50, // Huge random X velocity
-          25 + Math.random() * 25,    // MASSIVE upward velocity (25-50)
-          (Math.random() - 0.5) * 50  // Huge random Z velocity
+          (Math.random() - 0.5) * 120, // ENORMOUS random X velocity
+          50 + Math.random() * 70,     // EXPLOSIVE upward velocity (50-120)
+          (Math.random() - 0.5) * 120  // ENORMOUS random Z velocity
         );
         
+        // Add initial explosive scale effect
+        const originalScale = hitTarget.scale.clone();
+        hitTarget.scale.multiplyScalar(1.5); // Initial explosion scale
+        
         let velocity = flyDirection.clone();
-        const gravity = new THREE.Vector3(0, -25, 0); // Stronger gravity
+        const gravity = new THREE.Vector3(0, -35, 0); // Much stronger gravity
         const angularVelocity = new THREE.Vector3(
-          (Math.random() - 0.5) * 0.8,  // Much faster spinning
-          (Math.random() - 0.5) * 0.8,
-          (Math.random() - 0.5) * 0.8
+          (Math.random() - 0.5) * 2.5,  // EXTREME spinning
+          (Math.random() - 0.5) * 2.5,
+          (Math.random() - 0.5) * 2.5
         );
         
         const startTime = Date.now();
@@ -299,17 +303,28 @@ export default function VRControllers({
           // Apply gravity to velocity
           velocity.add(gravity.clone().multiplyScalar(deltaTime));
           
-          // Update position
+          // Update position with MASSIVE movement
           hitTarget.position.add(velocity.clone().multiplyScalar(deltaTime));
           
-          // Add spinning rotation
-          hitTarget.rotation.x += angularVelocity.x;
-          hitTarget.rotation.y += angularVelocity.y;
-          hitTarget.rotation.z += angularVelocity.z;
+          // Add EXTREME spinning rotation
+          hitTarget.rotation.x += angularVelocity.x * deltaTime * 60;
+          hitTarget.rotation.y += angularVelocity.y * deltaTime * 60;
+          hitTarget.rotation.z += angularVelocity.z * deltaTime * 60;
           
-          // Fade out after 1 second
-          if (elapsed > 1.0) {
-            const fadeProgress = Math.min((elapsed - 1.0) / 0.5, 1.0); // 0.5 second fade
+          // Scale effect - expand then contract during flight
+          if (elapsed < 0.3) {
+            const scaleMultiplier = 1.5 + Math.sin(elapsed * 20) * 0.5; // Wobble effect
+            hitTarget.scale.copy(originalScale.clone().multiplyScalar(scaleMultiplier));
+          } else {
+            // Gradually return to normal scale
+            const scaleProgress = Math.min((elapsed - 0.3) / 0.5, 1.0);
+            const currentScale = 1.5 - (0.5 * scaleProgress);
+            hitTarget.scale.copy(originalScale.clone().multiplyScalar(currentScale));
+          }
+          
+          // Fade out after 1.5 seconds
+          if (elapsed > 1.5) {
+            const fadeProgress = Math.min((elapsed - 1.5) / 1.0, 1.0); // 1 second fade
             const opacity = 1.0 - fadeProgress;
             
             if (hitTarget.material && 'opacity' in hitTarget.material) {
@@ -318,8 +333,8 @@ export default function VRControllers({
             }
           }
           
-          // Remove after 4 seconds total (longer flight time)
-          if (elapsed < 4.0) {
+          // Remove after 5 seconds total (longer flight time for dramatic effect)
+          if (elapsed < 5.0) {
             requestAnimationFrame(flyAnimation);
           } else {
             hitTarget.parent?.remove(hitTarget);
