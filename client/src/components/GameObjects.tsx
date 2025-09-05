@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import Enemy from './Enemy';
+import enemySpawns from '../data/enemySpawns.json';
 
 export default function GameObjects() {
   const { pillars } = useVRGame();
@@ -54,58 +55,14 @@ export default function GameObjects() {
         <meshLambertMaterial color="#808080" />
       </mesh>
       
-      {/* ENEMY ARMY - 10 Different Archetypes */}
-      
-      {/* 1. GRUNT SOLDIERS - Basic melee fighters */}
-      <Enemy type="grunt" position={[-60, 0, -20]} />
-      <Enemy type="grunt" position={[40, 0, -30]} />
-      <Enemy type="grunt" position={[-30, 0, -60]} />
-      
-      {/* 2. RIFLEMEN - Medium range shooters */}
-      <Enemy type="rifleman" position={[70, 0, -70]} />
-      <Enemy type="rifleman" position={[20, 0, -80]} />
-      
-      {/* 3. HEAVY GUNNERS - Slow but devastating */}
-      <Enemy type="heavy" position={[-80, 0, -40]} />
-      <Enemy type="heavy" position={[50, 0, -15]} />
-      
-      {/* 4. ASSASSINS - Fast melee with teleport */}
-      <Enemy type="assassin" position={[-40, 0, -85]} />
-      <Enemy type="assassin" position={[80, 0, -25]} />
-      
-      {/* 5. BOMBERS - AOE explosion attacks */}
-      <Enemy type="bomber" position={[-20, 0, -75]} />
-      <Enemy type="bomber" position={[60, 0, -60]} />
-      
-      {/* 6. SNIPERS - Long range precise shots */}
-      <Enemy type="sniper" position={[-70, 0, -65]} />
-      <Enemy type="sniper" position={[30, 0, -40]} />
-      
-      {/* 7. BERSERKERS - Rage mode melee */}
-      <Enemy type="berserker" position={[-50, 0, -30]} />
-      <Enemy type="berserker" position={[10, 0, -90]} />
-      
-      {/* 8. SHIELD GUARDS - Defensive with shields */}
-      <Enemy type="shield" position={[-90, 0, -80]} />
-      <Enemy type="shield" position={[85, 0, -50]} />
-      
-      {/* 9. MAGES - Magic projectile casters */}
-      <Enemy type="mage" position={[-15, 0, -45]} />
-      <Enemy type="mage" position={[65, 0, -35]} />
-      
-      {/* 10. BOSS - The Big Bad with massive health */}
-      <Enemy type="boss" position={[0, 0, -50]} />
-      
-      {/* FLYING ENEMIES - Aerial Threats */}
-      <Enemy type="drone" position={[-30, 5, -25]} />
-      <Enemy type="drone" position={[45, 6, -55]} />
-      <Enemy type="drone" position={[-75, 4, -75]} />
-      
-      <Enemy type="wasp" position={[25, 7, -35]} />
-      <Enemy type="wasp" position={[-55, 8, -45]} />
-      <Enemy type="wasp" position={[75, 5, -65]} />
-      
-      <Enemy type="phoenix" position={[0, 10, -25]} />
+      {/* ENEMY ARMY - Spawned from configuration data */}
+      {enemySpawns.spawns.map((spawn, index) => (
+        <Enemy
+          key={`${spawn.type}-${index}`}
+          type={spawn.type as any}
+          position={spawn.position as [number, number, number]}
+        />
+      ))}
       
       {/* All red pillars removed per user request */}
     </>

@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import HealthBar from "./HealthBar";
+import enemyConfig from "../data/enemyConfig.json";
 
 interface EnemyProps {
   type:
@@ -20,6 +21,32 @@ interface EnemyProps {
     | "wasp"
     | "phoenix";
   position: [number, number, number];
+}
+
+// Helper functions to get enemy properties from configuration
+function getEnemyProperty(enemyType: string, property: keyof (typeof enemyConfig.enemyTypes)[keyof typeof enemyConfig.enemyTypes]) {
+  const config = enemyConfig.enemyTypes[enemyType as keyof typeof enemyConfig.enemyTypes];
+  return config ? config[property] : enemyConfig.enemyTypes.grunt[property];
+}
+
+function getMaxHealth(enemyType: string): number {
+  return getEnemyProperty(enemyType, 'health') as number;
+}
+
+function getEnemyColor(enemyType: string): string {
+  return getEnemyProperty(enemyType, 'color') as string;
+}
+
+function getEnemySize(enemyType: string): [number, number, number] {
+  return getEnemyProperty(enemyType, 'size') as [number, number, number];
+}
+
+function getAttackDamage(enemyType: string, rageMode: boolean = false): number {
+  const config = enemyConfig.enemyTypes[enemyType as keyof typeof enemyConfig.enemyTypes];
+  if (config && enemyType === 'berserker' && rageMode && 'rageDamage' in config) {
+    return config.rageDamage as number;
+  }
+  return getEnemyProperty(enemyType, 'attackDamage') as number;
 }
 
 export default function Enemy({ type, position }: EnemyProps) {
@@ -47,169 +74,12 @@ export default function Enemy({ type, position }: EnemyProps) {
     }
   }, [gameResetKey, type]);
 
-  function getMaxHealth(enemyType: string): number {
-    switch (enemyType) {
-      case "grunt":
-        return 1;
-      case "rifleman":
-        return 2;
-      case "heavy":
-        return 4;
-      case "assassin":
-        return 3;
-      case "bomber":
-        return 3;
-      case "sniper":
-        return 5;
-      case "berserker":
-        return 4;
-      case "shield":
-        return 20;
-      case "mage":
-        return 7;
-      case "boss":
-        return 50;
-      case "drone":
-        return 1;
-      case "wasp":
-        return 1;
-      case "phoenix":
-        return 4;
-      default:
-        return 50;
-    }
-  }
-
-  function getEnemyColor(enemyType: string): string {
-    switch (enemyType) {
-      case "grunt":
-        return "#8B4513"; // Brown
-      case "rifleman":
-        return "#4B8B3B"; // Olive
-      case "heavy":
-        return "#2F4F4F"; // Dark slate
-      case "assassin":
-        return "#1C1C1C"; // Almost black
-      case "bomber":
-        return "#FF4500"; // Orange red
-      case "sniper":
-        return "#483D8B"; // Dark slate blue
-      case "berserker":
-        return "#8B0000"; // Dark red
-      case "shield":
-        return "#4682B4"; // Steel blue
-      case "mage":
-        return "#9400D3"; // Violet
-      case "boss":
-        return "#000000"; // Pure black
-      case "drone":
-        return "#C0C0C0"; // Silver
-      case "wasp":
-        return "#FFD700"; // Gold
-      case "phoenix":
-        return "#FF6347"; // Tomato red
-      default:
-        return "#8B4513";
-    }
-  }
-
-  function getEnemySize(enemyType: string): [number, number, number] {
-    switch (enemyType) {
-      case "grunt":
-        return [0.8, 1.5, 0.8];
-      case "rifleman":
-        return [0.7, 1.6, 0.7];
-      case "heavy":
-        return [1.2, 1.8, 1.2];
-      case "assassin":
-        return [0.6, 1.4, 0.6];
-      case "bomber":
-        return [0.9, 1.3, 0.9];
-      case "sniper":
-        return [0.7, 1.7, 0.7];
-      case "berserker":
-        return [1.0, 1.6, 1.0];
-      case "shield":
-        return [1.1, 1.9, 1.1];
-      case "mage":
-        return [0.8, 1.6, 0.8];
-      case "boss":
-        return [3.0, 4.0, 3.0];
-      case "drone":
-        return [0.6, 0.4, 1.2]; // Wide, flat
-      case "wasp":
-        return [0.4, 0.3, 0.8]; // Small, agile
-      case "phoenix":
-        return [2.0, 1.5, 3.0]; // Large wingspan
-      default:
-        return [0.8, 1.5, 0.8];
-    }
-  }
-
-  function getAttackDamage(enemyType: string): number {
-    switch (enemyType) {
-      case "grunt":
-        return 15;
-      case "rifleman":
-        return 20;
-      case "heavy":
-        return 35;
-      case "assassin":
-        return 25;
-      case "bomber":
-        return 50; // AOE
-      case "sniper":
-        return 40;
-      case "berserker":
-        return rageMode ? 45 : 30;
-      case "shield":
-        return 12;
-      case "mage":
-        return 28;
-      case "boss":
-        return 60;
-      case "drone":
-        return 18;
-      case "wasp":
-        return 12;
-      case "phoenix":
-        return 45;
-      default:
-        return 15;
-    }
-  }
-
   function getAttackSpeed(enemyType: string): number {
-    switch (enemyType) {
-      case "grunt":
-        return 2000; // 2 seconds
-      case "rifleman":
-        return 1500;
-      case "heavy":
-        return 3000;
-      case "assassin":
-        return 800;
-      case "bomber":
-        return 4000;
-      case "sniper":
-        return 2500;
-      case "berserker":
-        return rageMode ? 600 : 1200;
-      case "shield":
-        return 2200;
-      case "mage":
-        return 1800;
-      case "boss":
-        return 1000;
-      case "drone":
-        return 1200;
-      case "wasp":
-        return 600; // Very fast attacks
-      case "phoenix":
-        return 2000;
-      default:
-        return 2000;
+    const config = enemyConfig.enemyTypes[enemyType as keyof typeof enemyConfig.enemyTypes];
+    if (config && enemyType === 'berserker' && rageMode) {
+      return 600; // Faster in rage mode
     }
+    return config ? config.attackCooldown : 2000;
   }
 
   function takeDamage(damage: number) {
@@ -545,7 +415,7 @@ export default function Enemy({ type, position }: EnemyProps) {
     currentTime: number,
   ) {
     const direction = playerPos.clone().sub(enemyPos).normalize();
-    const damage = getAttackDamage(type);
+    const damage = getAttackDamage(type, rageMode);
 
     setIsAttacking(true);
     setTimeout(() => setIsAttacking(false), 300);

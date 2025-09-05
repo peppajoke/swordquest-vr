@@ -1,0 +1,139 @@
+{
+  "spawns": [
+    {
+      "type": "grunt",
+      "position": [-60, 0, -20],
+      "group": "Basic Soldiers"
+    },
+    {
+      "type": "grunt",
+      "position": [40, 0, -30],
+      "group": "Basic Soldiers"
+    },
+    {
+      "type": "grunt",
+      "position": [-30, 0, -60],
+      "group": "Basic Soldiers"
+    },
+    {
+      "type": "rifleman",
+      "position": [70, 0, -70],
+      "group": "Medium Range"
+    },
+    {
+      "type": "rifleman",
+      "position": [20, 0, -80],
+      "group": "Medium Range"
+    },
+    {
+      "type": "heavy",
+      "position": [-80, 0, -40],
+      "group": "Heavy Units"
+    },
+    {
+      "type": "heavy",
+      "position": [50, 0, -15],
+      "group": "Heavy Units"
+    },
+    {
+      "type": "assassin",
+      "position": [-40, 0, -85],
+      "group": "Fast Melee"
+    },
+    {
+      "type": "assassin",
+      "position": [80, 0, -25],
+      "group": "Fast Melee"
+    },
+    {
+      "type": "bomber",
+      "position": [-20, 0, -75],
+      "group": "Explosive"
+    },
+    {
+      "type": "bomber",
+      "position": [60, 0, -60],
+      "group": "Explosive"
+    },
+    {
+      "type": "sniper",
+      "position": [-70, 0, -65],
+      "group": "Long Range"
+    },
+    {
+      "type": "sniper",
+      "position": [30, 0, -40],
+      "group": "Long Range"
+    },
+    {
+      "type": "berserker",
+      "position": [-50, 0, -30],
+      "group": "Rage Units"
+    },
+    {
+      "type": "berserker",
+      "position": [10, 0, -90],
+      "group": "Rage Units"
+    },
+    {
+      "type": "shield",
+      "position": [-90, 0, -80],
+      "group": "Defensive"
+    },
+    {
+      "type": "shield",
+      "position": [85, 0, -50],
+      "group": "Defensive"
+    },
+    {
+      "type": "mage",
+      "position": [-15, 0, -45],
+      "group": "Magic Casters"
+    },
+    {
+      "type": "mage",
+      "position": [65, 0, -35],
+      "group": "Magic Casters"
+    },
+    {
+      "type": "boss",
+      "position": [0, 0, -50],
+      "group": "Boss"
+    },
+    {
+      "type": "drone",
+      "position": [-30, 5, -25],
+      "group": "Flying"
+    },
+    {
+      "type": "drone",
+      "position": [45, 6, -55],
+      "group": "Flying"
+    },
+    {
+      "type": "drone",
+      "position": [-75, 4, -75],
+      "group": "Flying"
+    },
+    {
+      "type": "wasp",
+      "position": [25, 7, -35],
+      "group": "Flying"
+    },
+    {
+      "type": "wasp",
+      "position": [-55, 8, -45],
+      "group": "Flying"
+    },
+    {
+      "type": "wasp",
+      "position": [75, 5, -65],
+      "group": "Flying"
+    },
+    {
+      "type": "phoenix",
+      "position": [0, 10, -25],
+      "group": "Flying"
+    }
+  ]
+}
