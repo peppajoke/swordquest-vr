@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 
 interface EnemyProps {
-  type: 'grunt' | 'rifleman' | 'heavy' | 'assassin' | 'bomber' | 'sniper' | 'berserker' | 'shield' | 'mage' | 'boss';
+  type: 'grunt' | 'rifleman' | 'heavy' | 'assassin' | 'bomber' | 'sniper' | 'berserker' | 'shield' | 'mage' | 'boss' | 'drone' | 'wasp' | 'phoenix';
   position: [number, number, number];
 }
 
@@ -32,6 +32,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield': return 200;
       case 'mage': return 90;
       case 'boss': return 1000;
+      case 'drone': return 45;
+      case 'wasp': return 35;
+      case 'phoenix': return 250;
       default: return 50;
     }
   }
@@ -48,6 +51,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield': return '#4682B4'; // Steel blue
       case 'mage': return '#9400D3'; // Violet
       case 'boss': return '#000000'; // Pure black
+      case 'drone': return '#C0C0C0'; // Silver
+      case 'wasp': return '#FFD700'; // Gold
+      case 'phoenix': return '#FF6347'; // Tomato red
       default: return '#8B4513';
     }
   }
@@ -64,6 +70,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield': return [1.1, 1.9, 1.1];
       case 'mage': return [0.8, 1.6, 0.8];
       case 'boss': return [3.0, 4.0, 3.0];
+      case 'drone': return [0.6, 0.4, 1.2]; // Wide, flat
+      case 'wasp': return [0.4, 0.3, 0.8]; // Small, agile
+      case 'phoenix': return [2.0, 1.5, 3.0]; // Large wingspan
       default: return [0.8, 1.5, 0.8];
     }
   }
@@ -80,6 +89,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield': return 12;
       case 'mage': return 28;
       case 'boss': return 60;
+      case 'drone': return 18;
+      case 'wasp': return 12;
+      case 'phoenix': return 45;
       default: return 15;
     }
   }
@@ -96,6 +108,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield': return 2200;
       case 'mage': return 1800;
       case 'boss': return 1000;
+      case 'drone': return 1200;
+      case 'wasp': return 600; // Very fast attacks
+      case 'phoenix': return 2000;
       default: return 2000;
     }
   }
@@ -295,6 +310,66 @@ export default function Enemy({ type, position }: EnemyProps) {
           }
         }
         break;
+        
+      case 'drone':
+        // Hover and strafe around player
+        if (distance < 20) {
+          meshRef.current.lookAt(playerPos);
+          // Circular movement pattern
+          const angle = currentTime * 0.001; // Slow rotation
+          const radius = 8;
+          const targetX = playerPos.x + Math.cos(angle) * radius;
+          const targetZ = playerPos.z + Math.sin(angle) * radius;
+          const targetY = playerPos.y + 3; // Stay airborne
+          
+          const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
+          const direction = targetPos.clone().sub(enemyPos).normalize();
+          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
+        }
+        break;
+        
+      case 'wasp':
+        // Fast, erratic flight patterns
+        if (distance < 15) {
+          // Quick dives toward player
+          const direction = playerPos.clone().sub(enemyPos).normalize();
+          // Add random jitter for erratic movement
+          direction.x += (Math.random() - 0.5) * 0.5;
+          direction.z += (Math.random() - 0.5) * 0.5;
+          direction.y += Math.sin(currentTime * 0.01) * 0.3; // Bobbing flight
+          direction.normalize();
+          
+          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 4));
+          meshRef.current.lookAt(playerPos);
+        }
+        break;
+        
+      case 'phoenix':
+        // Majestic aerial predator
+        if (distance < 25) {
+          // Swooping attacks from above
+          const currentY = meshRef.current.position.y;
+          const targetY = playerPos.y + 6; // Stay well above player
+          
+          if (distance > 10) {
+            // Approach from above
+            const direction = playerPos.clone().sub(enemyPos).normalize();
+            direction.y = (targetY - currentY) * 0.1; // Gradual height adjustment
+            meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2.5));
+          } else {
+            // Circle overhead for attack positioning
+            const angle = currentTime * 0.002;
+            const radius = 6;
+            const targetX = playerPos.x + Math.cos(angle) * radius;
+            const targetZ = playerPos.z + Math.sin(angle) * radius;
+            
+            const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
+            const direction = targetPos.clone().sub(enemyPos).normalize();
+            meshRef.current.position.add(direction.multiplyScalar(deltaTime * 1.5));
+          }
+          meshRef.current.lookAt(playerPos);
+        }
+        break;
     }
     
     // Attack logic for all types
@@ -316,6 +391,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield': return 4;
       case 'mage': return 12;
       case 'boss': return 15;
+      case 'drone': return 12;
+      case 'wasp': return 6;
+      case 'phoenix': return 20;
       default: return 3;
     }
   }
@@ -363,6 +441,25 @@ export default function Enemy({ type, position }: EnemyProps) {
           createExplosion(enemyPos, scene, damage * 0.5);
         }
         break;
+        
+      case 'drone':
+        // Precision laser shots
+        createProjectile(enemyPos, direction, scene, 'laser', damage);
+        break;
+        
+      case 'wasp':
+        // Fast stinger attacks
+        createProjectile(enemyPos, direction, scene, 'stinger', damage);
+        break;
+        
+      case 'phoenix':
+        // Fire breath attack
+        createProjectile(enemyPos, direction, scene, 'fire', damage);
+        // Phoenix also creates fire AOE
+        if (Math.random() < 0.25) {
+          createExplosion(enemyPos, scene, damage * 0.3);
+        }
+        break;
     }
   }
   
@@ -389,6 +486,30 @@ export default function Enemy({ type, position }: EnemyProps) {
           color: '#FF0000', 
           emissive: '#8B0000',
           emissiveIntensity: 0.8 
+        });
+        break;
+      case 'laser':
+        geometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3);
+        material = new THREE.MeshLambertMaterial({ 
+          color: '#00FFFF', 
+          emissive: '#0080FF',
+          emissiveIntensity: 1.0 
+        });
+        break;
+      case 'stinger':
+        geometry = new THREE.ConeGeometry(0.03, 0.2);
+        material = new THREE.MeshLambertMaterial({ 
+          color: '#FFD700', 
+          emissive: '#FFA500',
+          emissiveIntensity: 0.6 
+        });
+        break;
+      case 'fire':
+        geometry = new THREE.SphereGeometry(0.12);
+        material = new THREE.MeshLambertMaterial({ 
+          color: '#FF4500', 
+          emissive: '#FF6347',
+          emissiveIntensity: 1.2 
         });
         break;
       default:

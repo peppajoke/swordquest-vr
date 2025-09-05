@@ -1069,11 +1069,18 @@ export default function VRControllers({
      * We average the directions from both hands if both swords are active.
      */
 
+    // Check if we're in 3D flight mode (turbo + off ground)
+    const isGrounded = camera.position.y <= 1.8; // Player height when standing
+    const isTurboMode = burstSpeedMultiplier.current > 1.0;
+    const allow3DFlight = isTurboMode && !isGrounded;
+
     // Get direction from LEFT hand if left sword is active
     if (leftControllerObj && leftSwordRef.current) {
       const leftDirection = new THREE.Vector3();
       leftControllerObj.getWorldDirection(leftDirection);
-      leftDirection.y = 0; // Remove vertical component for ground-based movement
+      if (!allow3DFlight) {
+        leftDirection.y = 0; // Remove vertical component for ground-based movement
+      }
       leftDirection.normalize();
       handDirection.add(leftDirection);
       validDirections++;
@@ -1083,7 +1090,9 @@ export default function VRControllers({
     if (rightControllerObj && rightSwordRef.current) {
       const rightDirection = new THREE.Vector3();
       rightControllerObj.getWorldDirection(rightDirection);
-      rightDirection.y = 0; // Remove vertical component for ground-based movement
+      if (!allow3DFlight) {
+        rightDirection.y = 0; // Remove vertical component for ground-based movement
+      }
       rightDirection.normalize();
       handDirection.add(rightDirection);
       validDirections++;
@@ -1096,7 +1105,9 @@ export default function VRControllers({
     } else {
       // Fallback to camera direction if no swords are held
       camera.getWorldDirection(handDirection);
-      handDirection.y = 0;
+      if (!allow3DFlight) {
+        handDirection.y = 0;
+      }
       handDirection.normalize();
     }
 
@@ -1159,11 +1170,21 @@ export default function VRControllers({
 
     // Update fuel system (only if jetpack enabled)
     if (swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current) {
-      fuel.current -= fuelDrainRate.current * deltaTime;
+      // Calculate fuel drain rate based on altitude
+      const isGrounded = camera.position.y <= 1.8; // Player height when standing
+      const airborneMultiplier = isGrounded ? 1.0 : 4.0; // 4x faster fuel burn when airborne
+      const actualDrainRate = fuelDrainRate.current * airborneMultiplier;
+      
+      fuel.current -= actualDrainRate * deltaTime;
       if (fuel.current <= 0) {
         fuel.current = 0;
         wasEmpty.current = true;
         emptyPenaltyTime.current = 0;
+      }
+      
+      // Log fuel drain for debugging
+      if (!isGrounded) {
+        console.log(`⚡ AIRBORNE! Fuel draining ${airborneMultiplier}x faster: ${fuel.current.toFixed(1)}/100`);
       }
       // Track acceleration for sound
     } else {

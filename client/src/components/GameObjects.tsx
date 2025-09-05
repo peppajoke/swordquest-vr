@@ -95,6 +95,17 @@ export default function GameObjects() {
       
       {/* 10. BOSS - The Big Bad with massive health */}
       <Enemy type="boss" position={[0, 0, -50]} />
+      
+      {/* FLYING ENEMIES - Aerial Threats */}
+      <Enemy type="drone" position={[-30, 5, -25]} />
+      <Enemy type="drone" position={[45, 6, -55]} />
+      <Enemy type="drone" position={[-75, 4, -75]} />
+      
+      <Enemy type="wasp" position={[25, 7, -35]} />
+      <Enemy type="wasp" position={[-55, 8, -45]} />
+      <Enemy type="wasp" position={[75, 5, -65]} />
+      
+      <Enemy type="phoenix" position={[0, 10, -25]} />
       <RedPillar position={[-75, 1, -55]} destroyed={false} />
       
       {/* Additional 100 Random Red Pillars */}
