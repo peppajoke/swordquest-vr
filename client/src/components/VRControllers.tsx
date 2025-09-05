@@ -611,26 +611,39 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (aButtonPressed && !lastAButtonPressed.current) {
       
       if (rightSwordRef.current) {
-        // If right sword is spawned, cycle through all 45-degree combinations
-        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 512; // 8×8×8 = 512 combinations
+        // Toggle between standard mode (config 23) and side mode (config 71)
+        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 2;
         
-        // Convert position number to X, Y, Z indices (0-7 each for 45-degree increments)
-        const zIndex = rightSwordRotationMode.current % 8;
-        const yIndex = Math.floor(rightSwordRotationMode.current / 8) % 8;
-        const xIndex = Math.floor(rightSwordRotationMode.current / 64) % 8;
+        let configNumber, modeName;
+        let xIndex, yIndex, zIndex;
         
-        // Convert indices to actual rotation values (0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°)
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode = config 23 (22 in 0-based indexing)
+          configNumber = 23;
+          modeName = "STANDARD";
+          zIndex = 22 % 8;
+          yIndex = Math.floor(22 / 8) % 8;
+          xIndex = Math.floor(22 / 64) % 8;
+        } else {
+          // Side mode = config 71 (70 in 0-based indexing)
+          configNumber = 71;
+          modeName = "SIDE";
+          zIndex = 70 % 8;
+          yIndex = Math.floor(70 / 8) % 8;
+          xIndex = Math.floor(70 / 64) % 8;
+        }
+        
+        // Convert indices to actual rotation values
         const xRotation = (xIndex * 45) * Math.PI / 180;
         const yRotation = (yIndex * 45) * Math.PI / 180;
         const zRotation = (zIndex * 45) * Math.PI / 180;
         
         rightSwordRef.current.rotation.set(xRotation, yRotation, zRotation);
         
-        console.log(`🗡️ RIGHT sword config ${rightSwordRotationMode.current + 1}/512: X${xIndex * 45}° Y${yIndex * 45}° Z${zIndex * 45}°`);
+        console.log(`🗡️ RIGHT sword ${modeName} mode (config ${configNumber}): X${xIndex * 45}° Y${yIndex * 45}° Z${zIndex * 45}°`);
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`🗡️ Config ${rightSwordRotationMode.current + 1}/512`);
+          (window as any).vrDebugLog(`🗡️ ${modeName} mode (config ${configNumber})`);
           (window as any).vrDebugLog(`X:${xIndex * 45}° Y:${yIndex * 45}° Z:${zIndex * 45}°`);
-          (window as any).vrDebugLog(`Press A for next config`);
         }
       } else {
         // If no sword spawned, capture controller rotation
@@ -703,8 +716,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
         const sword = createSword();
-        // Set initial rotation to Forward Grip position
-        sword.rotation.set(0, 0, Math.PI / 2);
+        // Set initial rotation to standard mode (config 23)
+        const zIndex = 22 % 8;  // Config 23 = index 22
+        const yIndex = Math.floor(22 / 8) % 8;
+        const xIndex = Math.floor(22 / 64) % 8;
+        const xRotation = (xIndex * 45) * Math.PI / 180;
+        const yRotation = (yIndex * 45) * Math.PI / 180;
+        const zRotation = (zIndex * 45) * Math.PI / 180;
+        sword.rotation.set(xRotation, yRotation, zRotation);
         rightSwordRef.current = sword;
         rightControllerObj.add(sword);
         
