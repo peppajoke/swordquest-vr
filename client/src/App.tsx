@@ -11,10 +11,60 @@ const store = createXRStore();
 
 function App() {
   const [isGameLoaded, setIsGameLoaded] = useState(false);
+  const [gameInstance, setGameInstance] = useState<JSX.Element | null>(null);
+  
+  // Preload game systems
+  const handleLoadingComplete = async () => {
+    // Preload all audio files
+    const audioPromises = [
+      new Promise(resolve => {
+        const audio = new Audio('/sounds/hit.mp3');
+        audio.addEventListener('canplaythrough', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        audio.load();
+      }),
+      new Promise(resolve => {
+        const audio = new Audio('/sounds/success.mp3');
+        audio.addEventListener('canplaythrough', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        audio.load();
+      }),
+      new Promise(resolve => {
+        const audio = new Audio('/sounds/sword_hit.mp3');
+        audio.addEventListener('canplaythrough', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        audio.load();
+      }),
+      new Promise(resolve => {
+        const audio = new Audio('/sounds/gun_shoot.mp3');
+        audio.addEventListener('canplaythrough', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        audio.load();
+      }),
+      new Promise(resolve => {
+        const audio = new Audio('/sounds/gun_hit.mp3');
+        audio.addEventListener('canplaythrough', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        audio.load();
+      })
+    ];
+    
+    // Wait for all audio to preload
+    await Promise.allSettled(audioPromises);
+    
+    // Create the game instance
+    const game = <VRGame />;
+    setGameInstance(game);
+    
+    // Small delay to ensure everything is ready
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setIsGameLoaded(true);
+  };
   
   // Show loading screen first, then load game
   if (!isGameLoaded) {
-    return <LoadingScreen onComplete={() => setIsGameLoaded(true)} />;
+    return <LoadingScreen onComplete={handleLoadingComplete} />;
   }
   
   return (
@@ -56,7 +106,7 @@ function App() {
       >
         <XR store={store}>
           <Suspense fallback={null}>
-            <VRGame />
+            {gameInstance}
           </Suspense>
         </XR>
       </Canvas>

@@ -17,79 +17,17 @@ import { useAudio } from '../lib/stores/useAudio';
 export default function VRGame() {
   const { scene } = useThree();
   const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
-  const { 
-    setBackgroundMusic, 
-    setHitSound, 
-    setSuccessSound,
-    setSwordHitSound,
-    setGunShootSound,
-    setGunHitSound,
-    setPlayerDamageSound,
-    setAccelerationSound,
-    setBoostSound,
-    setGunAmmoSound
-  } = useAudio();
+  // Audio setup is handled by App.tsx preloading
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
   // Loading is now handled by App.tsx
 
   useEffect(() => {
+    // Audio is preloaded by App.tsx before this component renders
     initializeGame();
-
-    // Setup sound effects only
-    const hitSFX = new Audio('/sounds/hit.mp3');
-    hitSFX.volume = 0.5;
-    setHitSound(hitSFX);
-
-    const successSFX = new Audio('/sounds/success.mp3');
-    successSFX.volume = 0.6;
-    setSuccessSound(successSFX);
-    
-    // Try to load unique sound files (with fallbacks to existing sounds)
-    try {
-      const swordHitSFX = new Audio('/sounds/sword_hit.mp3');
-      swordHitSFX.volume = 0.5;
-      setSwordHitSound(swordHitSFX);
-    } catch { /* Use fallback */ }
-    
-    try {
-      const gunShootSFX = new Audio('/sounds/gun_shoot.mp3');
-      gunShootSFX.volume = 0.4;
-      setGunShootSound(gunShootSFX);
-    } catch { /* Use fallback */ }
-    
-    try {
-      const gunHitSFX = new Audio('/sounds/gun_hit.mp3');
-      gunHitSFX.volume = 0.5;
-      setGunHitSound(gunHitSFX);
-    } catch { /* Use fallback */ }
-    
-    try {
-      const playerDamageSFX = new Audio('/sounds/player_damage.mp3');
-      playerDamageSFX.volume = 0.6;
-      setPlayerDamageSound(playerDamageSFX);
-    } catch { /* Use fallback */ }
-    
-    try {
-      const accelerationSFX = new Audio('/sounds/acceleration.mp3');
-      accelerationSFX.volume = 0.3;
-      setAccelerationSound(accelerationSFX);
-    } catch { /* Use fallback */ }
-    
-    try {
-      const boostSFX = new Audio('/sounds/boost.mp3');
-      boostSFX.volume = 0.5;
-      setBoostSound(boostSFX);
-    } catch { /* Use fallback */ }
-    
-    try {
-      const gunAmmoSFX = new Audio('/sounds/gun_ammo.mp3');
-      gunAmmoSFX.volume = 0.4;
-      setGunAmmoSound(gunAmmoSFX);
-    } catch { /* Use fallback */ }
-
-  }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
+    console.log('🎮 VRGame fully loaded and ready!');
+  }, [initializeGame]);
 
   // Game is now fully loaded when this component renders
   return (
