@@ -558,12 +558,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       }
     }
 
-    // Handle direction locking
-    if (swordsHeld > lastSwordsHeld.current) {
-      lockedDirection.current = handDirection.clone().normalize();
-    } else if (swordsHeld < lastSwordsHeld.current) {
-      lockedDirection.current = null;
-    }
+    // Allow turning while holding swords - remove direction locking
+    lockedDirection.current = null;
     lastSwordsHeld.current = swordsHeld;
 
     // Movement system
