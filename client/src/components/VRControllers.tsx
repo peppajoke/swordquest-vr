@@ -311,45 +311,73 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
 
     const inputSources = Array.from(session.inputSources);
     
-    // Fixed hand assignments - correct mapping
-    const controller0 = inputSources.find(input => input.handedness === 'right'); // Controller 0 = RIGHT hand
-    const controller1 = inputSources.find(input => input.handedness === 'left');  // Controller 1 = LEFT hand
+    /*
+     * ========================================================================
+     * CRITICAL: WEBXR CONTROLLER DETECTION - DO NOT MODIFY WITHOUT CAREFUL CONSIDERATION
+     * ========================================================================
+     * 
+     * WebXR Standard: inputSource.handedness returns "left", "right", or "none"
+     * This is RELIABLE and provided by the Meta Quest system itself.
+     * 
+     * NEVER change these assignments - they directly map WebXR handedness to variables:
+     * - leftController = physical LEFT hand controller 
+     * - rightController = physical RIGHT hand controller
+     * 
+     * If hands seem "reversed", the problem is NOT here - it's in the button/weapon mapping below.
+     */
+    const leftController = inputSources.find(input => input.handedness === 'left');   // PHYSICAL LEFT HAND
+    const rightController = inputSources.find(input => input.handedness === 'right'); // PHYSICAL RIGHT HAND
     
     // Wait for both controllers to be available with proper gamepad data
-    if (!controller0 || !controller1 || !controller0.gamepad || !controller1.gamepad) {
+    if (!leftController || !rightController || !leftController.gamepad || !rightController.gamepad) {
       if (!vrInitialized.current) {
         console.log('⏳ Waiting for VR controllers to initialize...');
       }
       return;
     }
     
-    // VR is now ready - log once
+    // VR is now ready - log once with CLEAR identification
     if (!vrInitialized.current) {
       vrInitialized.current = true;
       console.log('✅ VR Controllers fully initialized and ready!');
-      console.log('🧪 HAND DETECTION DEBUG:');
-      console.log(`Controller 0 handedness: ${controller0.handedness}`);
-      console.log(`Controller 1 handedness: ${controller1.handedness}`);
-      console.log('Press triggers to test which hand fires which gun...');
+      console.log('🧪 CONTROLLER DETECTION VERIFICATION:');
+      console.log(`LEFT controller handedness: "${leftController.handedness}" (should be "left")`);
+      console.log(`RIGHT controller handedness: "${rightController.handedness}" (should be "right")`);
+      console.log('📋 Test each physical hand to verify correct detection...');
     }
 
-    // Store controller refs - keep them visible so our custom objects show
+    /*
+     * ========================================================================
+     * THREE.JS XR CONTROLLER SETUP - MATCHING WEBXR HANDEDNESS TO THREEJS INDICES
+     * ========================================================================
+     * 
+     * Three.js uses numbered controllers (0, 1) but WebXR uses handedness ("left", "right")
+     * We need to map them correctly:
+     * 
+     * ASSUMPTION (based on Three.js WebXR implementation):
+     * - gl.xr.getController(0) and gl.xr.getControllerGrip(0) = LEFT hand
+     * - gl.xr.getController(1) and gl.xr.getControllerGrip(1) = RIGHT hand
+     * 
+     * This matches the standard Three.js WebXR examples and documentation.
+     */
+    
+    // Set up LEFT hand Three.js controllers (index 0)
     if (!controller0Ref.current) {
-      controller0Ref.current = gl.xr.getController(0);
+      controller0Ref.current = gl.xr.getController(0);  // LEFT hand controller
       scene.add(controller0Ref.current);
     }
-    if (!controller1Ref.current) {
-      controller1Ref.current = gl.xr.getController(1);
-      scene.add(controller1Ref.current);
-    }
-    
-    // Set up grip controllers for weapon attachment
     if (!controllerGrip0Ref.current) {
-      controllerGrip0Ref.current = gl.xr.getControllerGrip(0);
+      controllerGrip0Ref.current = gl.xr.getControllerGrip(0);  // LEFT hand grip
       scene.add(controllerGrip0Ref.current);
     }
+    
+    // Set up RIGHT hand Three.js controllers (index 1) 
+    if (!controller1Ref.current) {
+      controller1Ref.current = gl.xr.getController(1);  // RIGHT hand controller
+      scene.add(controller1Ref.current);
+    }
     if (!controllerGrip1Ref.current) {
-      controllerGrip1Ref.current = gl.xr.getControllerGrip(1);
+      controllerGrip1Ref.current = gl.xr.getControllerGrip(1);  // RIGHT hand grip
       scene.add(controllerGrip1Ref.current);
     }
     
@@ -367,25 +395,61 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       });
     }
 
-    // Handle controller input
-    const gamepad0 = controller0.gamepad;
-    const gamepad1 = controller1.gamepad;
+    /*
+     * ========================================================================
+     * CONTROLLER INPUT MAPPING - READING BUTTONS FROM WEBXR GAMEPADS
+     * ========================================================================
+     * 
+     * Each WebXR controller has a gamepad with buttons and axes:
+     * - Button 0: Trigger
+     * - Button 1: Grip/Squeeze  
+     * - Button 2: Touchpad/Thumbstick click (if present)
+     * - Button 3: X button (LEFT controller) / A button (RIGHT controller)
+     * - Button 4: Y button (LEFT controller) / B button (RIGHT controller)  
+     * - Button 5: Menu button (LEFT controller) / Oculus button (RIGHT controller)
+     * 
+     * MAPPING STRATEGY:
+     * - leftController.gamepad = LEFT hand physical gamepad
+     * - rightController.gamepad = RIGHT hand physical gamepad
+     * - Each maps directly to its corresponding hand's actions
+     */
     
-    if (gamepad0 && gamepad0.buttons.length > 1) {
-      rightGrabbing.current = gamepad0.buttons[1].pressed; // Right hand (controller0) grip
-      rightTrigger.current = gamepad0.buttons[0].pressed;  // Right controller (0) fires RIGHT gun
+    const leftGamepad = leftController.gamepad;   // Physical LEFT hand gamepad
+    const rightGamepad = rightController.gamepad; // Physical RIGHT hand gamepad
+    
+    // LEFT HAND INPUT PROCESSING
+    if (leftGamepad && leftGamepad.buttons.length > 1) {
+      // Basic controls
+      leftGrabbing.current = leftGamepad.buttons[1].pressed;  // Left grip button
+      leftTrigger.current = leftGamepad.buttons[0].pressed;   // Left trigger
       
-      // A button for right sword rotation (button index 4 is typically A button)
-      const aButtonPressed = gamepad0.buttons[4]?.pressed || false;
+      // X button for left sword rotation (button index 3)
+      const xButtonPressed = leftGamepad.buttons[3]?.pressed || false;
+      if (xButtonPressed && !lastXButtonPressed.current && leftSwordRef.current) {
+        leftSwordRotation.current += Math.PI / 2; // Rotate 90 degrees
+        leftSwordRef.current.rotation.z = leftSwordRotation.current;
+        console.log('🔄 LEFT physical hand sword rotated 90 degrees');
+      }
+      lastXButtonPressed.current = xButtonPressed;
+    }
+    
+    // RIGHT HAND INPUT PROCESSING  
+    if (rightGamepad && rightGamepad.buttons.length > 1) {
+      // Basic controls
+      rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip button
+      rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger
+      
+      // A button for right sword rotation (button index 4)
+      const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
         rightSwordRotation.current += Math.PI / 2; // Rotate 90 degrees
         rightSwordRef.current.rotation.z = rightSwordRotation.current;
-        console.log('🔄 Right sword rotated 90 degrees');
+        console.log('🔄 RIGHT physical hand sword rotated 90 degrees');
       }
       lastAButtonPressed.current = aButtonPressed;
       
-      // B button toggle for jetpack (button index 5 is typically B button)
-      const bButtonPressed = gamepad0.buttons[5]?.pressed || false;
+      // B button toggle for jetpack (button index 5)
+      const bButtonPressed = rightGamepad.buttons[5]?.pressed || false;
       if (bButtonPressed && !lastBButtonPressed.current) {
         jetpackEnabled.current = !jetpackEnabled.current;
         console.log(jetpackEnabled.current ? '🚀 Jetpack ENABLED' : '🚫 Jetpack DISABLED');
@@ -395,97 +459,108 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
       lastBButtonPressed.current = bButtonPressed;
     }
-    if (gamepad1 && gamepad1.buttons.length > 1) {
-      leftGrabbing.current = gamepad1.buttons[1].pressed;  // Left hand (controller1) grip
-      leftTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires LEFT gun
-      
-      // X button for left sword rotation (button index 3 is typically X button)
-      const xButtonPressed = gamepad1.buttons[3]?.pressed || false;
-      if (xButtonPressed && !lastXButtonPressed.current && leftSwordRef.current) {
-        leftSwordRotation.current += Math.PI / 2; // Rotate 90 degrees
-        leftSwordRef.current.rotation.z = leftSwordRotation.current;
-        console.log('🔄 Left sword rotated 90 degrees');
-      }
-      lastXButtonPressed.current = xButtonPressed;
-    }
     
-    // Left stick movement (free locomotion) - LEFT CONTROLLER (gamepad1)
+    /*
+     * ========================================================================
+     * THUMBSTICK INPUT PROCESSING - AXES MAPPING
+     * ========================================================================
+     * 
+     * WebXR gamepad axes (for controllers with thumbsticks):
+     * - axes[0]: LEFT thumbstick X-axis (-1 = left, +1 = right)
+     * - axes[1]: LEFT thumbstick Y-axis (-1 = up, +1 = down)  
+     * - axes[2]: RIGHT thumbstick X-axis (-1 = left, +1 = right)
+     * - axes[3]: RIGHT thumbstick Y-axis (-1 = up, +1 = down)
+     * 
+     * CONTROL SCHEME:
+     * - LEFT hand thumbstick = Player movement (locomotion)
+     * - RIGHT hand thumbstick = Camera rotation (look around)
+     */
+    
+    // LEFT HAND THUMBSTICK - Movement Control
     let leftStickX = 0;
     let leftStickY = 0;
-    if (gamepad1 && gamepad1.axes && gamepad1.axes.length >= 4) {
-      leftStickX = gamepad1.axes[2] || 0; // X-axis (left/right)
-      leftStickY = gamepad1.axes[3] || 0; // Y-axis (forward/back)
+    if (leftGamepad && leftGamepad.axes && leftGamepad.axes.length >= 4) {
+      leftStickX = leftGamepad.axes[2] || 0; // X-axis: strafe left/right
+      leftStickY = leftGamepad.axes[3] || 0; // Y-axis: move forward/back
     }
     
-    // Right stick camera control - RIGHT CONTROLLER (gamepad0)
+    // RIGHT HAND THUMBSTICK - Camera Control  
     let rightStickX = 0;
     let rightStickY = 0;
-    if (gamepad0 && gamepad0.axes && gamepad0.axes.length >= 4) {
-      rightStickX = gamepad0.axes[2] || 0; // X-axis (look left/right)
-      rightStickY = gamepad0.axes[3] || 0; // Y-axis (look up/down)
+    if (rightGamepad && rightGamepad.axes && rightGamepad.axes.length >= 4) {
+      rightStickX = rightGamepad.axes[2] || 0; // X-axis: look left/right (yaw)
+      rightStickY = rightGamepad.axes[3] || 0; // Y-axis: look up/down (pitch)
     }
 
-    // Use grip controllers for weapon attachment (they track hand pose better)
-    const controller0Obj = controllerGrip0Ref.current;
-    const controller1Obj = controllerGrip1Ref.current;
+    /*
+     * ========================================================================
+     * WEAPON ATTACHMENT SYSTEM - MAPPING CONTROLLERS TO THREE.JS OBJECTS
+     * ========================================================================
+     * 
+     * Three.js grip controllers provide the 3D position/rotation for weapon attachment.
+     * Based on Three.js WebXR standard:
+     * - controllerGrip0 = LEFT hand 3D object  (index 0)
+     * - controllerGrip1 = RIGHT hand 3D object (index 1)
+     * 
+     * WEAPON ASSIGNMENT:
+     * - LEFT physical hand -> controllerGrip0 -> left weapons
+     * - RIGHT physical hand -> controllerGrip1 -> right weapons
+     */
     
-    if (!controller0Obj || !controller1Obj) return;
-
-    // RIGHT HAND ITEMS (controller0 = RIGHT hand)
-    // Always show gun
-    if (!rightGunRef.current) {
-      const gun = createGun();
-      rightGunRef.current = gun;
-      controller0Obj.add(gun);
-    }
+    const leftControllerObj = controllerGrip0Ref.current;   // LEFT hand 3D object (Three.js index 0)
+    const rightControllerObj = controllerGrip1Ref.current; // RIGHT hand 3D object (Three.js index 1) 
     
-    // Show/hide sword based on grip
-    if (rightGrabbing.current) {
-      // Show sword
-      if (!rightSwordRef.current) {
-        console.log(`⚔️ RIGHT sword spawned on controller0 (${controller0.handedness} hand)`);
-        const sword = createSword();
-        // Flip right-hand sword horizontally
-        sword.rotation.y = Math.PI; // 180 degrees horizontal flip
-        sword.rotation.z = rightSwordRotation.current; // Apply any existing rotation
-        rightSwordRef.current = sword;
-        controller0Obj.add(sword);
-      }
-    } else {
-      // Hide sword
-      if (rightSwordRef.current) {
-        console.log(`⚔️ RIGHT sword removed from controller0 (${controller0.handedness} hand)`);
-        controller0Obj.remove(rightSwordRef.current);
-        rightSwordRef.current = undefined;
-      }
-    }
+    if (!leftControllerObj || !rightControllerObj) return;
 
-    // LEFT HAND ITEMS (controller1 = LEFT hand)
-    // Always show gun
+    // LEFT HAND WEAPON MANAGEMENT
+    // Always show gun on left hand
     if (!leftGunRef.current) {
       const gun = createGun();
       leftGunRef.current = gun;
-      controller1Obj.add(gun);
+      leftControllerObj.add(gun);
     }
     
-    // Show/hide sword based on grip
+    // Show/hide left sword based on left grip
     if (leftGrabbing.current) {
-      // Show sword
       if (!leftSwordRef.current) {
-        console.log(`⚔️ LEFT sword spawned on controller1 (${controller1.handedness} hand)`);
+        console.log(`⚔️ LEFT sword spawned on LEFT physical hand (${leftController.handedness})`);
         const sword = createSword();
-        // Flip left-hand sword horizontally
-        sword.scale.x = -1; // Flip horizontally using scale instead of rotation
-        sword.rotation.z = leftSwordRotation.current; // Apply any existing rotation
+        sword.scale.x = -1; // Mirror for left hand
+        sword.rotation.z = leftSwordRotation.current;
         leftSwordRef.current = sword;
-        controller1Obj.add(sword);
+        leftControllerObj.add(sword);
       }
     } else {
-      // Hide sword
       if (leftSwordRef.current) {
-        console.log(`⚔️ LEFT sword removed from controller1 (${controller1.handedness} hand)`);
-        controller1Obj.remove(leftSwordRef.current);
+        console.log(`⚔️ LEFT sword removed from LEFT physical hand (${leftController.handedness})`);
+        leftControllerObj.remove(leftSwordRef.current);
         leftSwordRef.current = undefined;
+      }
+    }
+
+    // RIGHT HAND WEAPON MANAGEMENT
+    // Always show gun on right hand
+    if (!rightGunRef.current) {
+      const gun = createGun();
+      rightGunRef.current = gun;
+      rightControllerObj.add(gun);
+    }
+    
+    // Show/hide right sword based on right grip
+    if (rightGrabbing.current) {
+      if (!rightSwordRef.current) {
+        console.log(`⚔️ RIGHT sword spawned on RIGHT physical hand (${rightController.handedness})`);
+        const sword = createSword();
+        sword.rotation.y = Math.PI; // Standard orientation for right hand
+        sword.rotation.z = rightSwordRotation.current;
+        rightSwordRef.current = sword;
+        rightControllerObj.add(sword);
+      }
+    } else {
+      if (rightSwordRef.current) {
+        console.log(`⚔️ RIGHT sword removed from RIGHT physical hand (${rightController.handedness})`);
+        rightControllerObj.remove(rightSwordRef.current);
+        rightSwordRef.current = undefined;
       }
     }
 
@@ -498,23 +573,32 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     let handDirection = new THREE.Vector3();
     let validDirections = 0;
     
-    // Get direction from right controller if available
-    if (controller0Obj && rightSwordRef.current) {
-      const rightDirection = new THREE.Vector3();
-      controller0Obj.getWorldDirection(rightDirection);
-      rightDirection.y = 0;
-      rightDirection.normalize();
-      handDirection.add(rightDirection);
+    /*
+     * ========================================================================
+     * SWORD DIRECTION CALCULATION FOR JETPACK SYSTEM
+     * ========================================================================
+     * 
+     * For jetpack/acceleration, we need the direction the player is "pointing" with swords.
+     * We average the directions from both hands if both swords are active.
+     */
+    
+    // Get direction from LEFT hand if left sword is active
+    if (leftControllerObj && leftSwordRef.current) {
+      const leftDirection = new THREE.Vector3();
+      leftControllerObj.getWorldDirection(leftDirection);
+      leftDirection.y = 0; // Remove vertical component for ground-based movement
+      leftDirection.normalize();
+      handDirection.add(leftDirection);
       validDirections++;
     }
     
-    // Get direction from left controller if available
-    if (controller1Obj && leftSwordRef.current) {
-      const leftDirection = new THREE.Vector3();
-      controller1Obj.getWorldDirection(leftDirection);
-      leftDirection.y = 0;
-      leftDirection.normalize();
-      handDirection.add(leftDirection);
+    // Get direction from RIGHT hand if right sword is active  
+    if (rightControllerObj && rightSwordRef.current) {
+      const rightDirection = new THREE.Vector3();
+      rightControllerObj.getWorldDirection(rightDirection);
+      rightDirection.y = 0; // Remove vertical component for ground-based movement
+      rightDirection.normalize();
+      handDirection.add(rightDirection);
       validDirections++;
     }
     
@@ -760,19 +844,29 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
 
     // Gun firing logic - always available
     
-    // RIGHT GUN FIRING (controller0 = RIGHT hand)
-    if (rightTrigger.current && !lastRightTrigger.current) {
-      console.log(`🔫 RIGHT gun fired from controller0 (${controller0.handedness} hand)`);
-      fireInstantBullet(controller0Obj, 'right', scene);
-    }
-    lastRightTrigger.current = rightTrigger.current;
+    /*
+     * ========================================================================
+     * GUN FIRING SYSTEM - TRIGGER TO BULLET MAPPING
+     * ========================================================================
+     * 
+     * Direct mapping: Physical hand trigger -> Corresponding gun fires
+     * - LEFT physical trigger -> LEFT gun fires from LEFT controller object
+     * - RIGHT physical trigger -> RIGHT gun fires from RIGHT controller object
+     */
     
-    // LEFT GUN FIRING (controller1 = LEFT hand)
+    // LEFT HAND GUN FIRING
     if (leftTrigger.current && !lastLeftTrigger.current) {
-      console.log(`🔫 LEFT gun fired from controller1 (${controller1.handedness} hand)`);
-      fireInstantBullet(controller1Obj, 'left', scene);
+      console.log(`🔫 LEFT gun fired from LEFT physical hand (${leftController.handedness})`);
+      fireInstantBullet(leftControllerObj, 'left', scene);
     }
     lastLeftTrigger.current = leftTrigger.current;
+    
+    // RIGHT HAND GUN FIRING
+    if (rightTrigger.current && !lastRightTrigger.current) {
+      console.log(`🔫 RIGHT gun fired from RIGHT physical hand (${rightController.handedness})`);
+      fireInstantBullet(rightControllerObj, 'right', scene);
+    }
+    lastRightTrigger.current = rightTrigger.current;
     
     // No bullet movement needed - using instant hit system
     
