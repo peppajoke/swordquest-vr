@@ -571,36 +571,6 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
       lastBButtonPressed.current = bButtonPressed;
       
-      // Y button on RIGHT physical hand toggles RIGHT sword rotation mode
-      const yButtonPressed = rightGamepad.buttons[4]?.pressed || false;
-      if (yButtonPressed && !lastYButtonPressed.current && rightSwordRef.current) {
-        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 2;
-        
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode: x15, y30, z15 (converted to radians)
-          rightSwordRef.current.rotation.set(
-            15 * Math.PI / 180,  // x15 degrees
-            30 * Math.PI / 180,  // y30 degrees  
-            15 * Math.PI / 180   // z15 degrees
-          );
-          console.log('🗡️ RIGHT sword set to STANDARD mode (x15°, y30°, z15°)');
-          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-            (window as any).vrDebugLog(`🗡️ RIGHT sword: STANDARD mode`);
-          }
-        } else {
-          // Side mode: x90, y0, z-75 (converted to radians)
-          rightSwordRef.current.rotation.set(
-            90 * Math.PI / 180,   // x90 degrees
-            0 * Math.PI / 180,    // y0 degrees
-            -75 * Math.PI / 180   // z-75 degrees  
-          );
-          console.log('🗡️ RIGHT sword set to SIDE mode (x90°, y0°, z-75°)');
-          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-            (window as any).vrDebugLog(`🗡️ RIGHT sword: SIDE mode`);
-          }
-        }
-      }
-      lastYButtonPressed.current = yButtonPressed;
     }
     
     // THUMBSTICK INPUT
@@ -636,26 +606,56 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     
     if (!leftControllerObj || !rightControllerObj) return;
 
-    // A button captures current controller orientation (now that rightControllerObj exists)
+    // A button: captures controller rotation OR toggles RIGHT sword rotation mode
     const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
     if (aButtonPressed && !lastAButtonPressed.current) {
-      // Get the world rotation of the controller (which represents where you're pointing)
-      const controllerRotation = rightControllerObj.rotation;
-      const rotationData = {
-        x: Number(controllerRotation.x.toFixed(3)),
-        y: Number(controllerRotation.y.toFixed(3)),
-        z: Number(controllerRotation.z.toFixed(3))
-      };
       
-      console.log('🎮 CAPTURED CONTROLLER ROTATION:', rotationData);
-      
-      // Display on VR overlay
-      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-        (window as any).vrDebugLog(`📐 CAPTURED CONTROLLER ROTATION:`);
-        (window as any).vrDebugLog(`X: ${rotationData.x} (${(rotationData.x * 180 / Math.PI).toFixed(1)}°)`);
-        (window as any).vrDebugLog(`Y: ${rotationData.y} (${(rotationData.y * 180 / Math.PI).toFixed(1)}°)`);
-        (window as any).vrDebugLog(`Z: ${rotationData.z} (${(rotationData.z * 180 / Math.PI).toFixed(1)}°)`);
-        (window as any).vrDebugLog(`Tell me what this position should be called!`);
+      if (rightSwordRef.current) {
+        // If right sword is spawned, toggle rotation mode
+        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 2;
+        
+        if (rightSwordRotationMode.current === 0) {
+          // Standard mode: x15, y30, z15 (converted to radians)
+          rightSwordRef.current.rotation.set(
+            15 * Math.PI / 180,  // x15 degrees
+            30 * Math.PI / 180,  // y30 degrees  
+            15 * Math.PI / 180   // z15 degrees
+          );
+          console.log('🗡️ RIGHT sword set to STANDARD mode (x15°, y30°, z15°)');
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`🗡️ RIGHT sword: STANDARD mode`);
+          }
+        } else {
+          // Side mode: x90, y0, z-75 (converted to radians)
+          rightSwordRef.current.rotation.set(
+            90 * Math.PI / 180,   // x90 degrees
+            0 * Math.PI / 180,    // y0 degrees
+            -75 * Math.PI / 180   // z-75 degrees  
+          );
+          console.log('🗡️ RIGHT sword set to SIDE mode (x90°, y0°, z-75°)');
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`🗡️ RIGHT sword: SIDE mode`);
+          }
+        }
+      } else {
+        // If no sword spawned, capture controller rotation
+        const controllerRotation = rightControllerObj.rotation;
+        const rotationData = {
+          x: Number(controllerRotation.x.toFixed(3)),
+          y: Number(controllerRotation.y.toFixed(3)),
+          z: Number(controllerRotation.z.toFixed(3))
+        };
+        
+        console.log('🎮 CAPTURED CONTROLLER ROTATION:', rotationData);
+        
+        // Display on VR overlay
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`📐 CAPTURED CONTROLLER ROTATION:`);
+          (window as any).vrDebugLog(`X: ${rotationData.x} (${(rotationData.x * 180 / Math.PI).toFixed(1)}°)`);
+          (window as any).vrDebugLog(`Y: ${rotationData.y} (${(rotationData.y * 180 / Math.PI).toFixed(1)}°)`);
+          (window as any).vrDebugLog(`Z: ${rotationData.z} (${(rotationData.z * 180 / Math.PI).toFixed(1)}°)`);
+          (window as any).vrDebugLog(`Tell me what this position should be called!`);
+        }
       }
     }
     lastAButtonPressed.current = aButtonPressed;
