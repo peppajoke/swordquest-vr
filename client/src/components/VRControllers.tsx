@@ -1495,6 +1495,10 @@ export default function VRControllers({
       sword.localToWorld(bladeTip);
       swordPos.copy(bladeTip);
 
+      // Distance-based optimization for collision detection
+      const playerPos = camera.position.clone();
+      const COLLISION_CHECK_DISTANCE = 50; // Only check collisions within 50 units
+
       // Check collision with turret bullets (bullet slicing) - with safety check
       if (scene) {
         scene.traverse((child) => {
@@ -1537,6 +1541,9 @@ export default function VRControllers({
           if (child.userData.isPillar && !child.userData.destroyed) {
             const pillarPos = new THREE.Vector3();
             child.getWorldPosition(pillarPos);
+
+            // Skip distant objects for performance
+            if (playerPos.distanceTo(pillarPos) > COLLISION_CHECK_DISTANCE) return;
 
             const distance = swordPos.distanceTo(pillarPos);
             if (distance < 1.0) {
@@ -1583,6 +1590,9 @@ export default function VRControllers({
             const turretPos = new THREE.Vector3();
             child.getWorldPosition(turretPos);
 
+            // Skip distant objects for performance
+            if (playerPos.distanceTo(turretPos) > COLLISION_CHECK_DISTANCE) return;
+
             const distance = swordPos.distanceTo(turretPos);
             if (distance < 1.5) {
               // Hit distance for turrets (larger than pillars)
@@ -1615,6 +1625,9 @@ export default function VRControllers({
           if (child.userData.isEnemy && !child.userData.isDead) {
             const enemyPos = new THREE.Vector3();
             child.getWorldPosition(enemyPos);
+
+            // Skip distant objects for performance
+            if (playerPos.distanceTo(enemyPos) > COLLISION_CHECK_DISTANCE) return;
 
             const distance = swordPos.distanceTo(enemyPos);
             if (distance < 1.2) {

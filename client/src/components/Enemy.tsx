@@ -131,9 +131,31 @@ export default function Enemy({ type, position }: EnemyProps) {
     const playerPos = camera.position.clone();
     const distance = enemyPos.distanceTo(playerPos);
 
-    // Update collision data
+    // Always update collision data and dead status for immediate response
     meshRef.current.userData.health = health;
     meshRef.current.userData.isDead = isDead;
+
+    // Distance-based performance optimization
+    const MAX_ACTIVE_DISTANCE = 100; // Max distance for any AI behavior
+    const CLOSE_DISTANCE = 30; // Distance for full AI updates
+    const MID_DISTANCE = 60; // Distance for reduced AI updates
+    
+    // Skip expensive AI computations for very distant enemies
+    if (distance > MAX_ACTIVE_DISTANCE && !isDead) {
+      // Only update position for very basic collision detection
+      return;
+    }
+
+    // Reduce update frequency for distant enemies using simple frame counter
+    const frameSkip = distance > CLOSE_DISTANCE ? 
+      (distance > MID_DISTANCE ? 4 : 2) : 1; // Update every 4th frame for far, 2nd for mid, every frame for close
+    
+    // Use frame-based skipping instead of time-based for better performance
+    const frameNum = Math.floor(currentTime / 16) % frameSkip;
+    if (frameNum !== 0 && !isDead) {
+      // Skip this frame for distant enemies
+      return;
+    }
 
     // Death animation sequence
     if (isDead) {

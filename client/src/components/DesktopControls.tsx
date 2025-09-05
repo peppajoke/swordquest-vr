@@ -311,12 +311,18 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     // Sword swing area in front of player
     const swingPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(1.2));
     
+    // Distance-based optimization for sword collision detection
+    const MAX_SWORD_DISTANCE = 25; // Only check enemies within 25 units
+    
     // Check for enemies in swing range
     let hitAnyEnemy = false;
     scene.traverse((child) => {
       if (child.userData.isEnemy && !child.userData.isDead) {
         const enemyPos = new THREE.Vector3();
         child.getWorldPosition(enemyPos);
+        
+        // Skip distant enemies for performance
+        if (cameraPos.distanceTo(enemyPos) > MAX_SWORD_DISTANCE) return;
         
         const distance = swingPos.distanceTo(enemyPos);
         if (distance < 1.8) { // Slightly larger range for continuous swinging
