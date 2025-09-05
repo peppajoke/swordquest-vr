@@ -272,6 +272,15 @@ export default function VRControllers({
             .addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
         });
 
+        // Play sword hit sound when pillar gets destroyed
+        try {
+          const audioStore = require('../lib/stores/useAudio').useAudio;
+          audioStore.getState().playSwordHit();
+          console.log('🔊 Playing sword hit sound for pillar destruction');
+        } catch (error) {
+          console.log('🔊 Sword hit sound error:', error);
+        }
+
         // Launch pillar flying in the air with EXTREME physics
         const initialPos = new THREE.Vector3();
         hitTarget.getWorldPosition(initialPos);
