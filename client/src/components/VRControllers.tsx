@@ -645,15 +645,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       if (!rightSwordRef.current) {
         console.log(`⚔️ RIGHT physical hand sword spawned (on Three.js controller ${rightIndex})`);
         const sword = createSword();
-        // Set initial rotation based on current mode (default is side mode)
-        if (rightSwordMode.current === 'side') {
-          sword.rotation.y = 0;
-          sword.rotation.z = Math.PI / 2 + Math.PI; // Side mode: flipped 180 degrees
-        } else {
-          sword.rotation.y = 0;
-          sword.rotation.z = Math.PI / 2; // Base rotation
-          sword.rotation.x = -Math.PI / 4; // Standard mode: 45 degrees upward around X axis
-        }
+        // Start with neutral rotation for testing
+        sword.rotation.x = 0;
+        sword.rotation.y = 0;
+        sword.rotation.z = 0;
         rightSwordRef.current = sword;
         rightControllerObj.add(sword); // Attach to RIGHT physical hand
       }
@@ -661,8 +656,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       if (rightSwordRef.current) {
         rightControllerObj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
-        // Reset mode when sword is removed
-        rightSwordMode.current = 'side';
+        // Reset rotation test when sword is removed
+        rotationTestStep.current = 0;
       }
     }
 
