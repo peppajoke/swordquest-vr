@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
+import { useAudio } from '../lib/stores/useAudio';
 
 interface VRControllersProps {
   onFuelChange?: (fuel: number) => void;
@@ -10,6 +11,7 @@ interface VRControllersProps {
 }
 
 export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackChange }: VRControllersProps) {
+  const { playGunShoot } = useAudio();
   const { 
     addHitEffect, 
     explodePillar 
@@ -259,9 +261,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     createInstantHit(controllerPos, controllerDir, scene);
     
     // Play gun shoot sound
-    import('../lib/stores/useAudio').then(({ useAudio }) => {
-      useAudio.getState().playGunShoot();
-    });
+    playGunShoot();
     
     // Consume ammo
     ammo.current--;
