@@ -40,7 +40,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const lastYButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
-  const rightSwordRotationMode = useRef(0); // 0 = standard, 1 = side
+  const rightSwordRotationMode = useRef(0); // Cycles through different positions
   // Controller sync status tracking
   const controllerSyncStatus = useRef({
     scanning: true,
@@ -611,31 +611,58 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (aButtonPressed && !lastAButtonPressed.current) {
       
       if (rightSwordRef.current) {
-        // If right sword is spawned, toggle rotation mode
-        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 2;
+        // If right sword is spawned, cycle through different rotation positions
+        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 8;
         
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode: x15, y30, z15 (converted to radians)
-          rightSwordRef.current.rotation.set(
-            15 * Math.PI / 180,  // x15 degrees
-            30 * Math.PI / 180,  // y30 degrees  
-            15 * Math.PI / 180   // z15 degrees
-          );
-          console.log('🗡️ RIGHT sword set to STANDARD mode (x15°, y30°, z15°)');
-          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-            (window as any).vrDebugLog(`🗡️ RIGHT sword: STANDARD mode`);
-          }
-        } else {
-          // Side mode: x90, y0, z-75 (converted to radians)
-          rightSwordRef.current.rotation.set(
-            90 * Math.PI / 180,   // x90 degrees
-            0 * Math.PI / 180,    // y0 degrees
-            -75 * Math.PI / 180   // z-75 degrees  
-          );
-          console.log('🗡️ RIGHT sword set to SIDE mode (x90°, y0°, z-75°)');
-          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-            (window as any).vrDebugLog(`🗡️ RIGHT sword: SIDE mode`);
-          }
+        let positionName = "";
+        
+        switch (rightSwordRotationMode.current) {
+          case 0:
+            // Forward Grip - Natural forward hold
+            rightSwordRef.current.rotation.set(0, 0, Math.PI / 2);
+            positionName = "FORWARD GRIP";
+            break;
+          case 1:
+            // Upward Thrust - Pointing up and forward
+            rightSwordRef.current.rotation.set(-Math.PI / 4, 0, Math.PI / 2);
+            positionName = "UPWARD THRUST";
+            break;
+          case 2:
+            // Side Slash - Horizontal from the side
+            rightSwordRef.current.rotation.set(0, 0, 0);
+            positionName = "SIDE SLASH";
+            break;
+          case 3:
+            // Downward Strike - Angled down
+            rightSwordRef.current.rotation.set(Math.PI / 4, 0, Math.PI / 2);
+            positionName = "DOWNWARD STRIKE";
+            break;
+          case 4:
+            // Defensive Parry - Angled up for blocking
+            rightSwordRef.current.rotation.set(-Math.PI / 3, 0, Math.PI / 3);
+            positionName = "DEFENSIVE PARRY";
+            break;
+          case 5:
+            // Backhand Swing - Reverse grip style
+            rightSwordRef.current.rotation.set(0, Math.PI, Math.PI / 2);
+            positionName = "BACKHAND SWING";
+            break;
+          case 6:
+            // Overhead Chop - High overhead position
+            rightSwordRef.current.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+            positionName = "OVERHEAD CHOP";
+            break;
+          case 7:
+            // Low Guard - Defensive low position
+            rightSwordRef.current.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+            positionName = "LOW GUARD";
+            break;
+        }
+        
+        console.log(`🗡️ RIGHT sword position ${rightSwordRotationMode.current + 1}/8: ${positionName}`);
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`🗡️ Position ${rightSwordRotationMode.current + 1}/8: ${positionName}`);
+          (window as any).vrDebugLog(`Press A to cycle to next position`);
         }
       } else {
         // If no sword spawned, capture controller rotation
@@ -708,22 +735,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
         const sword = createSword();
-        // Set initial rotation based on current mode
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode: x15, y30, z15
-          sword.rotation.set(
-            15 * Math.PI / 180,
-            30 * Math.PI / 180,
-            15 * Math.PI / 180
-          );
-        } else {
-          // Side mode: x90, y0, z-75
-          sword.rotation.set(
-            90 * Math.PI / 180,
-            0 * Math.PI / 180,
-            -75 * Math.PI / 180
-          );
-        }
+        // Set initial rotation to Forward Grip position
+        sword.rotation.set(0, 0, Math.PI / 2);
         rightSwordRef.current = sword;
         rightControllerObj.add(sword);
         
