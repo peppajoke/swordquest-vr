@@ -367,6 +367,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       leftGrabbing.current = gamepad1.buttons[1].pressed; // Left hand (controller1) grip
       rightTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires RIGHT gun - SWAPPED!
     }
+    
+    // Left stick movement (free locomotion)
+    let leftStickX = 0;
+    let leftStickY = 0;
+    if (gamepad1 && gamepad1.axes && gamepad1.axes.length >= 4) {
+      leftStickX = gamepad1.axes[2] || 0; // X-axis (left/right)
+      leftStickY = gamepad1.axes[3] || 0; // Y-axis (forward/back)
+    }
 
     // Use grip controllers for weapon attachment (they track hand pose better)
     const controller0Obj = controllerGrip0Ref.current;
@@ -630,7 +638,35 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       }
     }
 
-    // Apply movement to worldGroup with wall collision
+    // Left stick free movement (slower speed)
+    if (Math.abs(leftStickX) > 0.1 || Math.abs(leftStickY) > 0.1) {
+      const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
+      if (worldGroup) {
+        // Get camera direction for forward/backward movement
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
+        cameraDirection.y = 0; // Keep movement horizontal
+        cameraDirection.normalize();
+        
+        // Get right direction from camera
+        const rightDirection = new THREE.Vector3();
+        rightDirection.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
+        rightDirection.normalize();
+        
+        // Calculate movement vector (slower speed: 0.05 vs grip movement 0.1)
+        const stickMoveVector = new THREE.Vector3();
+        stickMoveVector.add(rightDirection.multiplyScalar(leftStickX * 0.05));
+        stickMoveVector.add(cameraDirection.multiplyScalar(-leftStickY * 0.05)); // Negative for forward
+        
+        // Check collision
+        const newPosition = worldGroup.position.clone().add(stickMoveVector);
+        if (!(newPosition.x < -19 || newPosition.x > 19 || newPosition.z < -9 || newPosition.z > 19)) {
+          worldGroup.position.add(stickMoveVector);
+        }
+      }
+    }
+
+    // Apply grip-based movement to worldGroup with wall collision
     if (velocity.current.length() > 0.01) {
       const moveVector = velocity.current.clone().multiplyScalar(deltaTime);
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
