@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 import DesktopSwordVisual from './DesktopSwordVisual';
+import { PLAYER_CONFIG, COMBAT_CONFIG } from '../config/gameConfig';
 
 interface DesktopControlsProps {
   onShoot?: (hand: 'left' | 'right') => void;
@@ -34,8 +35,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   // Physics state
   const verticalVelocity = useRef(0);
   const isGrounded = useRef(true);
-  const gravity = -20; // Gravity acceleration (negative for downward)
-  const jumpVelocity = 8; // Initial jump velocity
+  const gravity = PLAYER_CONFIG.movement.gravity * 2; // Gravity acceleration (negative for downward)
+  const jumpVelocity = PLAYER_CONFIG.movement.jumpVelocity; // Initial jump velocity
   const groundLevel = 1; // Ground Y position (accounting for player height)
   
   // Mouse state
@@ -46,22 +47,22 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   // Jetpack state
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [fuel, setFuel] = useState(100);
-  const maxSpeed = 8.0;
-  const jetpackSpeed = 12.0;
+  const maxSpeed = PLAYER_CONFIG.movement.jetpackSpeed;
+  const jetpackSpeed = PLAYER_CONFIG.movement.jetpackSpeed;
   
   // Sword swinging state
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
   const [isSwinging, setIsSwinging] = useState(false);
   const [swingingHand, setSwingingHand] = useState<'left' | 'right'>('right');
   const lastSwordSwing = useRef(0);
-  const swingCooldown = 500; // 0.5 seconds between swings
+  const swingCooldown = PLAYER_CONFIG.weapons.swingCooldown;
   const [swordSwinging, setSwordSwinging] = useState(false);
   const lastSwordDamage = useRef(0);
-  const swordDamageCooldown = 500; // Single damage per swing
+  const swordDamageCooldown = PLAYER_CONFIG.weapons.swordDamageCooldown;
   
   // Gun shooting state - dual clip system like VR
   const lastShot = useRef(0);
-  const shotCooldown = 150; // Faster shooting for desktop
+  const shotCooldown = PLAYER_CONFIG.weapons.shotCooldown;
   const [leftClip, setLeftClip] = useState(12); // Left gun clip
   const [rightClip, setRightClip] = useState(12); // Right gun clip
   const maxClipSize = 12; // Max rounds per clip
@@ -256,7 +257,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     
     const timeout = setTimeout(() => {
       reloadGuns();
-    }, 1500);
+    }, PLAYER_CONFIG.weapons.reloadTimeout);
     
     setReloadTimeout(timeout);
   };
@@ -312,7 +313,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     const swingPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(1.2));
     
     // Distance-based optimization for sword collision detection
-    const MAX_SWORD_DISTANCE = 25; // Only check enemies within 25 units
+    const MAX_SWORD_DISTANCE = COMBAT_CONFIG.collision.swordCheckDistance;
     
     // Check for enemies in swing range
     let hitAnyEnemy = false;

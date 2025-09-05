@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import { useAudio } from "../lib/stores/useAudio";
+import { PLAYER_CONFIG, COMBAT_CONFIG, WORLD_CONFIG } from "../config/gameConfig";
 
 interface VRControllersProps {
   onFuelChange?: (fuel: number) => void;
@@ -102,9 +103,9 @@ export default function VRControllers({
   const lastSwordsHeld = useRef(0);
 
   // Movement parameters
-  const maxSpeed = useRef(9.6); // Increased by 3x (3.2 * 3)
-  const accelerationRate = useRef(12.0);
-  const turnRate = useRef(0.3);
+  const maxSpeed = useRef(PLAYER_CONFIG.movement.maxSpeed);
+  const accelerationRate = useRef(PLAYER_CONFIG.movement.accelerationRate);
+  const turnRate = useRef(PLAYER_CONFIG.movement.turnRate);
 
   // Gun system
   const bullets = useRef<
@@ -118,7 +119,7 @@ export default function VRControllers({
   // Individual gun clips with 12 rounds each
   const leftClip = useRef(12); // Left gun clip
   const rightClip = useRef(12); // Right gun clip
-  const maxClipSize = useRef(12); // Max rounds per clip
+  const maxClipSize = useRef(PLAYER_CONFIG.weapons.maxClipSize);
 
   // Reload state tracking
   const leftReloading = useRef(false);
@@ -128,9 +129,9 @@ export default function VRControllers({
   // Fuel system
   const fuel = useRef(100.0);
   const maxFuel = useRef(100.0);
-  const fuelDrainRate = useRef(3.0); // Much slower drain
-  const fuelRechargeRate = useRef(8.0);
-  const fuelPenaltyRecovery = useRef(15.0);
+  const fuelDrainRate = useRef(PLAYER_CONFIG.jetpack.fuelDrainRate);
+  const fuelRechargeRate = useRef(PLAYER_CONFIG.jetpack.fuelRechargeRate);
+  const fuelPenaltyRecovery = useRef(PLAYER_CONFIG.jetpack.fuelPenaltyRecovery);
   const wasEmpty = useRef(false);
   const emptyPenaltyTime = useRef(0);
   const wasAccelerating = useRef(false);
@@ -1539,7 +1540,7 @@ export default function VRControllers({
 
       // Distance-based optimization for collision detection
       const playerPos = camera.position.clone();
-      const COLLISION_CHECK_DISTANCE = 50; // Only check collisions within 50 units
+      const COLLISION_CHECK_DISTANCE = COMBAT_CONFIG.collision.collisionCheckDistance;
 
       // Check collision with turret bullets (bullet slicing) - with safety check
       if (scene) {
@@ -1588,7 +1589,7 @@ export default function VRControllers({
             if (playerPos.distanceTo(pillarPos) > COLLISION_CHECK_DISTANCE) return;
 
             const distance = swordPos.distanceTo(pillarPos);
-            if (distance < 1.0) {
+            if (distance < COMBAT_CONFIG.collision.pillarHitDistance) {
               // Hit distance
               explodePillar(child.uuid);
               child.userData.destroyed = true;
@@ -1636,10 +1637,10 @@ export default function VRControllers({
             if (playerPos.distanceTo(turretPos) > COLLISION_CHECK_DISTANCE) return;
 
             const distance = swordPos.distanceTo(turretPos);
-            if (distance < 1.5) {
+            if (distance < COMBAT_CONFIG.collision.turretHitDistance) {
               // Hit distance for turrets (larger than pillars)
               // Damage turret
-              child.userData.health -= 35; // More damage with sword
+              child.userData.health -= PLAYER_CONFIG.weapons.swordDamageVR;
               console.log(
                 `⚔️ Turret slashed! Health: ${child.userData.health}/100`,
               );
@@ -1672,9 +1673,9 @@ export default function VRControllers({
             if (playerPos.distanceTo(enemyPos) > COLLISION_CHECK_DISTANCE) return;
 
             const distance = swordPos.distanceTo(enemyPos);
-            if (distance < 1.2) {
+            if (distance < COMBAT_CONFIG.collision.enemyHitDistance) {
               // Hit distance for enemies
-              const swordDamage = 45; // Higher damage with sword
+              const swordDamage = PLAYER_CONFIG.weapons.swordDamageVR;
               if (child.userData.takeDamage) {
                 child.userData.takeDamage(swordDamage);
               }
@@ -1698,7 +1699,7 @@ export default function VRControllers({
             child.getWorldPosition(boxPos);
 
             const distance = swordPos.distanceTo(boxPos);
-            if (distance < 2.0) {
+            if (distance < COMBAT_CONFIG.collision.playAgainBoxDistance) {
               // Hit distance for the Play Again box
               console.log("⚔️ Slashed Play Again box - respawning!");
 

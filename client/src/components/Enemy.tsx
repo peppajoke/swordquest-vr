@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import HealthBar from "./HealthBar";
 import enemyConfig from "../data/enemyConfig.json";
+import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
 
 interface EnemyProps {
   type:
@@ -135,10 +136,10 @@ export default function Enemy({ type, position }: EnemyProps) {
     meshRef.current.userData.health = health;
     meshRef.current.userData.isDead = isDead;
 
-    // Distance-based performance optimization
-    const MAX_ACTIVE_DISTANCE = 100; // Max distance for any AI behavior
-    const CLOSE_DISTANCE = 30; // Distance for full AI updates
-    const MID_DISTANCE = 60; // Distance for reduced AI updates
+    // Distance-based performance optimization using central config
+    const MAX_ACTIVE_DISTANCE = COMBAT_CONFIG.collision.maxCheckDistance;
+    const CLOSE_DISTANCE = COMBAT_CONFIG.collision.closeDistance;
+    const MID_DISTANCE = COMBAT_CONFIG.collision.midDistance;
     
     // Skip expensive AI computations for very distant enemies
     if (distance > MAX_ACTIVE_DISTANCE && !isDead) {
@@ -148,7 +149,7 @@ export default function Enemy({ type, position }: EnemyProps) {
 
     // Reduce update frequency for distant enemies using simple frame counter
     const frameSkip = distance > CLOSE_DISTANCE ? 
-      (distance > MID_DISTANCE ? 4 : 2) : 1; // Update every 4th frame for far, 2nd for mid, every frame for close
+      (distance > MID_DISTANCE ? PERFORMANCE_CONFIG.frameSkipping.farFrameSkip : PERFORMANCE_CONFIG.frameSkipping.midFrameSkip) : PERFORMANCE_CONFIG.frameSkipping.closeFrameSkip;
     
     // Use frame-based skipping instead of time-based for better performance
     const frameNum = Math.floor(currentTime / 16) % frameSkip;
@@ -157,13 +158,13 @@ export default function Enemy({ type, position }: EnemyProps) {
       return;
     }
 
-    // Death animation sequence
+    // Death animation sequence using central config
     if (isDead) {
       const deathTime =
         currentTime - (meshRef.current.userData.deathStartTime || currentTime);
 
-      if (deathTime < 500) {
-        // Phase 1: Turn bright red (0-0.5 seconds)
+      if (deathTime < ANIMATION_CONFIG.deathSequence.redPhase) {
+        // Phase 1: Turn bright red
         meshRef.current.traverse((child) => {
           if (
             child instanceof THREE.Mesh &&
@@ -173,9 +174,9 @@ export default function Enemy({ type, position }: EnemyProps) {
             child.material.transparent = true;
           }
         });
-      } else if (deathTime < 1500) {
-        // Phase 2: Become translucent (0.5-1.5 seconds)
-        const fadeProgress = (deathTime - 500) / 1000; // 0 to 1
+      } else if (deathTime < ANIMATION_CONFIG.deathSequence.dissolveStart) {
+        // Phase 2: Become translucent
+        const fadeProgress = (deathTime - ANIMATION_CONFIG.deathSequence.redPhase) / ANIMATION_CONFIG.deathSequence.fadePhase; // 0 to 1
         const opacity = 1.0 - fadeProgress * 0.5; // Fade to 50% opacity
 
         meshRef.current.traverse((child) => {
@@ -188,8 +189,8 @@ export default function Enemy({ type, position }: EnemyProps) {
           }
         });
       } else {
-        // Phase 3: Dissolve (1.5+ seconds)
-        const dissolveProgress = (deathTime - 1500) / 1000; // 0 to 1+
+        // Phase 3: Dissolve
+        const dissolveProgress = (deathTime - ANIMATION_CONFIG.deathSequence.dissolveStart) / 1000; // 0 to 1+
         const scale = Math.max(0, 1.0 - dissolveProgress);
         const opacity = Math.max(0, 0.5 - dissolveProgress * 0.5);
 
