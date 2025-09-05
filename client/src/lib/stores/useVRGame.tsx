@@ -77,41 +77,13 @@ interface VRGameState {
 
 const createInitialTargets = (): Target[] => [];
 
-const createInitialPillars = (): Pillar[] => [
-  // Scattered red pillars throughout the expanded level (300% larger)
-  { id: 'pillar_1', position: [-20, 1, -12], destroyed: false },
-  { id: 'pillar_2', position: [20, 1, -12], destroyed: false },
-  { id: 'pillar_3', position: [-8, 1, -24], destroyed: false },
-  { id: 'pillar_4', position: [8, 1, -24], destroyed: false },
-  { id: 'pillar_5', position: [0, 1, -32], destroyed: false },
-  { id: 'pillar_6', position: [-28, 1, -40], destroyed: false },
-  { id: 'pillar_7', position: [28, 1, -40], destroyed: false },
-  { id: 'pillar_8', position: [-12, 1, -48], destroyed: false },
-  { id: 'pillar_9', position: [12, 1, -48], destroyed: false },
-  { id: 'pillar_10', position: [0, 1, -60], destroyed: false },
-  { id: 'pillar_11', position: [-24, 1, -72], destroyed: false },
-  { id: 'pillar_12', position: [24, 1, -72], destroyed: false },
-  { id: 'pillar_13', position: [-4, 1, -80], destroyed: false },
-  { id: 'pillar_14', position: [4, 1, -80], destroyed: false },
-  { id: 'pillar_15', position: [-32, 1, -100], destroyed: false },
-  { id: 'pillar_16', position: [32, 1, -100], destroyed: false },
-  // Additional pillars for the expanded space
-  { id: 'pillar_17', position: [-15, 1, -15], destroyed: false },
-  { id: 'pillar_18', position: [15, 1, -15], destroyed: false },
-  { id: 'pillar_19', position: [-35, 1, -30], destroyed: false },
-  { id: 'pillar_20', position: [35, 1, -30], destroyed: false },
-  { id: 'pillar_21', position: [0, 1, -45], destroyed: false },
-  { id: 'pillar_22', position: [-20, 1, -55], destroyed: false },
-  { id: 'pillar_23', position: [20, 1, -55], destroyed: false },
-  { id: 'pillar_24', position: [-30, 1, -85], destroyed: false },
-  { id: 'pillar_25', position: [30, 1, -85], destroyed: false },
-];
+const createInitialPillars = (): Pillar[] => [];
 
 export const useVRGame = create<VRGameState>()(
   subscribeWithSelector((set, get) => ({
     score: 0,
-    targets: createInitialTargets(),
-    pillars: createInitialPillars(),
+    targets: [],
+    pillars: [],
     hitEffects: [],
     swordColliders: [],
     targetMeshes: {},

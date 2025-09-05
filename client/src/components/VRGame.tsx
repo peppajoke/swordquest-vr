@@ -118,10 +118,10 @@ export default function VRGame() {
       <group name="worldGroup">
         {inDeathRoom && <DeathRoom />}
         
-        {/* Ground - Covers entire expanded map area */}
-        <mesh receiveShadow position={[0, 0, -50]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[150, 200]} />
-          <meshLambertMaterial color="#2d3436" />
+        {/* Room Floor */}
+        <mesh receiveShadow position={[0, 0, -5]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[20, 10]} />
+          <meshLambertMaterial color="#666666" />
         </mesh>
         
         {/* Game Objects - targets and environment */}

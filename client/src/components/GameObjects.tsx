@@ -8,44 +8,45 @@ export default function GameObjects() {
   
   // No more ammo pickups - removed for auto-recharge system
   
-  // Generate 12 turret towers scattered around the level
-  const turrets = useMemo(() => {
-    const towerList: Array<{ id: string; x: number; y: number; z: number }> = [];
-    
-    for (let i = 0; i < 12; i++) {
-      const x = (Math.random() - 0.5) * 120; // -60 to +60
-      const z = -30 + Math.random() * -80;   // -30 to -110
-      const y = 0; // Ground level
-      
-      towerList.push({
-        id: `turret-${i}`,
-        x, y, z
-      });
-    }
-    
-    return towerList;
-  }, []);
+  // No turrets in starting room
+  const turrets = useMemo(() => [], []);
 
   return (
     <>
-      {/* Red Pillars scattered throughout the level */}
-      {pillars.map((pillar) => (
-        <RedPillar
-          key={pillar.id}
-          position={pillar.position}
-          destroyed={pillar.destroyed}
-        />
-      ))}
+      {/* Room Walls */}
+      {/* Back wall */}
+      <mesh position={[0, 2, -10]} receiveShadow>
+        <boxGeometry args={[20, 4, 0.2]} />
+        <meshLambertMaterial color="#555555" />
+      </mesh>
       
-      {/* Ammo pickups removed - using auto-recharge system */}
+      {/* Left wall */}
+      <mesh position={[-10, 2, -5]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[10, 4, 0.2]} />
+        <meshLambertMaterial color="#555555" />
+      </mesh>
       
-      {/* Turret Towers */}
-      {turrets.map((turret) => (
-        <TurretTower
-          key={turret.id}
-          position={[turret.x, turret.y, turret.z]}
-        />
-      ))}
+      {/* Right wall */}
+      <mesh position={[10, 2, -5]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[10, 4, 0.2]} />
+        <meshLambertMaterial color="#555555" />
+      </mesh>
+      
+      {/* Front wall (partial, with opening) */}
+      <mesh position={[-5, 2, 0]} receiveShadow>
+        <boxGeometry args={[8, 4, 0.2]} />
+        <meshLambertMaterial color="#555555" />
+      </mesh>
+      <mesh position={[5, 2, 0]} receiveShadow>
+        <boxGeometry args={[8, 4, 0.2]} />
+        <meshLambertMaterial color="#555555" />
+      </mesh>
+      
+      {/* Ceiling */}
+      <mesh position={[0, 4, -5]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 10]} />
+        <meshLambertMaterial color="#444444" />
+      </mesh>
     </>
   );
 }
