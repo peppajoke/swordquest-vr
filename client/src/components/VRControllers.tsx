@@ -327,6 +327,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (!vrInitialized.current) {
       vrInitialized.current = true;
       console.log('✅ VR Controllers fully initialized and ready!');
+      console.log('🧪 HAND DETECTION DEBUG:');
+      console.log(`Controller 0 handedness: ${controller0.handedness}`);
+      console.log(`Controller 1 handedness: ${controller1.handedness}`);
+      console.log('Press triggers to test which hand fires which gun...');
     }
 
     // Store controller refs - keep them visible so our custom objects show
@@ -439,6 +443,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (rightGrabbing.current) {
       // Show sword
       if (!rightSwordRef.current) {
+        console.log(`⚔️ RIGHT sword spawned on controller0 (${controller0.handedness} hand)`);
         const sword = createSword();
         // Flip right-hand sword horizontally
         sword.rotation.y = Math.PI; // 180 degrees horizontal flip
@@ -449,6 +454,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     } else {
       // Hide sword
       if (rightSwordRef.current) {
+        console.log(`⚔️ RIGHT sword removed from controller0 (${controller0.handedness} hand)`);
         controller0Obj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
       }
@@ -466,6 +472,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (leftGrabbing.current) {
       // Show sword
       if (!leftSwordRef.current) {
+        console.log(`⚔️ LEFT sword spawned on controller1 (${controller1.handedness} hand)`);
         const sword = createSword();
         // Flip left-hand sword horizontally
         sword.scale.x = -1; // Flip horizontally using scale instead of rotation
@@ -476,6 +483,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     } else {
       // Hide sword
       if (leftSwordRef.current) {
+        console.log(`⚔️ LEFT sword removed from controller1 (${controller1.handedness} hand)`);
         controller1Obj.remove(leftSwordRef.current);
         leftSwordRef.current = undefined;
       }
@@ -754,12 +762,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     
     // RIGHT GUN FIRING (controller0 = RIGHT hand)
     if (rightTrigger.current && !lastRightTrigger.current) {
+      console.log(`🔫 RIGHT gun fired from controller0 (${controller0.handedness} hand)`);
       fireInstantBullet(controller0Obj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
     
     // LEFT GUN FIRING (controller1 = LEFT hand)
     if (leftTrigger.current && !lastLeftTrigger.current) {
+      console.log(`🔫 LEFT gun fired from controller1 (${controller1.handedness} hand)`);
       fireInstantBullet(controller1Obj, 'left', scene);
     }
     lastLeftTrigger.current = leftTrigger.current;
