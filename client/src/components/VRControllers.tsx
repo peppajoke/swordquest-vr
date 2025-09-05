@@ -213,6 +213,46 @@ export default function VRControllers({
       hitDistance = intersects[0].distance;
       hitTarget = intersects[0].object;
       endPosition.copy(intersects[0].point!);
+    } else {
+      // Aim assist: If no direct hit, check for nearby targets
+      const aimAssistRadius = 2.0; // 2 meter radius for aim assist
+      let closestTarget = null;
+      let closestDistance = Infinity;
+      
+      if (worldGroup) {
+        worldGroup.traverse((child) => {
+          if (
+            (child.userData.isPillar && !child.userData.destroyed) ||
+            (child.userData.isTurret && child.userData.health > 0)
+          ) {
+            const targetPos = new THREE.Vector3();
+            child.getWorldPosition(targetPos);
+            
+            // Calculate distance from bullet ray to target center
+            const rayToTarget = targetPos.clone().sub(startPosition);
+            const projectionLength = rayToTarget.dot(direction.normalize());
+            
+            if (projectionLength > 0 && projectionLength < maxDistance) {
+              const closestPointOnRay = startPosition.clone().add(
+                direction.clone().normalize().multiplyScalar(projectionLength)
+              );
+              const distanceToTarget = targetPos.distanceTo(closestPointOnRay);
+              
+              if (distanceToTarget < aimAssistRadius && projectionLength < closestDistance) {
+                closestTarget = child;
+                closestDistance = projectionLength;
+                hitDistance = projectionLength;
+                endPosition.copy(targetPos);
+              }
+            }
+          }
+        });
+      }
+      
+      if (closestTarget) {
+        hitTarget = closestTarget;
+        console.log(`🎯 Aim assist hit target at ${hitDistance.toFixed(1)}m (${aimAssistRadius}m radius)`);
+      }
     }
 
     // Create visible laser beam
@@ -456,90 +496,76 @@ export default function VRControllers({
     return gun;
   }
 
-  // === ADD: Oculus/Meta controller hider ===
-  function installControllerHider(gl: any, scene: THREE.Scene) {
-    const targets: (THREE.Object3D | undefined)[] = [
-      gl.xr.getController(0),
-      gl.xr.getController(1),
-      gl.xr.getControllerGrip(0),
-      gl.xr.getControllerGrip(1),
-    ];
+  // === Controller hider (safe, no flicker) ===
+  function installControllerHiderSafe(gl: any, scene: THREE.Scene) {
+    const grips = [gl.xr.getControllerGrip(0), gl.xr.getControllerGrip(1)];
+    const rays = [gl.xr.getController(0), gl.xr.getController(1)];
 
     const isCustom = (o: any) => !!o?.userData?.isCustomModel;
 
-    const nuke = (root?: THREE.Object3D | null) => {
+    // Only touch children under controller/grip nodes
+    const hideUnder = (root?: THREE.Object3D | null) => {
       root?.traverse((child: any) => {
-        if (isCustom(child)) return;
-        const t = child?.type?.toLowerCase?.() || "";
-        const n = child?.name?.toLowerCase?.() || "";
+        if (!child || isCustom(child)) return;
 
-        // Hide rays, default meshes, controller models
+        const t = (child.type || "").toLowerCase();
+        const n = (child.name || "").toLowerCase();
+
+        // built-in ray lines
+        if (child.isLine || t.includes("line")) child.visible = false;
+
+        // XRControllerModelFactory bits (names vary: "MotionController", "OculusTouch", profiles)
         if (
-          child.isLine ||
-          t.includes("line") ||
           child.isMesh ||
           child.isSkinnedMesh ||
           child.isGroup ||
           child.isObject3D ||
           n.includes("controller") ||
           n.includes("oculus") ||
-          n.includes("profile")
+          n.includes("profile") ||
+          n.includes("motion")
         ) {
+          // don't remove; just hide so transforms remain stable
           child.visible = false;
-          // hard-remove too (prevents reappearing)
-          if (child.parent) child.parent.remove(child);
+          // extra safety: shrink so hit-testing won't catch it
+          if (!child.userData.__shrunk) {
+            child.scale.multiplyScalar(0.00001);
+            child.userData.__shrunk = true;
+          }
         }
       });
     };
 
-    // Guard against future adds: monkey-patch .add on targets so any new default model is dropped
-    const patchAdd = (obj?: THREE.Object3D) => {
-      if (!obj || (obj as any).__addPatched) return;
-      const origAdd = obj.add.bind(obj);
-      (obj as any).__addPatched = true;
-      obj.add = (...children: THREE.Object3D[]) => {
-        const keep: THREE.Object3D[] = [];
-        for (const c of children) {
-          if (isCustom(c)) {
-            keep.push(c);
-            continue;
-          }
-          // If not custom, hide & drop
-          nuke(c);
-        }
-        if (keep.length) origAdd(...keep);
-        return obj;
-      };
+    // Run once now
+    grips.forEach(hideUnder);
+    rays.forEach(hideUnder);
+
+    // Re-run when XR reattaches models
+    const rehide = () => {
+      grips.forEach(hideUnder);
+      rays.forEach(hideUnder);
     };
-
-    // Apply to all known targets now…
-    targets.forEach((o) => {
-      nuke(o);
-      patchAdd(o as any);
+    grips.forEach((g) => {
+      g?.addEventListener?.("connected", rehide);
+      g?.addEventListener?.("disconnected", rehide);
+    });
+    rays.forEach((r) => {
+      r?.addEventListener?.("connected", rehide);
+      r?.addEventListener?.("disconnected", rehide);
     });
 
-    // …and also to the scene (catches <Controllers/> or factory attaching under scene)
-    patchAdd(scene);
-
-    // Re-apply on XR connect/disconnect (factory often attaches on connect)
-    targets.forEach((o) => {
-      o?.addEventListener?.("connected", () => nuke(o));
-      o?.addEventListener?.("disconnected", () => nuke(o));
-    });
-
-    // Final fallback: nuke a few initial frames (race-proof)
+    // Small startup cushion: first ~30 frames only, then stop (no seizures!)
     let frames = 0;
-    const stop = gl.setAnimationLoop ? gl.setAnimationLoop : (fn: any) => fn;
-    const oldLoop = gl.getAnimationLoop?.();
-    gl.setAnimationLoop?.((t: number) => {
-      if (frames < 90) {
-        targets.forEach(nuke);
-        frames++;
+    const tick = () => {
+      if (frames++ < 30) {
+        grips.forEach(hideUnder);
+        rays.forEach(hideUnder);
+        requestAnimationFrame(tick);
       }
-      if (oldLoop) oldLoop(t);
-    });
+    };
+    requestAnimationFrame(tick);
   }
-  // === END ADD ===
+  // === END ===
 
   useFrame((state) => {
     const { gl, camera, scene } = state;
@@ -574,9 +600,8 @@ export default function VRControllers({
       scene.add(controllerGrip1Ref.current);
     }
 
-    // After creating & adding controller0/1 and grip0/1:
     if (!hiddenXRDefaultsRef.current) {
-      installControllerHider(gl, scene);
+      installControllerHiderSafe(gl, scene);
       hiddenXRDefaultsRef.current = true;
     }
 
