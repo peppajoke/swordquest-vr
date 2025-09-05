@@ -70,11 +70,23 @@ export function DeathRoom() {
         <meshLambertMaterial color="#222222" />
       </mesh>
       
-      {/* Red mood lighting */}
+      {/* Bright lighting for visibility */}
       <pointLight 
         position={[0, 3, 0]} 
-        intensity={1.5} 
-        color="#ff4444" 
+        intensity={3} 
+        color="#ffffff" 
+        distance={15}
+      />
+      <pointLight 
+        position={[-2, 2, -1]} 
+        intensity={2} 
+        color="#4499ff" 
+        distance={10}
+      />
+      <pointLight 
+        position={[2, 2, -1]} 
+        intensity={2} 
+        color="#ff6600" 
         distance={10}
       />
       

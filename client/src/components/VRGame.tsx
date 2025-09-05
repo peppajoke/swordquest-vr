@@ -101,8 +101,8 @@ export default function VRGame() {
     return (
       <>
         {/* Death Room Lighting */}
-        <color attach="background" args={["#220000"]} />
-        <ambientLight intensity={0.2} />
+        <color attach="background" args={["#001122"]} />
+        <ambientLight intensity={0.6} />
         
         {/* World Group for death room */}
         <group name="worldGroup">
