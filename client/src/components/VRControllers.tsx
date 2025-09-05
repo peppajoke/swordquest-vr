@@ -311,9 +311,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
 
     const inputSources = Array.from(session.inputSources);
     
-    // Fixed hand assignments - swapping to correct the mapping
-    const controller0 = inputSources.find(input => input.handedness === 'left');  // Controller 0 = LEFT hand
-    const controller1 = inputSources.find(input => input.handedness === 'right'); // Controller 1 = RIGHT hand
+    // 🚨🚨🚨 CRITICAL HAND MAPPING - DO NOT CHANGE THESE ASSIGNMENTS! 🚨🚨🚨
+    // ✅ CORRECT MAPPING (VERIFIED WORKING):
+    // - controller0 = LEFT HAND (left controller)
+    // - controller1 = RIGHT HAND (right controller)
+    // 🚨 NEVER SWAP THESE - THEY ARE CORRECT! 🚨
+    const controller0 = inputSources.find(input => input.handedness === 'left');  // Controller 0 = LEFT hand ✅
+    const controller1 = inputSources.find(input => input.handedness === 'right'); // Controller 1 = RIGHT hand ✅
     
     // Wait for both controllers to be available with proper gamepad data
     if (!controller0 || !controller1 || !controller0.gamepad || !controller1.gamepad) {
@@ -367,9 +371,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     const gamepad0 = controller0.gamepad;
     const gamepad1 = controller1.gamepad;
     
+    // 🚨🚨🚨 BUTTON INPUT HANDLING - HAND MAPPINGS ARE CRITICAL! 🚨🚨🚨
+    
+    // ✅ LEFT HAND INPUT (controller0 = LEFT HAND)
     if (gamepad0 && gamepad0.buttons.length > 1) {
-      leftGrabbing.current = gamepad0.buttons[1].pressed;  // Left hand (controller0) grip
-      leftTrigger.current = gamepad0.buttons[0].pressed;   // Left controller (0) fires LEFT gun
+      leftGrabbing.current = gamepad0.buttons[1].pressed;  // LEFT hand grip ✅
+      leftTrigger.current = gamepad0.buttons[0].pressed;   // LEFT hand trigger fires LEFT gun ✅
       
       // X button for left sword rotation (button index 3 is typically X button)
       const xButtonPressed = gamepad0.buttons[3]?.pressed || false;
@@ -380,9 +387,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
       lastXButtonPressed.current = xButtonPressed;
     }
+    
+    // ✅ RIGHT HAND INPUT (controller1 = RIGHT HAND)
     if (gamepad1 && gamepad1.buttons.length > 1) {
-      rightGrabbing.current = gamepad1.buttons[1].pressed; // Right hand (controller1) grip
-      rightTrigger.current = gamepad1.buttons[0].pressed;  // Right controller (1) fires RIGHT gun
+      rightGrabbing.current = gamepad1.buttons[1].pressed; // RIGHT hand grip ✅
+      rightTrigger.current = gamepad1.buttons[0].pressed;  // RIGHT hand trigger fires RIGHT gun ✅
       
       // B button toggle for jetpack (button index 5 is typically B button)
       const bButtonPressed = gamepad1.buttons[5]?.pressed || false;
@@ -395,20 +404,20 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
       lastBButtonPressed.current = bButtonPressed;
       
-      // A button for right sword mode toggle (button index 4 is typically A button)
+      // A button for RIGHT HAND sword mode toggle (button index 4 is typically A button)
       const aButtonPressed = gamepad1.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        // Toggle between side and forward modes
+        // Toggle between side and forward modes for RIGHT HAND ✅
         rightSwordMode.current = rightSwordMode.current === 'side' ? 'forward' : 'side';
         
         if (rightSwordMode.current === 'forward') {
-          // Forward mode: point sword directly ahead
-          rightSwordRef.current.rotation.set(0, Math.PI, -Math.PI / 2); // Point forward, flipped
-          console.log('⚔️ Right sword: FORWARD mode');
+          // Forward mode: point RIGHT HAND sword directly ahead ✅
+          rightSwordRef.current.rotation.set(0, Math.PI, -Math.PI / 2);
+          console.log('⚔️ RIGHT hand sword: FORWARD mode');
         } else {
-          // Side mode: default orientation (side slash)
-          rightSwordRef.current.rotation.set(0, Math.PI, 0); // Default side orientation, flipped
-          console.log('⚔️ Right sword: SIDE mode');
+          // Side mode: default orientation for RIGHT HAND ✅
+          rightSwordRef.current.rotation.set(0, Math.PI, 0);
+          console.log('⚔️ RIGHT hand sword: SIDE mode');
         }
       }
       lastAButtonPressed.current = aButtonPressed;
@@ -436,59 +445,61 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     
     if (!controller0Obj || !controller1Obj) return;
 
-    // LEFT HAND ITEMS (controller0 = LEFT hand)
-    // Always show gun
+    // 🚨🚨🚨 WEAPON ATTACHMENT - HAND MAPPINGS ARE CRITICAL! 🚨🚨🚨
+    
+    // ✅ LEFT HAND WEAPONS (controller0 = LEFT HAND) ✅
+    // Always show LEFT hand gun
     if (!leftGunRef.current) {
       const gun = createGun();
       leftGunRef.current = gun;
-      controller0Obj.add(gun);
+      controller0Obj.add(gun); // Add to LEFT controller ✅
     }
     
-    // Show/hide sword based on grip
+    // Show/hide LEFT hand sword based on LEFT hand grip
     if (leftGrabbing.current) {
-      // Show sword
+      // Show LEFT hand sword ✅
       if (!leftSwordRef.current) {
         const sword = createSword();
         // Flip left-hand sword horizontally
         sword.scale.x = -1; // Flip horizontally using scale instead of rotation
         sword.rotation.z = leftSwordRotation.current; // Apply any existing rotation
         leftSwordRef.current = sword;
-        controller0Obj.add(sword);
+        controller0Obj.add(sword); // Add to LEFT controller ✅
       }
     } else {
-      // Hide sword
+      // Hide LEFT hand sword
       if (leftSwordRef.current) {
         controller0Obj.remove(leftSwordRef.current);
         leftSwordRef.current = undefined;
       }
     }
 
-    // RIGHT HAND ITEMS (controller1 = RIGHT hand)
-    // Always show gun
+    // ✅ RIGHT HAND WEAPONS (controller1 = RIGHT HAND) ✅
+    // Always show RIGHT hand gun
     if (!rightGunRef.current) {
       const gun = createGun();
       rightGunRef.current = gun;
-      controller1Obj.add(gun);
+      controller1Obj.add(gun); // Add to RIGHT controller ✅
     }
     
-    // Show/hide sword based on grip
+    // Show/hide RIGHT hand sword based on RIGHT hand grip
     if (rightGrabbing.current) {
-      // Show sword
+      // Show RIGHT hand sword ✅
       if (!rightSwordRef.current) {
         const sword = createSword();
-        // Apply rotation based on current mode
+        // Apply rotation based on current mode for RIGHT HAND ✅
         if (rightSwordMode.current === 'forward') {
-          // Forward mode: point sword directly ahead
-          sword.rotation.set(0, Math.PI, -Math.PI / 2); // Point forward, flipped
+          // Forward mode: point RIGHT hand sword directly ahead ✅
+          sword.rotation.set(0, Math.PI, -Math.PI / 2);
         } else {
-          // Side mode: default orientation (side slash)
-          sword.rotation.set(0, Math.PI, 0); // Default side orientation, flipped
+          // Side mode: default orientation for RIGHT hand ✅
+          sword.rotation.set(0, Math.PI, 0);
         }
         rightSwordRef.current = sword;
-        controller1Obj.add(sword);
+        controller1Obj.add(sword); // Add to RIGHT controller ✅
       }
     } else {
-      // Hide sword
+      // Hide RIGHT hand sword
       if (rightSwordRef.current) {
         controller1Obj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
@@ -770,15 +781,17 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
 
     // Gun firing logic - always available
     
-    // LEFT GUN FIRING (controller0 = LEFT hand)
+    // 🚨🚨🚨 GUN FIRING - HAND MAPPINGS ARE CRITICAL! 🚨🚨🚨
+    
+    // ✅ LEFT GUN FIRING (controller0 = LEFT HAND) ✅
     if (leftTrigger.current && !lastLeftTrigger.current) {
-      fireInstantBullet(controller0Obj, 'left', scene);
+      fireInstantBullet(controller0Obj, 'left', scene); // LEFT controller fires LEFT gun ✅
     }
     lastLeftTrigger.current = leftTrigger.current;
     
-    // RIGHT GUN FIRING (controller1 = RIGHT hand)
+    // ✅ RIGHT GUN FIRING (controller1 = RIGHT HAND) ✅
     if (rightTrigger.current && !lastRightTrigger.current) {
-      fireInstantBullet(controller1Obj, 'right', scene);
+      fireInstantBullet(controller1Obj, 'right', scene); // RIGHT controller fires RIGHT gun ✅
     }
     lastRightTrigger.current = rightTrigger.current;
     
