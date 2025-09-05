@@ -115,7 +115,7 @@ export default function VRControllers({
   const leftClip = useRef(12); // Left gun clip
   const rightClip = useRef(12); // Right gun clip
   const maxClipSize = useRef(12); // Max rounds per clip
-  
+
   // Reload state tracking
   const leftReloading = useRef(false);
   const rightReloading = useRef(false);
@@ -576,8 +576,8 @@ export default function VRControllers({
 
     // After creating & adding controller0/1 and grip0/1:
     if (!hiddenXRDefaultsRef.current) {
-      //installControllerHider(gl, scene);
-      //hiddenXRDefaultsRef.current = true;
+      installControllerHider(gl, scene);
+      hiddenXRDefaultsRef.current = true;
     }
 
     /*
@@ -1175,39 +1175,51 @@ export default function VRControllers({
     }
 
     // No auto-recharge - reload at shoulder instead
-    
+
     // Check for shoulder reload for left gun
     if (leftControllerObj && leftClip.current < maxClipSize.current) {
       leftControllerObj.getWorldPosition(tempVector);
       // Check if left controller is near left shoulder (approximately chest height and left side)
       const shoulderHeight = camera.position.y - 0.3; // About shoulder level
       const shoulderLeft = camera.position.x - 0.2; // Left side of body
-      
-      if (tempVector.y > shoulderHeight && tempVector.x < shoulderLeft && 
-          tempVector.z > camera.position.z - 0.3 && tempVector.z < camera.position.z + 0.1) {
+
+      if (
+        tempVector.y > shoulderHeight &&
+        tempVector.x < shoulderLeft &&
+        tempVector.z > camera.position.z - 0.3 &&
+        tempVector.z < camera.position.z + 0.1
+      ) {
         if (!leftReloading.current) {
           leftReloading.current = true;
           leftClip.current = maxClipSize.current; // Reload clip
-          console.log(`🔄 LEFT gun reloaded! Clip: ${leftClip.current}/${maxClipSize.current}`);
+          console.log(
+            `🔄 LEFT gun reloaded! Clip: ${leftClip.current}/${maxClipSize.current}`,
+          );
         }
       } else {
         leftReloading.current = false;
       }
     }
-    
-    // Check for shoulder reload for right gun  
+
+    // Check for shoulder reload for right gun
     if (rightControllerObj && rightClip.current < maxClipSize.current) {
       rightControllerObj.getWorldPosition(tempVector);
       // Check if right controller is near right shoulder
       const shoulderHeight = camera.position.y - 0.3;
       const shoulderRight = camera.position.x + 0.2; // Right side of body
-      
-      if (tempVector.y > shoulderHeight && tempVector.x > shoulderRight &&
-          tempVector.z > camera.position.z - 0.3 && tempVector.z < camera.position.z + 0.1) {
+
+      if (
+        tempVector.y > shoulderHeight &&
+        tempVector.x > shoulderRight &&
+        tempVector.z > camera.position.z - 0.3 &&
+        tempVector.z < camera.position.z + 0.1
+      ) {
         if (!rightReloading.current) {
           rightReloading.current = true;
           rightClip.current = maxClipSize.current; // Reload clip
-          console.log(`🔄 RIGHT gun reloaded! Clip: ${rightClip.current}/${maxClipSize.current}`);
+          console.log(
+            `🔄 RIGHT gun reloaded! Clip: ${rightClip.current}/${maxClipSize.current}`,
+          );
         }
       } else {
         rightReloading.current = false;
