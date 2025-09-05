@@ -344,8 +344,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     body.position.y = 0.02;
     gun.add(body);
     
-    // Rotate gun to point forward and slightly upward
-    gun.rotation.x = -Math.PI / 2 - Math.PI / 4; // 90 degrees up + 45 degrees more = 135 degrees total
+    // Rotate gun to point forward and upward
+    gun.rotation.x = -Math.PI / 2 + Math.PI / 4; // 90 degrees up - 45 degrees = 45 degrees total upward
     
     return gun;
   }
