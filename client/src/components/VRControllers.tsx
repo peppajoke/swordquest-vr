@@ -39,7 +39,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const lastXButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
-  const rightSwordMode = useRef<'side' | 'upward'>('side'); // Track sword mode for right hand
+  const rotationTestStep = useRef(0); // Track which rotation test we're on
   
   /*
    * ========================================================================
@@ -504,34 +504,66 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
       rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
-      // A button on RIGHT physical hand toggles between sword modes (button index 4 on right controller)
+      // A button on RIGHT physical hand cycles through rotation tests (button index 4 on right controller)
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
-      if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        // Toggle between side and upward modes
-        if (rightSwordMode.current === 'side') {
-          rightSwordMode.current = 'upward';
+      
+      // More robust button state tracking with extra logging
+      if (aButtonPressed !== lastAButtonPressed.current) {
+        console.log(`🎮 A button changed: ${lastAButtonPressed.current} → ${aButtonPressed}, sword: ${!!rightSwordRef.current}`);
+        
+        // Only process on button PRESS (not release) and only if sword exists
+        if (aButtonPressed && rightSwordRef.current) {
+          rotationTestStep.current = (rotationTestStep.current + 1) % 8; // Expanded to 8 tests
           
-          /*
-           * UPWARD MODE: "pointed directly upward, but 45 degrees away from me"
-           * Using calibration: tip up = negative X, twist right = negative Y
-           */
-          rightSwordRef.current.rotation.x = -Math.PI / 2; // Point up (negative X)
-          rightSwordRef.current.rotation.y = -Math.PI / 4; // Twist right 45° (negative Y)  
-          rightSwordRef.current.rotation.z = 0; // No roll
+          console.log(`🔄 ROTATION TEST ${rotationTestStep.current + 1}/8`);
           
-          console.log('🔄 RIGHT sword: UPWARD mode (up and away from user)');
-        } else {
-          rightSwordMode.current = 'side';
+          // Reset to neutral first
+          rightSwordRef.current.rotation.set(0, 0, 0);
           
-          /*
-           * SIDE MODE: "sword pointed fully to the right" 
-           * Using calibration: twist right = negative Y rotation
-           */
-          rightSwordRef.current.rotation.x = 0; // No tilt
-          rightSwordRef.current.rotation.y = -Math.PI / 2; // Point fully right (negative Y)
-          rightSwordRef.current.rotation.z = 0; // No roll
+          let description = "";
           
-          console.log('🔄 RIGHT sword: SIDE mode (pointing fully right)');
+          switch (rotationTestStep.current) {
+            case 0:
+              description = "NEUTRAL - no rotation";
+              break;
+            case 1:
+              rightSwordRef.current.rotation.y = Math.PI / 2; // +90° Y
+              description = "Y+90° - should point LEFT from your view";
+              break;
+            case 2:
+              rightSwordRef.current.rotation.y = -Math.PI / 2; // -90° Y  
+              description = "Y-90° - should point RIGHT from your view";
+              break;
+            case 3:
+              rightSwordRef.current.rotation.x = Math.PI / 2; // +90° X
+              description = "X+90° - should point DOWN from your view";
+              break;
+            case 4:
+              rightSwordRef.current.rotation.x = -Math.PI / 2; // -90° X
+              description = "X-90° - should point UP from your view";
+              break;
+            case 5:
+              rightSwordRef.current.rotation.z = Math.PI / 2; // +90° Z
+              description = "Z+90° - should ROLL 90° clockwise";
+              break;
+            case 6:
+              rightSwordRef.current.rotation.y = -Math.PI / 4; // -45° Y
+              rightSwordRef.current.rotation.x = -Math.PI / 2; // -90° X
+              description = "COMBO: X-90° + Y-45° - up and right";
+              break;
+            case 7:
+              rightSwordRef.current.rotation.y = Math.PI; // 180° Y
+              description = "Y+180° - should point BACKWARD";
+              break;
+          }
+          
+          // Log to debug display
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`TEST ${rotationTestStep.current + 1}/8: ${description}`);
+          }
+          
+          console.log(`Applied: ${description}`);
+          console.log(`Rotation values: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`);
         }
       }
       lastAButtonPressed.current = aButtonPressed;
@@ -629,10 +661,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       if (!rightSwordRef.current) {
         console.log(`⚔️ RIGHT physical hand sword spawned (on Three.js controller ${rightIndex})`);
         const sword = createSword();
-        // Start in side mode: sword pointing fully to the right
-        sword.rotation.x = 0; // No tilt
-        sword.rotation.y = -Math.PI / 2; // Point fully right (negative Y)
-        sword.rotation.z = 0; // No roll
+        // Start with neutral rotation for testing
+        sword.rotation.set(0, 0, 0);
         rightSwordRef.current = sword;
         rightControllerObj.add(sword); // Attach to RIGHT physical hand
       }
@@ -640,8 +670,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       if (rightSwordRef.current) {
         rightControllerObj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
-        // Reset to side mode when sword is removed
-        rightSwordMode.current = 'side';
+        // Reset rotation test when sword is removed
+        rotationTestStep.current = 0;
       }
     }
 
