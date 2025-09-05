@@ -611,58 +611,26 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (aButtonPressed && !lastAButtonPressed.current) {
       
       if (rightSwordRef.current) {
-        // If right sword is spawned, cycle through different rotation positions
-        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 8;
+        // If right sword is spawned, cycle through all 45-degree combinations
+        rightSwordRotationMode.current = (rightSwordRotationMode.current + 1) % 512; // 8×8×8 = 512 combinations
         
-        let positionName = "";
+        // Convert position number to X, Y, Z indices (0-7 each for 45-degree increments)
+        const zIndex = rightSwordRotationMode.current % 8;
+        const yIndex = Math.floor(rightSwordRotationMode.current / 8) % 8;
+        const xIndex = Math.floor(rightSwordRotationMode.current / 64) % 8;
         
-        switch (rightSwordRotationMode.current) {
-          case 0:
-            // Forward Grip - Natural forward hold
-            rightSwordRef.current.rotation.set(0, 0, Math.PI / 2);
-            positionName = "FORWARD GRIP";
-            break;
-          case 1:
-            // Upward Thrust - Pointing up and forward
-            rightSwordRef.current.rotation.set(-Math.PI / 4, 0, Math.PI / 2);
-            positionName = "UPWARD THRUST";
-            break;
-          case 2:
-            // Side Slash - Horizontal from the side
-            rightSwordRef.current.rotation.set(0, 0, 0);
-            positionName = "SIDE SLASH";
-            break;
-          case 3:
-            // Downward Strike - Angled down
-            rightSwordRef.current.rotation.set(Math.PI / 4, 0, Math.PI / 2);
-            positionName = "DOWNWARD STRIKE";
-            break;
-          case 4:
-            // Defensive Parry - Angled up for blocking
-            rightSwordRef.current.rotation.set(-Math.PI / 3, 0, Math.PI / 3);
-            positionName = "DEFENSIVE PARRY";
-            break;
-          case 5:
-            // Backhand Swing - Reverse grip style
-            rightSwordRef.current.rotation.set(0, Math.PI, Math.PI / 2);
-            positionName = "BACKHAND SWING";
-            break;
-          case 6:
-            // Overhead Chop - High overhead position
-            rightSwordRef.current.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
-            positionName = "OVERHEAD CHOP";
-            break;
-          case 7:
-            // Low Guard - Defensive low position
-            rightSwordRef.current.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-            positionName = "LOW GUARD";
-            break;
-        }
+        // Convert indices to actual rotation values (0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°)
+        const xRotation = (xIndex * 45) * Math.PI / 180;
+        const yRotation = (yIndex * 45) * Math.PI / 180;
+        const zRotation = (zIndex * 45) * Math.PI / 180;
         
-        console.log(`🗡️ RIGHT sword position ${rightSwordRotationMode.current + 1}/8: ${positionName}`);
+        rightSwordRef.current.rotation.set(xRotation, yRotation, zRotation);
+        
+        console.log(`🗡️ RIGHT sword config ${rightSwordRotationMode.current + 1}/512: X${xIndex * 45}° Y${yIndex * 45}° Z${zIndex * 45}°`);
         if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`🗡️ Position ${rightSwordRotationMode.current + 1}/8: ${positionName}`);
-          (window as any).vrDebugLog(`Press A to cycle to next position`);
+          (window as any).vrDebugLog(`🗡️ Config ${rightSwordRotationMode.current + 1}/512`);
+          (window as any).vrDebugLog(`X:${xIndex * 45}° Y:${yIndex * 45}° Z:${zIndex * 45}°`);
+          (window as any).vrDebugLog(`Press A for next config`);
         }
       } else {
         // If no sword spawned, capture controller rotation
