@@ -114,6 +114,10 @@ export default function Enemy({ type, position }: EnemyProps) {
     
     if (newHealth <= 0) {
       setIsDead(true);
+      // Mark death start time for animation
+      if (meshRef.current) {
+        meshRef.current.userData.deathStartTime = Date.now();
+      }
       // Award points based on enemy type
       const points = type === 'boss' ? 500 : type === 'heavy' ? 100 : 50;
       console.log(`💀 ${type.toUpperCase()} defeated! +${points} points`);
@@ -133,7 +137,7 @@ export default function Enemy({ type, position }: EnemyProps) {
   }, [health, maxHealth, isDead, type]);
   
   useFrame((state) => {
-    if (!meshRef.current || isDead) return;
+    if (!meshRef.current) return;
     
     const currentTime = Date.now();
     const { camera, scene } = state;
@@ -149,20 +153,47 @@ export default function Enemy({ type, position }: EnemyProps) {
     meshRef.current.userData.health = health;
     meshRef.current.userData.isDead = isDead;
     
-    // Don't attack if dead
+    // Death animation sequence
     if (isDead) {
-      // Death animation - fade and shrink
-      meshRef.current.scale.multiplyScalar(0.98);
-      meshRef.current.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
-          child.material.opacity = Math.max(0, child.material.opacity - 0.02);
-          child.material.transparent = true;
-        }
-      });
+      const deathTime = currentTime - (meshRef.current.userData.deathStartTime || currentTime);
       
-      // Remove after fading
-      if (meshRef.current.scale.x < 0.1) {
-        scene.remove(meshRef.current);
+      if (deathTime < 500) {
+        // Phase 1: Turn bright red (0-0.5 seconds)
+        meshRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+            child.material.color.set('#FF0000'); // Bright red
+            child.material.transparent = true;
+          }
+        });
+      } else if (deathTime < 1500) {
+        // Phase 2: Become translucent (0.5-1.5 seconds)
+        const fadeProgress = (deathTime - 500) / 1000; // 0 to 1
+        const opacity = 1.0 - fadeProgress * 0.5; // Fade to 50% opacity
+        
+        meshRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+            child.material.opacity = opacity;
+            child.material.transparent = true;
+          }
+        });
+      } else {
+        // Phase 3: Dissolve (1.5+ seconds)
+        const dissolveProgress = (deathTime - 1500) / 1000; // 0 to 1+
+        const scale = Math.max(0, 1.0 - dissolveProgress);
+        const opacity = Math.max(0, 0.5 - dissolveProgress * 0.5);
+        
+        meshRef.current.scale.setScalar(scale);
+        meshRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+            child.material.opacity = opacity;
+            child.material.transparent = true;
+          }
+        });
+        
+        // Remove completely after dissolving
+        if (scale <= 0) {
+          scene.remove(meshRef.current);
+        }
       }
       return;
     }
