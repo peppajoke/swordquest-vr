@@ -37,6 +37,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const lastXButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
+  const rightSwordMode = useRef<'side' | 'standard'>('side'); // Track sword mode for right hand
   
   /*
    * ========================================================================
@@ -503,12 +504,23 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
       rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
-      // A button on RIGHT physical hand rotates RIGHT sword (button index 4 on right controller)
+      // A button on RIGHT physical hand toggles between side/standard modes (button index 4 on right controller)
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        rightSwordRotation.current += Math.PI / 2;
-        rightSwordRef.current.rotation.z = rightSwordRotation.current;
-        console.log('🔄 RIGHT physical hand sword rotated 90 degrees');
+        // Toggle between side and standard modes
+        if (rightSwordMode.current === 'side') {
+          rightSwordMode.current = 'standard';
+          // Standard mode: pointing upward/forwards (inverted as requested)
+          rightSwordRef.current.rotation.y = 0; // Reset Y rotation
+          rightSwordRef.current.rotation.z = -Math.PI / 2; // Point upward (inverted)
+          console.log('🔄 RIGHT hand sword: STANDARD mode (upward/forwards)');
+        } else {
+          rightSwordMode.current = 'side';
+          // Side mode: pointing to the right (inverted as requested)
+          rightSwordRef.current.rotation.y = 0; // Reset Y rotation  
+          rightSwordRef.current.rotation.z = Math.PI; // Point to the right (inverted)
+          console.log('🔄 RIGHT hand sword: SIDE mode (pointing right)');
+        }
       }
       lastAButtonPressed.current = aButtonPressed;
       
@@ -605,8 +617,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       if (!rightSwordRef.current) {
         console.log(`⚔️ RIGHT physical hand sword spawned (on Three.js controller ${rightIndex})`);
         const sword = createSword();
-        sword.rotation.y = Math.PI; // Standard orientation for right hand
-        sword.rotation.z = rightSwordRotation.current;
+        // Set initial rotation based on current mode (default is side mode)
+        if (rightSwordMode.current === 'side') {
+          sword.rotation.y = 0;
+          sword.rotation.z = Math.PI; // Side mode: pointing right (inverted)
+        } else {
+          sword.rotation.y = 0;
+          sword.rotation.z = -Math.PI / 2; // Standard mode: pointing upward (inverted)
+        }
         rightSwordRef.current = sword;
         rightControllerObj.add(sword); // Attach to RIGHT physical hand
       }
@@ -614,6 +632,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       if (rightSwordRef.current) {
         rightControllerObj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
+        // Reset mode when sword is removed
+        rightSwordMode.current = 'side';
       }
     }
 
