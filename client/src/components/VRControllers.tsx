@@ -547,7 +547,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       leftTrigger.current = leftGamepad.buttons[0].pressed;   // Left trigger = fire left gun
       
       // X button on LEFT physical hand toggles LEFT sword rotation mode
-      const xButtonPressed = leftGamepad.buttons[3]?.pressed || false;
+      const xButtonPressed = leftGamepad.buttons[4]?.pressed || false;
       
       // Debug X button
       if (xButtonPressed && !lastXButtonPressed.current) {
