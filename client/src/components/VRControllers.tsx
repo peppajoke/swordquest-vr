@@ -102,7 +102,7 @@ export default function VRControllers({
   const lastSwordsHeld = useRef(0);
 
   // Movement parameters
-  const maxSpeed = useRef(3.2); // Reduced by 60% (8.0 * 0.4)
+  const maxSpeed = useRef(9.6); // Increased by 3x (3.2 * 3)
   const accelerationRate = useRef(12.0);
   const turnRate = useRef(0.3);
 
