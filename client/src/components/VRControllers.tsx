@@ -512,8 +512,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
           rightSwordMode.current = 'standard';
           // Standard mode: 45 degrees upward from straight down
           rightSwordRef.current.rotation.y = 0; // Reset Y rotation
-          rightSwordRef.current.rotation.z = Math.PI - Math.PI / 4; // Straight down - 45 degrees = upward
-          console.log('🔄 RIGHT hand sword: STANDARD mode (45 degrees upward from down)');
+          rightSwordRef.current.rotation.z = Math.PI / 2; // Base rotation
+          rightSwordRef.current.rotation.x = -Math.PI / 4; // 45 degrees upward around X axis
+          console.log('🔄 RIGHT hand sword: STANDARD mode (45 degrees upward)');
         } else {
           rightSwordMode.current = 'side';
           // Side mode: flipped 180 degrees horizontally
@@ -623,7 +624,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
           sword.rotation.z = Math.PI / 2 + Math.PI; // Side mode: flipped 180 degrees
         } else {
           sword.rotation.y = 0;
-          sword.rotation.z = Math.PI - Math.PI / 4; // Standard mode: 45 degrees upward from down
+          sword.rotation.z = Math.PI / 2; // Base rotation
+          sword.rotation.x = -Math.PI / 4; // Standard mode: 45 degrees upward around X axis
         }
         rightSwordRef.current = sword;
         rightControllerObj.add(sword); // Attach to RIGHT physical hand
