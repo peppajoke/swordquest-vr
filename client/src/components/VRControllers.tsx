@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
@@ -137,6 +137,37 @@ export default function VRControllers({
 
   // add near top
   const rehide = () => hideDefaultXRVisuals();
+
+  // Store event listener functions for cleanup
+  const eventListenersRef = useRef<{
+    controller0Connected?: (event: any) => void;
+    controller1Connected?: (event: any) => void;
+    rehideConnected?: (event: any) => void;
+    rehideDisconnected?: (event: any) => void;
+  }>({});
+
+  // Cleanup event listeners when component unmounts
+  useEffect(() => {
+    return () => {
+      // Remove all controller event listeners
+      if (controller0Ref.current && eventListenersRef.current.controller0Connected) {
+        controller0Ref.current.removeEventListener("connected", eventListenersRef.current.controller0Connected);
+      }
+      if (controller1Ref.current && eventListenersRef.current.controller1Connected) {
+        controller1Ref.current.removeEventListener("connected", eventListenersRef.current.controller1Connected);
+      }
+      
+      // Remove rehide event listeners from all controllers
+      [controller0Ref, controller1Ref, controllerGrip0Ref, controllerGrip1Ref].forEach((r) => {
+        if (r.current && eventListenersRef.current.rehideConnected) {
+          r.current.removeEventListener("connected", eventListenersRef.current.rehideConnected);
+        }
+        if (r.current && eventListenersRef.current.rehideDisconnected) {
+          r.current.removeEventListener("disconnected", eventListenersRef.current.rehideDisconnected);
+        }
+      });
+    };
+  }, []);
 
   function hideDefaultXRVisuals() {
     const kill = (obj?: THREE.Object3D | null) =>
@@ -601,18 +632,23 @@ export default function VRControllers({
     // after creating controllers/grips (once)
     if (!controllersSetup.current) {
       controllersSetup.current = true;
+      
+      // Store rehide functions for cleanup
+      eventListenersRef.current.rehideConnected = rehide as any;
+      eventListenersRef.current.rehideDisconnected = rehide as any;
+      
       [
         controller0Ref,
         controller1Ref,
         controllerGrip0Ref,
         controllerGrip1Ref,
       ].forEach((r) => {
-        r.current?.addEventListener("connected", rehide as any);
-        r.current?.addEventListener("disconnected", rehide as any);
+        r.current?.addEventListener("connected", eventListenersRef.current.rehideConnected!);
+        r.current?.addEventListener("disconnected", eventListenersRef.current.rehideDisconnected!);
       });
 
-      // Listen for controller 0 connection to determine its handedness
-      controller0Ref.current.addEventListener("connected", (event) => {
+      // Store controller 0 connected function for cleanup
+      eventListenersRef.current.controller0Connected = (event) => {
         const handedness = event.data.handedness;
         if (handedness === "left" || handedness === "right") {
           handToIndexMap.current[handedness] = 0;
@@ -628,10 +664,13 @@ export default function VRControllers({
             );
           }
         }
-      });
+      };
+      
+      // Listen for controller 0 connection to determine its handedness
+      controller0Ref.current.addEventListener("connected", eventListenersRef.current.controller0Connected);
 
-      // Listen for controller 1 connection to determine its handedness
-      controller1Ref.current.addEventListener("connected", (event) => {
+      // Store controller 1 connected function for cleanup
+      eventListenersRef.current.controller1Connected = (event) => {
         const handedness = event.data.handedness;
         if (handedness === "left" || handedness === "right") {
           handToIndexMap.current[handedness] = 1;
@@ -647,7 +686,10 @@ export default function VRControllers({
             );
           }
         }
-      });
+      };
+
+      // Listen for controller 1 connection to determine its handedness
+      controller1Ref.current.addEventListener("connected", eventListenersRef.current.controller1Connected);
     }
 
     /*
