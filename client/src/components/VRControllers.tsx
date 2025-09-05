@@ -121,17 +121,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const emptyPenaltyTime = useRef(0);
   const wasAccelerating = useRef(false);
 
+  // add near top
+  const rehide = () => hideDefaultXRVisuals();
+
   function hideDefaultXRVisuals() {
-    [controller0Ref.current, controller1Ref.current].forEach(c =>
-      c?.traverse(child => {
-        if ((child as any).isLine || child.type === 'LineSegments') child.visible = false;
-      })
-    );
-    [controllerGrip0Ref.current, controllerGrip1Ref.current].forEach(g =>
-      g?.traverse(child => {
-        if (!child.userData?.isCustomModel) child.visible = false;
-      })
-    );
+    const kill = (obj?: THREE.Object3D | null) => obj?.traverse((child: any) => {
+      if (child?.userData?.isCustomModel) return;
+      if (
+        child.isLine || child.type === 'Line' || child.type === 'LineSegments' || child.type === 'LineLoop' ||
+        child.isMesh || child.isSkinnedMesh || child.isGroup || child.isObject3D ||
+        child.name?.toLowerCase().includes('controller') || child.name?.toLowerCase().includes('profile')
+      ) child.visible = false;
+    });
+    kill(controller0Ref.current);
+    kill(controller1Ref.current);
+    kill(controllerGrip0Ref.current);
+    kill(controllerGrip1Ref.current);
   }
 
   // Burst speed system
@@ -425,6 +430,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     if (!controllersSetup.current) {
       controllersSetup.current = true;
       
+      // Add rehide listeners for connected/disconnected
+      [controller0Ref, controller1Ref, controllerGrip0Ref, controllerGrip1Ref].forEach(r => {
+        r.current?.addEventListener('connected', rehide as any);
+        r.current?.addEventListener('disconnected', rehide as any);
+      });
+      
       // Listen for controller 0 connection to determine its handedness
       controller0Ref.current.addEventListener('connected', (event) => {
         const handedness = event.data.handedness;
@@ -504,8 +515,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
     }
     
-    // Hide default XR visuals once controllers are ready
-    if (controllerGrip0Ref.current && controllerGrip1Ref.current && !hiddenXRDefaultsRef.current) {
+    // initial hide
+    if ((controllerGrip0Ref.current || controllerGrip1Ref.current) && !hiddenXRDefaultsRef.current) {
       hideDefaultXRVisuals();
       hiddenXRDefaultsRef.current = true;
     }
