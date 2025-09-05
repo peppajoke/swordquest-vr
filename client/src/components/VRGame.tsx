@@ -7,6 +7,7 @@ import SwordEffects from './SwordEffects';
 import { VRDebugDisplay } from './VRDebugDisplay';
 import DesktopControls from './DesktopControls';
 import DesktopUI from './DesktopUI';
+import PlayerCollisionDetector from './PlayerCollisionDetector';
 import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
@@ -113,6 +114,9 @@ export default function VRGame() {
         }}
         onJetpackToggle={setJetpackEnabled}
       />
+      
+      {/* Player Collision Detection */}
+      <PlayerCollisionDetector />
       
       {/* VR Debug Display with HP/Fuel/Ammo - Visible in Quest 3 */}
       <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />

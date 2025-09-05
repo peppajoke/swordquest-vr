@@ -413,7 +413,22 @@ export default function Enemy({ type, position }: EnemyProps) {
       case 'shield':
         // Melee attack - damage player directly
         console.log(`⚔️ ${type} melee attack! ${damage} damage`);
-        // TODO: Integrate with player health system
+        
+        // Check if player is in melee range (2 units)
+        const playerDistance = enemyPos.distanceTo(playerPos);
+        if (playerDistance < 2.0) {
+          // Import and call the damage function
+          import('../lib/stores/useVRGame').then(({ useVRGame }) => {
+            useVRGame.getState().takeDamage(damage);
+            console.log(`💥 Player hit by ${type}! Took ${damage} damage!`);
+          });
+          
+          // Play damage sound
+          import('../lib/stores/useAudio').then(({ useAudio }) => {
+            useAudio.getState().playPlayerDamage();
+          });
+        }
+        
         addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
         break;
         
@@ -562,6 +577,12 @@ export default function Enemy({ type, position }: EnemyProps) {
     const explosionMesh = new THREE.Mesh(explosionGeometry, explosionMaterial);
     explosionMesh.position.copy(center);
     explosionMesh.position.y += 1;
+    
+    // Mark explosion for player collision detection
+    explosionMesh.userData.isExplosion = true;
+    explosionMesh.userData.damage = damage;
+    explosionMesh.userData.radius = 3.0;
+    explosionMesh.userData.hitPlayer = false;
     
     scene.add(explosionMesh);
     
