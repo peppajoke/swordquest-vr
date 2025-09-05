@@ -1,14 +1,22 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { VRButton, XR, createXRStore } from "@react-three/xr";
 import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
+import { LoadingScreen } from "./components/LoadingScreen";
 import "@fontsource/inter";
 import "./index.css";
 
 const store = createXRStore();
 
 function App() {
+  const [isGameLoaded, setIsGameLoaded] = useState(false);
+  
+  // Show loading screen first, then load game
+  if (!isGameLoaded) {
+    return <LoadingScreen onComplete={() => setIsGameLoaded(true)} />;
+  }
+  
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       {/* VR Entry Button */}

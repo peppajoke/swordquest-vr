@@ -32,7 +32,7 @@ export default function VRGame() {
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
-  const [isLoading, setIsLoading] = useState(true);
+  // Loading is now handled by App.tsx
 
   useEffect(() => {
     initializeGame();
@@ -91,12 +91,7 @@ export default function VRGame() {
 
   }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
 
-  // Initialize loading complete after a short delay
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
+  // Game is now fully loaded when this component renders
   return (
     <>
       {/* Environment Lighting */}
