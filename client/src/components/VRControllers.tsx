@@ -289,8 +289,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     body.position.y = 0.02;
     gun.add(body);
     
-    // Rotate entire gun forward and up 67.5 degrees (meeting in the middle)
-    gun.rotation.x = Math.PI / 2 + Math.PI + Math.PI / 8; // 90 degrees downward + 180 degrees forward + 22.5 degrees up
+    // Rotate gun to point forward properly
+    gun.rotation.x = -Math.PI / 2; // Simple 90 degrees up to point forward
     
     return gun;
   }
@@ -361,11 +361,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     
     if (gamepad0 && gamepad0.buttons.length > 1) {
       rightGrabbing.current = gamepad0.buttons[1].pressed; // Right hand (controller0) grip
-      leftTrigger.current = gamepad0.buttons[0].pressed;    // Right controller (0) fires LEFT gun - SWAPPED!
+      rightTrigger.current = gamepad0.buttons[0].pressed;  // Right controller (0) fires RIGHT gun - FIXED!
     }
     if (gamepad1 && gamepad1.buttons.length > 1) {
       leftGrabbing.current = gamepad1.buttons[1].pressed; // Left hand (controller1) grip
-      rightTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires RIGHT gun - SWAPPED!
+      leftTrigger.current = gamepad1.buttons[0].pressed;   // Left controller (1) fires LEFT gun - FIXED!
     }
     
     // Left stick movement (free locomotion)
@@ -692,13 +692,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
 
     // Gun firing logic - always available
     
-    // ✓ RIGHT GUN FIRING (controller0 = RIGHT hand - CORRECT!)
+    // RIGHT GUN FIRING (controller0 = RIGHT hand)
     if (rightTrigger.current && !lastRightTrigger.current) {
       fireInstantBullet(controller0Obj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
     
-    // ✓ LEFT GUN FIRING (controller1 = LEFT hand - CORRECT!)
+    // LEFT GUN FIRING (controller1 = LEFT hand)
     if (leftTrigger.current && !lastLeftTrigger.current) {
       fireInstantBullet(controller1Obj, 'left', scene);
     }
