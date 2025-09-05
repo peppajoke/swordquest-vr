@@ -1,11 +1,24 @@
-import { useRef, useState, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { useVRGame } from '../lib/stores/useVRGame';
-import HealthBar from './HealthBar';
+import { useRef, useState, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
+import { useVRGame } from "../lib/stores/useVRGame";
+import HealthBar from "./HealthBar";
 
 interface EnemyProps {
-  type: 'grunt' | 'rifleman' | 'heavy' | 'assassin' | 'bomber' | 'sniper' | 'berserker' | 'shield' | 'mage' | 'boss' | 'drone' | 'wasp' | 'phoenix';
+  type:
+    | "grunt"
+    | "rifleman"
+    | "heavy"
+    | "assassin"
+    | "bomber"
+    | "sniper"
+    | "berserker"
+    | "shield"
+    | "mage"
+    | "boss"
+    | "drone"
+    | "wasp"
+    | "phoenix";
   position: [number, number, number];
 }
 
@@ -18,9 +31,9 @@ export default function Enemy({ type, position }: EnemyProps) {
   const [isAttacking, setIsAttacking] = useState(false);
   const [rageMode, setRageMode] = useState(false);
   const [teleportCooldown, setTeleportCooldown] = useState(0);
-  
+
   const { addHitEffect, gameResetKey } = useVRGame();
-  
+
   // Reset enemy when game resets
   useEffect(() => {
     if (gameResetKey > 0) {
@@ -33,114 +46,184 @@ export default function Enemy({ type, position }: EnemyProps) {
       console.log(`🔄 ${type} enemy reset!`);
     }
   }, [gameResetKey, type]);
-  
+
   function getMaxHealth(enemyType: string): number {
     switch (enemyType) {
-      case 'grunt': return 1;
-      case 'rifleman': return 2;
-      case 'heavy': return 4;
-      case 'assassin': return 3;
-      case 'bomber': return 3;
-      case 'sniper': return 5;
-      case 'berserker': return 4;
-      case 'shield': return 20;
-      case 'mage': return 7;
-      case 'boss': return 50;
-      case 'drone': return 1;
-      case 'wasp': return 1;
-      case 'phoenix': return 250;
-      default: return 50;
+      case "grunt":
+        return 1;
+      case "rifleman":
+        return 2;
+      case "heavy":
+        return 4;
+      case "assassin":
+        return 3;
+      case "bomber":
+        return 3;
+      case "sniper":
+        return 5;
+      case "berserker":
+        return 4;
+      case "shield":
+        return 20;
+      case "mage":
+        return 7;
+      case "boss":
+        return 50;
+      case "drone":
+        return 1;
+      case "wasp":
+        return 1;
+      case "phoenix":
+        return 4;
+      default:
+        return 50;
     }
   }
-  
+
   function getEnemyColor(enemyType: string): string {
     switch (enemyType) {
-      case 'grunt': return '#8B4513'; // Brown
-      case 'rifleman': return '#4B8B3B'; // Olive
-      case 'heavy': return '#2F4F4F'; // Dark slate
-      case 'assassin': return '#1C1C1C'; // Almost black
-      case 'bomber': return '#FF4500'; // Orange red
-      case 'sniper': return '#483D8B'; // Dark slate blue
-      case 'berserker': return '#8B0000'; // Dark red
-      case 'shield': return '#4682B4'; // Steel blue
-      case 'mage': return '#9400D3'; // Violet
-      case 'boss': return '#000000'; // Pure black
-      case 'drone': return '#C0C0C0'; // Silver
-      case 'wasp': return '#FFD700'; // Gold
-      case 'phoenix': return '#FF6347'; // Tomato red
-      default: return '#8B4513';
+      case "grunt":
+        return "#8B4513"; // Brown
+      case "rifleman":
+        return "#4B8B3B"; // Olive
+      case "heavy":
+        return "#2F4F4F"; // Dark slate
+      case "assassin":
+        return "#1C1C1C"; // Almost black
+      case "bomber":
+        return "#FF4500"; // Orange red
+      case "sniper":
+        return "#483D8B"; // Dark slate blue
+      case "berserker":
+        return "#8B0000"; // Dark red
+      case "shield":
+        return "#4682B4"; // Steel blue
+      case "mage":
+        return "#9400D3"; // Violet
+      case "boss":
+        return "#000000"; // Pure black
+      case "drone":
+        return "#C0C0C0"; // Silver
+      case "wasp":
+        return "#FFD700"; // Gold
+      case "phoenix":
+        return "#FF6347"; // Tomato red
+      default:
+        return "#8B4513";
     }
   }
-  
+
   function getEnemySize(enemyType: string): [number, number, number] {
     switch (enemyType) {
-      case 'grunt': return [0.8, 1.5, 0.8];
-      case 'rifleman': return [0.7, 1.6, 0.7];
-      case 'heavy': return [1.2, 1.8, 1.2];
-      case 'assassin': return [0.6, 1.4, 0.6];
-      case 'bomber': return [0.9, 1.3, 0.9];
-      case 'sniper': return [0.7, 1.7, 0.7];
-      case 'berserker': return [1.0, 1.6, 1.0];
-      case 'shield': return [1.1, 1.9, 1.1];
-      case 'mage': return [0.8, 1.6, 0.8];
-      case 'boss': return [3.0, 4.0, 3.0];
-      case 'drone': return [0.6, 0.4, 1.2]; // Wide, flat
-      case 'wasp': return [0.4, 0.3, 0.8]; // Small, agile
-      case 'phoenix': return [2.0, 1.5, 3.0]; // Large wingspan
-      default: return [0.8, 1.5, 0.8];
+      case "grunt":
+        return [0.8, 1.5, 0.8];
+      case "rifleman":
+        return [0.7, 1.6, 0.7];
+      case "heavy":
+        return [1.2, 1.8, 1.2];
+      case "assassin":
+        return [0.6, 1.4, 0.6];
+      case "bomber":
+        return [0.9, 1.3, 0.9];
+      case "sniper":
+        return [0.7, 1.7, 0.7];
+      case "berserker":
+        return [1.0, 1.6, 1.0];
+      case "shield":
+        return [1.1, 1.9, 1.1];
+      case "mage":
+        return [0.8, 1.6, 0.8];
+      case "boss":
+        return [3.0, 4.0, 3.0];
+      case "drone":
+        return [0.6, 0.4, 1.2]; // Wide, flat
+      case "wasp":
+        return [0.4, 0.3, 0.8]; // Small, agile
+      case "phoenix":
+        return [2.0, 1.5, 3.0]; // Large wingspan
+      default:
+        return [0.8, 1.5, 0.8];
     }
   }
-  
+
   function getAttackDamage(enemyType: string): number {
     switch (enemyType) {
-      case 'grunt': return 15;
-      case 'rifleman': return 20;
-      case 'heavy': return 35;
-      case 'assassin': return 25;
-      case 'bomber': return 50; // AOE
-      case 'sniper': return 40;
-      case 'berserker': return rageMode ? 45 : 30;
-      case 'shield': return 12;
-      case 'mage': return 28;
-      case 'boss': return 60;
-      case 'drone': return 18;
-      case 'wasp': return 12;
-      case 'phoenix': return 45;
-      default: return 15;
+      case "grunt":
+        return 15;
+      case "rifleman":
+        return 20;
+      case "heavy":
+        return 35;
+      case "assassin":
+        return 25;
+      case "bomber":
+        return 50; // AOE
+      case "sniper":
+        return 40;
+      case "berserker":
+        return rageMode ? 45 : 30;
+      case "shield":
+        return 12;
+      case "mage":
+        return 28;
+      case "boss":
+        return 60;
+      case "drone":
+        return 18;
+      case "wasp":
+        return 12;
+      case "phoenix":
+        return 45;
+      default:
+        return 15;
     }
   }
-  
+
   function getAttackSpeed(enemyType: string): number {
     switch (enemyType) {
-      case 'grunt': return 2000; // 2 seconds
-      case 'rifleman': return 1500;
-      case 'heavy': return 3000;
-      case 'assassin': return 800;
-      case 'bomber': return 4000;
-      case 'sniper': return 2500;
-      case 'berserker': return rageMode ? 600 : 1200;
-      case 'shield': return 2200;
-      case 'mage': return 1800;
-      case 'boss': return 1000;
-      case 'drone': return 1200;
-      case 'wasp': return 600; // Very fast attacks
-      case 'phoenix': return 2000;
-      default: return 2000;
+      case "grunt":
+        return 2000; // 2 seconds
+      case "rifleman":
+        return 1500;
+      case "heavy":
+        return 3000;
+      case "assassin":
+        return 800;
+      case "bomber":
+        return 4000;
+      case "sniper":
+        return 2500;
+      case "berserker":
+        return rageMode ? 600 : 1200;
+      case "shield":
+        return 2200;
+      case "mage":
+        return 1800;
+      case "boss":
+        return 1000;
+      case "drone":
+        return 1200;
+      case "wasp":
+        return 600; // Very fast attacks
+      case "phoenix":
+        return 2000;
+      default:
+        return 2000;
     }
   }
-  
+
   function takeDamage(damage: number) {
     if (isDead) return;
-    
+
     const newHealth = Math.max(0, health - damage);
     setHealth(newHealth);
-    
+
     // Berserker rage mode when low health
-    if (type === 'berserker' && newHealth < maxHealth * 0.3 && !rageMode) {
+    if (type === "berserker" && newHealth < maxHealth * 0.3 && !rageMode) {
       setRageMode(true);
-      console.log('🔥 BERSERKER RAGE ACTIVATED!');
+      console.log("🔥 BERSERKER RAGE ACTIVATED!");
     }
-    
+
     if (newHealth <= 0) {
       setIsDead(true);
       // Mark death start time for animation
@@ -148,11 +231,11 @@ export default function Enemy({ type, position }: EnemyProps) {
         meshRef.current.userData.deathStartTime = Date.now();
       }
       // Award points based on enemy type
-      const points = type === 'boss' ? 500 : type === 'heavy' ? 100 : 50;
+      const points = type === "boss" ? 500 : type === "heavy" ? 100 : 50;
       console.log(`💀 ${type.toUpperCase()} defeated! +${points} points`);
     }
   }
-  
+
   useEffect(() => {
     if (meshRef.current) {
       // Mark for collision detection
@@ -164,33 +247,37 @@ export default function Enemy({ type, position }: EnemyProps) {
       meshRef.current.userData.isDead = isDead;
     }
   }, [health, maxHealth, isDead, type]);
-  
+
   useFrame((state) => {
     if (!meshRef.current) return;
-    
+
     const currentTime = Date.now();
     const { camera, scene } = state;
     const deltaTime = 0.016; // ~60fps
-    
+
     // Get positions
     const enemyPos = new THREE.Vector3();
     meshRef.current.getWorldPosition(enemyPos);
     const playerPos = camera.position.clone();
     const distance = enemyPos.distanceTo(playerPos);
-    
+
     // Update collision data
     meshRef.current.userData.health = health;
     meshRef.current.userData.isDead = isDead;
-    
+
     // Death animation sequence
     if (isDead) {
-      const deathTime = currentTime - (meshRef.current.userData.deathStartTime || currentTime);
-      
+      const deathTime =
+        currentTime - (meshRef.current.userData.deathStartTime || currentTime);
+
       if (deathTime < 500) {
         // Phase 1: Turn bright red (0-0.5 seconds)
         meshRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
-            child.material.color.set('#FF0000'); // Bright red
+          if (
+            child instanceof THREE.Mesh &&
+            child.material instanceof THREE.MeshLambertMaterial
+          ) {
+            child.material.color.set("#FF0000"); // Bright red
             child.material.transparent = true;
           }
         });
@@ -198,9 +285,12 @@ export default function Enemy({ type, position }: EnemyProps) {
         // Phase 2: Become translucent (0.5-1.5 seconds)
         const fadeProgress = (deathTime - 500) / 1000; // 0 to 1
         const opacity = 1.0 - fadeProgress * 0.5; // Fade to 50% opacity
-        
+
         meshRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+          if (
+            child instanceof THREE.Mesh &&
+            child.material instanceof THREE.MeshLambertMaterial
+          ) {
             child.material.opacity = opacity;
             child.material.transparent = true;
           }
@@ -210,15 +300,18 @@ export default function Enemy({ type, position }: EnemyProps) {
         const dissolveProgress = (deathTime - 1500) / 1000; // 0 to 1+
         const scale = Math.max(0, 1.0 - dissolveProgress);
         const opacity = Math.max(0, 0.5 - dissolveProgress * 0.5);
-        
+
         meshRef.current.scale.setScalar(scale);
         meshRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+          if (
+            child instanceof THREE.Mesh &&
+            child.material instanceof THREE.MeshLambertMaterial
+          ) {
             child.material.opacity = opacity;
             child.material.transparent = true;
           }
         });
-        
+
         // Remove completely after dissolving
         if (scale <= 0) {
           scene.remove(meshRef.current);
@@ -226,83 +319,93 @@ export default function Enemy({ type, position }: EnemyProps) {
       }
       return;
     }
-    
+
     // AI Behaviors based on type
     switch (type) {
-      case 'grunt':
+      case "grunt":
         // Basic melee - walk toward player if close
         if (distance < 15 && distance > 2) {
           const direction = playerPos.clone().sub(enemyPos).normalize();
           meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
         }
         break;
-        
-      case 'rifleman':
+
+      case "rifleman":
         // Medium range shooting
         if (distance < 20 && distance > 8) {
           meshRef.current.lookAt(playerPos);
         }
         break;
-        
-      case 'heavy':
+
+      case "heavy":
         // Slow movement, high damage
         if (distance < 12 && distance > 3) {
           const direction = playerPos.clone().sub(enemyPos).normalize();
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 0.8));
+          meshRef.current.position.add(
+            direction.multiplyScalar(deltaTime * 0.8),
+          );
         }
         break;
-        
-      case 'assassin':
+
+      case "assassin":
         // Teleport closer if far away
         if (distance > 15 && currentTime > teleportCooldown) {
-          const teleportPos = playerPos.clone().add(new THREE.Vector3(
-            (Math.random() - 0.5) * 6,
-            0,
-            (Math.random() - 0.5) * 6
-          ));
+          const teleportPos = playerPos
+            .clone()
+            .add(
+              new THREE.Vector3(
+                (Math.random() - 0.5) * 6,
+                0,
+                (Math.random() - 0.5) * 6,
+              ),
+            );
           meshRef.current.position.copy(teleportPos);
           setTeleportCooldown(currentTime + 5000);
-          console.log('🥷 Assassin teleported!');
+          console.log("🥷 Assassin teleported!");
         } else if (distance < 8) {
           // Fast melee approach
           const direction = playerPos.clone().sub(enemyPos).normalize();
           meshRef.current.position.add(direction.multiplyScalar(deltaTime * 4));
         }
         break;
-        
-      case 'berserker':
+
+      case "berserker":
         // Aggressive charging
         if (distance < 20) {
           const direction = playerPos.clone().sub(enemyPos).normalize();
           const speed = rageMode ? 5 : 2.5;
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * speed));
-          
+          meshRef.current.position.add(
+            direction.multiplyScalar(deltaTime * speed),
+          );
+
           // Berserker visual effects when in rage
           if (rageMode) {
             meshRef.current.rotation.y += deltaTime * 5;
           }
         }
         break;
-        
-      case 'sniper':
+
+      case "sniper":
         // Keep distance and aim
         if (distance < 25 && distance > 15) {
           meshRef.current.lookAt(playerPos);
         } else if (distance < 10) {
           // Back away
           const direction = enemyPos.clone().sub(playerPos).normalize();
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 1.5));
+          meshRef.current.position.add(
+            direction.multiplyScalar(deltaTime * 1.5),
+          );
         }
         break;
-        
-      case 'shield':
+
+      case "shield":
         // Defensive positioning
         if (distance < 8) {
           meshRef.current.lookAt(playerPos);
         }
         break;
-        
-      case 'mage':
+
+      case "mage":
         // Keep medium distance
         if (distance < 15 && distance > 8) {
           meshRef.current.lookAt(playerPos);
@@ -312,20 +415,22 @@ export default function Enemy({ type, position }: EnemyProps) {
           meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
         }
         break;
-        
-      case 'boss':
+
+      case "boss":
         // Multi-phase behavior
         if (distance < 30) {
           meshRef.current.lookAt(playerPos);
           // Slow approach
           if (distance > 8) {
             const direction = playerPos.clone().sub(enemyPos).normalize();
-            meshRef.current.position.add(direction.multiplyScalar(deltaTime * 1));
+            meshRef.current.position.add(
+              direction.multiplyScalar(deltaTime * 1),
+            );
           }
         }
         break;
-        
-      case 'drone':
+
+      case "drone":
         // Hover and strafe around player
         if (distance < 20) {
           meshRef.current.lookAt(playerPos);
@@ -335,14 +440,14 @@ export default function Enemy({ type, position }: EnemyProps) {
           const targetX = playerPos.x + Math.cos(angle) * radius;
           const targetZ = playerPos.z + Math.sin(angle) * radius;
           const targetY = playerPos.y + 3; // Stay airborne
-          
+
           const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
           const direction = targetPos.clone().sub(enemyPos).normalize();
           meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
         }
         break;
-        
-      case 'wasp':
+
+      case "wasp":
         // Fast, erratic flight patterns
         if (distance < 15) {
           // Quick dives toward player
@@ -352,138 +457,164 @@ export default function Enemy({ type, position }: EnemyProps) {
           direction.z += (Math.random() - 0.5) * 0.5;
           direction.y += Math.sin(currentTime * 0.01) * 0.3; // Bobbing flight
           direction.normalize();
-          
+
           meshRef.current.position.add(direction.multiplyScalar(deltaTime * 4));
           meshRef.current.lookAt(playerPos);
         }
         break;
-        
-      case 'phoenix':
+
+      case "phoenix":
         // Majestic aerial predator
         if (distance < 25) {
           // Swooping attacks from above
           const currentY = meshRef.current.position.y;
           const targetY = playerPos.y + 6; // Stay well above player
-          
+
           if (distance > 10) {
             // Approach from above
             const direction = playerPos.clone().sub(enemyPos).normalize();
             direction.y = (targetY - currentY) * 0.1; // Gradual height adjustment
-            meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2.5));
+            meshRef.current.position.add(
+              direction.multiplyScalar(deltaTime * 2.5),
+            );
           } else {
             // Circle overhead for attack positioning
             const angle = currentTime * 0.002;
             const radius = 6;
             const targetX = playerPos.x + Math.cos(angle) * radius;
             const targetZ = playerPos.z + Math.sin(angle) * radius;
-            
+
             const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
             const direction = targetPos.clone().sub(enemyPos).normalize();
-            meshRef.current.position.add(direction.multiplyScalar(deltaTime * 1.5));
+            meshRef.current.position.add(
+              direction.multiplyScalar(deltaTime * 1.5),
+            );
           }
           meshRef.current.lookAt(playerPos);
         }
         break;
     }
-    
+
     // Attack logic for all types
-    if (distance < getAttackRange(type) && currentTime > lastAttack + getAttackSpeed(type)) {
+    if (
+      distance < getAttackRange(type) &&
+      currentTime > lastAttack + getAttackSpeed(type)
+    ) {
       performAttack(enemyPos, playerPos, scene, currentTime);
       setLastAttack(currentTime);
     }
   });
-  
+
   function getAttackRange(enemyType: string): number {
     switch (enemyType) {
-      case 'grunt': return 3;
-      case 'rifleman': return 18;
-      case 'heavy': return 5;
-      case 'assassin': return 2.5;
-      case 'bomber': return 4;
-      case 'sniper': return 25;
-      case 'berserker': return 3.5;
-      case 'shield': return 4;
-      case 'mage': return 12;
-      case 'boss': return 15;
-      case 'drone': return 12;
-      case 'wasp': return 6;
-      case 'phoenix': return 20;
-      default: return 3;
+      case "grunt":
+        return 3;
+      case "rifleman":
+        return 18;
+      case "heavy":
+        return 5;
+      case "assassin":
+        return 2.5;
+      case "bomber":
+        return 4;
+      case "sniper":
+        return 25;
+      case "berserker":
+        return 3.5;
+      case "shield":
+        return 4;
+      case "mage":
+        return 12;
+      case "boss":
+        return 15;
+      case "drone":
+        return 12;
+      case "wasp":
+        return 6;
+      case "phoenix":
+        return 20;
+      default:
+        return 3;
     }
   }
-  
-  function performAttack(enemyPos: THREE.Vector3, playerPos: THREE.Vector3, scene: THREE.Scene, currentTime: number) {
+
+  function performAttack(
+    enemyPos: THREE.Vector3,
+    playerPos: THREE.Vector3,
+    scene: THREE.Scene,
+    currentTime: number,
+  ) {
     const direction = playerPos.clone().sub(enemyPos).normalize();
     const damage = getAttackDamage(type);
-    
+
     setIsAttacking(true);
     setTimeout(() => setIsAttacking(false), 300);
-    
+
     switch (type) {
-      case 'grunt':
-      case 'heavy':
-      case 'assassin':
-      case 'berserker':
-      case 'shield':
+      case "grunt":
+      case "heavy":
+      case "assassin":
+      case "berserker":
+      case "shield":
         // Melee attack - damage player directly
         console.log(`⚔️ ${type} melee attack! ${damage} damage`);
-        
+
         // Check if player is in melee range (2 units)
         const playerDistance = enemyPos.distanceTo(playerPos);
         if (playerDistance < 2.0) {
           // Import and call the damage function
-          import('../lib/stores/useVRGame').then(({ useVRGame }) => {
+          import("../lib/stores/useVRGame").then(({ useVRGame }) => {
             useVRGame.getState().takeDamage(damage);
             console.log(`💥 Player hit by ${type}! Took ${damage} damage!`);
           });
-          
+
           // Play damage sound
-          import('../lib/stores/useAudio').then(({ useAudio }) => {
+          import("../lib/stores/useAudio").then(({ useAudio }) => {
             useAudio.getState().playPlayerDamage();
           });
         }
-        
+
         addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
         break;
-        
-      case 'rifleman':
-      case 'sniper':
+
+      case "rifleman":
+      case "sniper":
         // Projectile attack
-        createProjectile(enemyPos, direction, scene, 'bullet', damage);
+        createProjectile(enemyPos, direction, scene, "bullet", damage);
         break;
-        
-      case 'bomber':
+
+      case "bomber":
         // AOE explosion
         createExplosion(enemyPos, scene, damage);
         break;
-        
-      case 'mage':
+
+      case "mage":
         // Magic projectile
-        createProjectile(enemyPos, direction, scene, 'magic', damage);
+        createProjectile(enemyPos, direction, scene, "magic", damage);
         break;
-        
-      case 'boss':
+
+      case "boss":
         // Multiple attacks
-        createProjectile(enemyPos, direction, scene, 'boss', damage);
+        createProjectile(enemyPos, direction, scene, "boss", damage);
         // Boss also creates AOE every 3rd attack
         if (Math.random() < 0.33) {
           createExplosion(enemyPos, scene, damage * 0.5);
         }
         break;
-        
-      case 'drone':
+
+      case "drone":
         // Precision laser shots
-        createProjectile(enemyPos, direction, scene, 'laser', damage);
+        createProjectile(enemyPos, direction, scene, "laser", damage);
         break;
-        
-      case 'wasp':
+
+      case "wasp":
         // Fast stinger attacks
-        createProjectile(enemyPos, direction, scene, 'stinger', damage);
+        createProjectile(enemyPos, direction, scene, "stinger", damage);
         break;
-        
-      case 'phoenix':
+
+      case "phoenix":
         // Fire breath attack
-        createProjectile(enemyPos, direction, scene, 'fire', damage);
+        createProjectile(enemyPos, direction, scene, "fire", damage);
         // Phoenix also creates fire AOE
         if (Math.random() < 0.25) {
           createExplosion(enemyPos, scene, damage * 0.3);
@@ -491,122 +622,135 @@ export default function Enemy({ type, position }: EnemyProps) {
         break;
     }
   }
-  
-  function createProjectile(startPos: THREE.Vector3, direction: THREE.Vector3, scene: THREE.Scene, projectileType: string, damage: number) {
+
+  function createProjectile(
+    startPos: THREE.Vector3,
+    direction: THREE.Vector3,
+    scene: THREE.Scene,
+    projectileType: string,
+    damage: number,
+  ) {
     const projectileGroup = new THREE.Group();
-    
+
     let geometry, material;
     switch (projectileType) {
-      case 'bullet':
+      case "bullet":
         geometry = new THREE.SphereGeometry(0.05);
-        material = new THREE.MeshLambertMaterial({ color: '#FFD700' });
+        material = new THREE.MeshLambertMaterial({ color: "#FFD700" });
         break;
-      case 'magic':
+      case "magic":
         geometry = new THREE.SphereGeometry(0.1);
-        material = new THREE.MeshLambertMaterial({ 
-          color: '#9400D3', 
-          emissive: '#4B0082',
-          emissiveIntensity: 0.5 
+        material = new THREE.MeshLambertMaterial({
+          color: "#9400D3",
+          emissive: "#4B0082",
+          emissiveIntensity: 0.5,
         });
         break;
-      case 'boss':
+      case "boss":
         geometry = new THREE.SphereGeometry(0.15);
-        material = new THREE.MeshLambertMaterial({ 
-          color: '#FF0000', 
-          emissive: '#8B0000',
-          emissiveIntensity: 0.8 
+        material = new THREE.MeshLambertMaterial({
+          color: "#FF0000",
+          emissive: "#8B0000",
+          emissiveIntensity: 0.8,
         });
         break;
-      case 'laser':
+      case "laser":
         geometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3);
-        material = new THREE.MeshLambertMaterial({ 
-          color: '#00FFFF', 
-          emissive: '#0080FF',
-          emissiveIntensity: 1.0 
+        material = new THREE.MeshLambertMaterial({
+          color: "#00FFFF",
+          emissive: "#0080FF",
+          emissiveIntensity: 1.0,
         });
         break;
-      case 'stinger':
+      case "stinger":
         geometry = new THREE.ConeGeometry(0.03, 0.2);
-        material = new THREE.MeshLambertMaterial({ 
-          color: '#FFD700', 
-          emissive: '#FFA500',
-          emissiveIntensity: 0.6 
+        material = new THREE.MeshLambertMaterial({
+          color: "#FFD700",
+          emissive: "#FFA500",
+          emissiveIntensity: 0.6,
         });
         break;
-      case 'fire':
+      case "fire":
         geometry = new THREE.SphereGeometry(0.12);
-        material = new THREE.MeshLambertMaterial({ 
-          color: '#FF4500', 
-          emissive: '#FF6347',
-          emissiveIntensity: 1.2 
+        material = new THREE.MeshLambertMaterial({
+          color: "#FF4500",
+          emissive: "#FF6347",
+          emissiveIntensity: 1.2,
         });
         break;
       default:
         geometry = new THREE.SphereGeometry(0.05);
-        material = new THREE.MeshLambertMaterial({ color: '#FFD700' });
+        material = new THREE.MeshLambertMaterial({ color: "#FFD700" });
     }
-    
+
     const projectileMesh = new THREE.Mesh(geometry, material);
     projectileGroup.add(projectileMesh);
     projectileGroup.position.copy(startPos);
     projectileGroup.position.y += 1.5; // Shoot from chest height
-    
+
     // Mark as enemy projectile
     projectileGroup.userData.isEnemyProjectile = true;
     projectileGroup.userData.damage = damage;
     projectileGroup.userData.velocity = direction.clone().multiplyScalar(15);
     projectileGroup.userData.startTime = Date.now();
-    
+
     scene.add(projectileGroup);
-    
+
     // Animate projectile
     const animateProjectile = () => {
       if (!projectileGroup.parent) return;
-      
+
       const elapsed = Date.now() - projectileGroup.userData.startTime;
-      if (elapsed > 5000) { // Remove after 5 seconds
+      if (elapsed > 5000) {
+        // Remove after 5 seconds
         scene.remove(projectileGroup);
         return;
       }
-      
-      projectileGroup.position.add(projectileGroup.userData.velocity.clone().multiplyScalar(0.016));
+
+      projectileGroup.position.add(
+        projectileGroup.userData.velocity.clone().multiplyScalar(0.016),
+      );
       requestAnimationFrame(animateProjectile);
     };
     animateProjectile();
-    
+
     console.log(`🏹 ${type} fired ${projectileType}! ${damage} damage`);
   }
-  
-  function createExplosion(center: THREE.Vector3, scene: THREE.Scene, damage: number) {
+
+  function createExplosion(
+    center: THREE.Vector3,
+    scene: THREE.Scene,
+    damage: number,
+  ) {
     // Create explosion effect
     addHitEffect([center.x, center.y + 1, center.z]);
-    
+
     // Create explosion sphere for visual
     const explosionGeometry = new THREE.SphereGeometry(3);
-    const explosionMaterial = new THREE.MeshLambertMaterial({ 
-      color: '#FF4500',
+    const explosionMaterial = new THREE.MeshLambertMaterial({
+      color: "#FF4500",
       transparent: true,
-      opacity: 0.7
+      opacity: 0.7,
     });
     const explosionMesh = new THREE.Mesh(explosionGeometry, explosionMaterial);
     explosionMesh.position.copy(center);
     explosionMesh.position.y += 1;
-    
+
     // Mark explosion for player collision detection
     explosionMesh.userData.isExplosion = true;
     explosionMesh.userData.damage = damage;
     explosionMesh.userData.radius = 3.0;
     explosionMesh.userData.hitPlayer = false;
-    
+
     scene.add(explosionMesh);
-    
+
     // Animate explosion
     let scale = 0.1;
     const animateExplosion = () => {
       scale += 0.2;
       explosionMesh.scale.setScalar(scale);
       explosionMaterial.opacity -= 0.05;
-      
+
       if (explosionMaterial.opacity <= 0) {
         scene.remove(explosionMesh);
       } else {
@@ -614,59 +758,59 @@ export default function Enemy({ type, position }: EnemyProps) {
       }
     };
     animateExplosion();
-    
+
     console.log(`💥 ${type} EXPLOSION! ${damage} AOE damage`);
   }
-  
+
   if (isDead) return null;
-  
+
   const size = getEnemySize(type);
   const color = getEnemyColor(type);
-  
+
   return (
     <group ref={meshRef} position={position}>
       {/* Main Body */}
       <mesh position={[0, size[1] / 2, 0]}>
         <boxGeometry args={size} />
-        <meshLambertMaterial 
-          color={isAttacking ? '#FF0000' : color}
+        <meshLambertMaterial
+          color={isAttacking ? "#FF0000" : color}
           transparent={true}
           opacity={rageMode ? 0.9 : 1.0}
         />
       </mesh>
-      
+
       {/* Health Bar Component */}
-      <HealthBar 
-        health={health} 
-        maxHealth={maxHealth} 
-        position={[position[0], position[1], position[2]]} 
+      <HealthBar
+        health={health}
+        maxHealth={maxHealth}
+        position={[position[0], position[1], position[2]]}
         enemyType={type}
       />
-      
+
       {/* Special Visual Effects */}
-      {type === 'shield' && (
+      {type === "shield" && (
         <mesh position={[0.8, size[1] / 2, 0]} rotation={[0, 0, 0]}>
           <boxGeometry args={[0.1, 1.5, 0.8]} />
           <meshLambertMaterial color="#4682B4" />
         </mesh>
       )}
-      
-      {type === 'mage' && (
+
+      {type === "mage" && (
         <mesh position={[0, size[1] + 0.8, 0]}>
           <sphereGeometry args={[0.2]} />
-          <meshLambertMaterial 
-            color="#9400D3" 
+          <meshLambertMaterial
+            color="#9400D3"
             emissive="#4B0082"
             emissiveIntensity={0.5}
           />
         </mesh>
       )}
-      
+
       {rageMode && (
         <mesh position={[0, size[1] + 1, 0]}>
           <sphereGeometry args={[0.3]} />
-          <meshLambertMaterial 
-            color="#FF0000" 
+          <meshLambertMaterial
+            color="#FF0000"
             emissive="#8B0000"
             emissiveIntensity={1.0}
             transparent={true}

@@ -137,9 +137,20 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     // Fire from slightly in front of camera
     const shootPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(0.5));
     
-    // Create instant hit raycast
+    // Create instant hit raycast - look in worldGroup like VR system does
     const raycaster = new THREE.Raycaster(shootPos, cameraDir);
-    const intersects = raycaster.intersectObjects(scene.children, true);
+    let intersects: THREE.Intersection[] = [];
+    
+    // Check hits on world objects (same approach as VR system)
+    const worldGroup = scene.getObjectByName("worldGroup") as THREE.Group;
+    if (worldGroup) {
+      intersects = raycaster.intersectObjects(worldGroup.children, true);
+    }
+    
+    // Fallback to full scene if worldGroup not found
+    if (intersects.length === 0) {
+      intersects = raycaster.intersectObjects(scene.children, true);
+    }
     
     // Create muzzle flash effect
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
