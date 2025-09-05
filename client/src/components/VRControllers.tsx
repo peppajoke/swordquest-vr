@@ -40,6 +40,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const lastYButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
+  const leftSwordRotationMode = useRef(0); // 0 = standard, 1 = side
   const rightSwordRotationMode = useRef(0); // Cycles through different positions
   // Controller sync status tracking
   const controllerSyncStatus = useRef({
@@ -545,12 +546,43 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       leftGrabbing.current = leftGamepad.buttons[1].pressed;  // Left grip = spawn left sword
       leftTrigger.current = leftGamepad.buttons[0].pressed;   // Left trigger = fire left gun
       
-      // X button on LEFT physical hand rotates LEFT sword
+      // X button on LEFT physical hand toggles LEFT sword rotation mode
       const xButtonPressed = leftGamepad.buttons[3]?.pressed || false;
       if (xButtonPressed && !lastXButtonPressed.current && leftSwordRef.current) {
-        leftSwordRotation.current += Math.PI / 2;
-        leftSwordRef.current.rotation.z = leftSwordRotation.current;
-        console.log('🔄 LEFT physical hand sword rotated 90 degrees');
+        // Toggle between standard mode (config 23) and side mode (config 71) - horizontally flipped
+        leftSwordRotationMode.current = (leftSwordRotationMode.current + 1) % 2;
+        
+        let configNumber, modeName;
+        let xIndex, yIndex, zIndex;
+        
+        if (leftSwordRotationMode.current === 0) {
+          // Standard mode = config 23 (22 in 0-based indexing) - horizontally flipped
+          configNumber = 23;
+          modeName = "STANDARD";
+          zIndex = 22 % 8;
+          yIndex = Math.floor(22 / 8) % 8;
+          xIndex = Math.floor(22 / 64) % 8;
+        } else {
+          // Side mode = config 71 (70 in 0-based indexing) - horizontally flipped
+          configNumber = 71;
+          modeName = "SIDE";
+          zIndex = 70 % 8;
+          yIndex = Math.floor(70 / 8) % 8;
+          xIndex = Math.floor(70 / 64) % 8;
+        }
+        
+        // Convert indices to actual rotation values and flip horizontally
+        const xRotation = (xIndex * 45) * Math.PI / 180;
+        const yRotation = -(yIndex * 45) * Math.PI / 180; // Flip Y rotation for horizontal mirror
+        const zRotation = (zIndex * 45) * Math.PI / 180;
+        
+        leftSwordRef.current.rotation.set(xRotation, yRotation, zRotation);
+        
+        console.log(`🗡️ LEFT sword ${modeName} mode (config ${configNumber} flipped): X${xIndex * 45}° Y${-(yIndex * 45)}° Z${zIndex * 45}°`);
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`🗡️ LEFT ${modeName} mode (config ${configNumber} flipped)`);
+          (window as any).vrDebugLog(`X:${xIndex * 45}° Y:${-(yIndex * 45)}° Z:${zIndex * 45}°`);
+        }
       }
       lastXButtonPressed.current = xButtonPressed;
     }
@@ -693,7 +725,16 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         console.log(`⚔️ LEFT physical hand sword spawned (on Three.js controller ${leftIndex})`);
         const sword = createSword();
         sword.scale.x = -1; // Mirror for left hand dual-wielding
-        sword.rotation.z = leftSwordRotation.current;
+        
+        // Set initial rotation to standard mode (config 23) - horizontally flipped
+        const zIndex = 22 % 8;  // Config 23 = index 22
+        const yIndex = Math.floor(22 / 8) % 8;
+        const xIndex = Math.floor(22 / 64) % 8;
+        const xRotation = (xIndex * 45) * Math.PI / 180;
+        const yRotation = -(yIndex * 45) * Math.PI / 180; // Flip Y rotation for horizontal mirror
+        const zRotation = (zIndex * 45) * Math.PI / 180;
+        sword.rotation.set(xRotation, yRotation, zRotation);
+        
         leftSwordRef.current = sword;
         leftControllerObj.add(sword); // Attach to LEFT physical hand
       }
