@@ -510,15 +510,15 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         // Toggle between side and standard modes
         if (rightSwordMode.current === 'side') {
           rightSwordMode.current = 'standard';
-          // Standard mode: pointing upward at 45 degrees
+          // Standard mode: pointing upward 45 degrees
           rightSwordRef.current.rotation.y = 0; // Reset Y rotation
-          rightSwordRef.current.rotation.z = -Math.PI / 4; // Point upward 45 degrees
+          rightSwordRef.current.rotation.z = Math.PI / 2 + Math.PI / 4; // Point upward 45 degrees from default
           console.log('🔄 RIGHT hand sword: STANDARD mode (upward 45 degrees)');
         } else {
           rightSwordMode.current = 'side';
-          // Side mode: pointing to the right (inverted as requested)
+          // Side mode: pointing to the right (perfect as is)
           rightSwordRef.current.rotation.y = 0; // Reset Y rotation  
-          rightSwordRef.current.rotation.z = Math.PI; // Point to the right (inverted)
+          rightSwordRef.current.rotation.z = Math.PI / 2; // Point to the right (original perfect setting)
           console.log('🔄 RIGHT hand sword: SIDE mode (pointing right)');
         }
       }
@@ -620,10 +620,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         // Set initial rotation based on current mode (default is side mode)
         if (rightSwordMode.current === 'side') {
           sword.rotation.y = 0;
-          sword.rotation.z = Math.PI; // Side mode: pointing right (inverted)
+          sword.rotation.z = Math.PI / 2; // Side mode: pointing right (perfect setting)
         } else {
           sword.rotation.y = 0;
-          sword.rotation.z = -Math.PI / 4; // Standard mode: pointing upward 45 degrees
+          sword.rotation.z = Math.PI / 2 + Math.PI / 4; // Standard mode: pointing upward 45 degrees
         }
         rightSwordRef.current = sword;
         rightControllerObj.add(sword); // Attach to RIGHT physical hand
