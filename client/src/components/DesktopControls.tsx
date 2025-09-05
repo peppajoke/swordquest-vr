@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
@@ -14,6 +15,7 @@ interface DesktopControlsProps {
 
 export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
+  const { isPresenting: isVRPresented } = useXR();
   const { addHitEffect } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
   
@@ -151,6 +153,46 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     if (intersects.length === 0) {
       intersects = raycaster.intersectObjects(scene.children, true);
     }
+    
+    // Create visual bullet beam like VR system
+    const maxDistance = 100;
+    const actualEndPos = shootPos.clone().add(cameraDir.clone().multiplyScalar(maxDistance));
+    
+    // If we hit something, use the hit point as end position
+    if (intersects.length > 0) {
+      actualEndPos.copy(intersects[0].point);
+    }
+    
+    // Create visible laser beam
+    const beamLength = shootPos.distanceTo(actualEndPos);
+    const beamGeometry = new THREE.CylinderGeometry(0.005, 0.005, beamLength, 8);
+    const beamMaterial = new THREE.MeshLambertMaterial({
+      color: "#00ff00",
+      emissive: "#88ff00", 
+      emissiveIntensity: 1.5,
+      transparent: true,
+      opacity: 0.8,
+    });
+    const beam = new THREE.Mesh(beamGeometry, beamMaterial);
+    
+    // Position beam correctly
+    const beamCenter = shootPos.clone().add(cameraDir.clone().multiplyScalar(beamLength / 2));
+    beam.position.copy(beamCenter);
+    
+    // Align beam with direction
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), cameraDir.clone().normalize());
+    beam.quaternion.copy(quaternion);
+    
+    // Add beam to scene temporarily
+    scene.add(beam);
+    
+    // Remove beam after short duration
+    setTimeout(() => {
+      scene.remove(beam);
+      beam.geometry.dispose();
+      (beam.material as THREE.Material).dispose();
+    }, 100);
     
     // Create muzzle flash effect
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
@@ -528,7 +570,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     camera.position.y = Math.min(18, camera.position.y);
     
     // Continuous sword damage detection while swinging
-    if (isSwinging && rightMouseDown) {
+    if (isSwinging) {
       const currentTime = Date.now();
       if (currentTime > lastSwordDamage.current + swordDamageCooldown) {
         checkSwordDamage();
@@ -547,7 +589,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           setIsSwinging(false);
           console.log('⚔️ Desktop sword swing completed!');
         }}
-        isVisible={true}
+        isVisible={!isVRPresented}
       />
     </>
   );

@@ -25,31 +25,51 @@ export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand, left
   }, []);
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '20px',
-      left: '20px',
-      color: 'white',
-      fontFamily: 'monospace',
-      fontSize: '14px',
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      padding: '10px',
-      borderRadius: '5px',
-      zIndex: 1000,
-      pointerEvents: 'none'
-    }}>
-      <div>🎮 DESKTOP MODE</div>
-      <div>WASD: Move | Mouse: Look | Space: Jump</div>
-      <div>Left Click: Shoot | Right Click: Sword | R: Reload</div>
-      <div>Shift: Toggle Jetpack</div>
-      <div>🔫 Left: <span style={{color: leftClip > 4 ? 'white' : leftClip > 0 ? 'orange' : 'red'}}>{leftClip}/12</span> | Right: <span style={{color: rightClip > 4 ? 'white' : rightClip > 0 ? 'orange' : 'red'}}>{rightClip}/12</span> | Active: {currentGun.toUpperCase()}</div>
-      {isReloading && <div style={{color: 'yellow'}}>🔄 Reloading...</div>}
-      <div>🚀 Jetpack: {jetpackEnabled ? 'ON' : 'OFF'}</div>
-      <div>⚡ Fuel: {fuel.toFixed(0)}/100</div>
-      <div>⚔️ Next Sword: {currentSwordHand}</div>
-      {!isPointerLocked && (
-        <div style={{ color: 'yellow' }}>Click to capture mouse</div>
-      )}
-    </div>
+    <>
+      {/* Crosshairs */}
+      <div
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 999,
+          pointerEvents: "none",
+          color: "white",
+          fontSize: "20px",
+          textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+        }}
+      >
+        ⊕
+      </div>
+
+      {/* UI Panel */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '20px',
+        color: 'white',
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        padding: '10px',
+        borderRadius: '5px',
+        zIndex: 1000,
+        pointerEvents: 'none'
+      }}>
+        <div>🎮 DESKTOP MODE</div>
+        <div>WASD: Move | Mouse: Look | Space: Jump</div>
+        <div>Left Click: Shoot | Right Click: Sword | R: Reload</div>
+        <div>Shift: Toggle Jetpack</div>
+        <div>🔫 Left: <span style={{color: leftClip > 4 ? 'white' : leftClip > 0 ? 'orange' : 'red'}}>{leftClip}/12</span> | Right: <span style={{color: rightClip > 4 ? 'white' : rightClip > 0 ? 'orange' : 'red'}}>{rightClip}/12</span> | Active: {currentGun.toUpperCase()}</div>
+        {isReloading && <div style={{color: 'yellow'}}>🔄 Reloading...</div>}
+        <div>🚀 Jetpack: {jetpackEnabled ? 'ON' : 'OFF'}</div>
+        <div>⚡ Fuel: {fuel.toFixed(0)}/100</div>
+        <div>⚔️ Next Sword: {currentSwordHand}</div>
+        {!isPointerLocked && (
+          <div style={{ color: 'yellow' }}>Click to capture mouse</div>
+        )}
+      </div>
+    </>
   );
 }
