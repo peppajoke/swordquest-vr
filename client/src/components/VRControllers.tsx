@@ -636,10 +636,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         const newPosition = worldGroup.position.clone().add(moveVector);
         let canMove = true;
         
-        // Room boundaries (40x20 room centered at [0, 0, -10])
-        // Player should stay within: x: -19 to +19, z: -19 to -1 (inside room with small buffer)
-        if (newPosition.x < -19 || newPosition.x > 19 || newPosition.z < -19 || newPosition.z > -1) {
+        // Room boundaries (40x20 room with world group starting at [0, 0, 10])
+        // Player should stay within: x: -19 to +19, z: -9 to +19 (adjusted for spawn position)
+        if (newPosition.x < -19 || newPosition.x > 19 || newPosition.z < -9 || newPosition.z > 19) {
+          console.log(`🚫 Movement blocked! Position: ${newPosition.x.toFixed(2)}, ${newPosition.z.toFixed(2)} - Boundaries: x(-19 to 19), z(-9 to 19)`);
           canMove = false;
+        } else {
+          console.log(`✅ Movement allowed! Position: ${newPosition.x.toFixed(2)}, ${newPosition.z.toFixed(2)}`);
         }
         
         if (canMove) {
