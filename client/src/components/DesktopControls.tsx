@@ -24,8 +24,16 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     a: false,
     s: false,
     d: false,
-    shift: false
+    shift: false,
+    space: false
   });
+  
+  // Physics state
+  const verticalVelocity = useRef(0);
+  const isGrounded = useRef(true);
+  const gravity = -20; // Gravity acceleration (negative for downward)
+  const jumpVelocity = 8; // Initial jump velocity
+  const groundLevel = 1; // Ground Y position (accounting for player height)
   
   // Mouse state
   const mouseMovement = useRef({ x: 0, y: 0 });
@@ -163,6 +171,16 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
             console.log(`🚀 Jetpack ${newJetpackState ? 'ENABLED' : 'DISABLED'}`);
           }
           break;
+        case 'Space':
+          keys.current.space = true;
+          if (isGrounded.current && !jetpackEnabled) {
+            // Jump when grounded and not flying
+            verticalVelocity.current = jumpVelocity;
+            isGrounded.current = false;
+            console.log('🦘 Jump!');
+          }
+          event.preventDefault();
+          break;
       }
     };
     
@@ -182,6 +200,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           break;
         case 'ShiftLeft':
           keys.current.shift = false;
+          break;
+        case 'Space':
+          keys.current.space = false;
           break;
       }
     };
@@ -265,14 +286,29 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     direction.current.normalize();
     direction.current.applyQuaternion(camera.quaternion);
     
+    // Physics: Apply gravity when not using jetpack
+    if (!jetpackEnabled) {
+      verticalVelocity.current += gravity * deltaTime;
+      
+      // Check ground collision
+      const newY = camera.position.y + verticalVelocity.current * deltaTime;
+      if (newY <= groundLevel) {
+        camera.position.y = groundLevel;
+        verticalVelocity.current = 0;
+        isGrounded.current = true;
+      } else {
+        camera.position.y = newY;
+        isGrounded.current = false;
+      }
+    }
+    
     // Handle jetpack mechanics
     if (jetpackEnabled && fuel > 0) {
       // Allow 3D movement with jetpack
       const speed = jetpackSpeed;
       
       // Jetpack fuel consumption
-      const isGrounded = camera.position.y <= 1.8;
-      const fuelDrain = isGrounded ? 15 : 60; // 4x faster when airborne
+      const fuelDrain = isGrounded.current ? 15 : 60; // 4x faster when airborne
       setFuel(prev => Math.max(0, prev - fuelDrain * deltaTime));
       
       if (fuel <= 0) {
@@ -283,13 +319,22 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
         console.log('⚡ Jetpack fuel depleted!');
       }
       
-      // Apply jetpack movement (including Y axis)
+      // Jetpack movement: spacebar for upward thrust
+      if (keys.current.space) {
+        verticalVelocity.current = jetpackSpeed * 0.7; // Upward thrust when holding space
+      } else {
+        verticalVelocity.current *= 0.95; // Slow drift down when not thrusting
+      }
+      
+      // Apply horizontal jetpack movement
       velocity.current.x = direction.current.x * speed;
-      velocity.current.y = direction.current.y * speed;
       velocity.current.z = direction.current.z * speed;
       
+      // Apply vertical movement from jetpack
+      camera.position.y += verticalVelocity.current * deltaTime;
+      
       // Log airborne status
-      if (!isGrounded) {
+      if (!isGrounded.current) {
         console.log(`⚡ AIRBORNE! Fuel: ${fuel.toFixed(1)}/100`);
       }
     } else {
@@ -299,15 +344,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       
       velocity.current.x = direction.current.x * speed;
       velocity.current.z = direction.current.z * speed;
-      
-      // Apply gravity
-      velocity.current.y -= 9.8 * deltaTime;
-      
-      // Ground check
-      if (camera.position.y <= 1.8) {
-        camera.position.y = 1.8;
-        velocity.current.y = 0;
-      }
+      velocity.current.y = 0; // Horizontal movement only
       
       // Fuel recharge when not using jetpack
       setFuel(prev => Math.min(100, prev + 30 * deltaTime));
