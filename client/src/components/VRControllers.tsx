@@ -373,6 +373,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       leftStickX = gamepad1.axes[2] || 0; // X-axis (left/right)
       leftStickY = gamepad1.axes[3] || 0; // Y-axis (forward/back)
     }
+    
+    // Right stick camera control
+    let rightStickX = 0;
+    let rightStickY = 0;
+    if (gamepad0 && gamepad0.axes && gamepad0.axes.length >= 4) {
+      rightStickX = gamepad0.axes[2] || 0; // X-axis (look left/right)
+      rightStickY = gamepad0.axes[3] || 0; // Y-axis (look up/down)
+    }
 
     // Use grip controllers for weapon attachment (they track hand pose better)
     const controller0Obj = controllerGrip0Ref.current;
@@ -634,6 +642,19 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
           useAudio.getState().stopAcceleration();
         });
       }
+    }
+
+    // Right stick camera rotation
+    if (Math.abs(rightStickX) > 0.1 || Math.abs(rightStickY) > 0.1) {
+      // Apply smooth camera rotation based on right stick input
+      const rotationSpeed = 0.02;
+      
+      // Horizontal rotation (yaw)
+      camera.rotation.y -= rightStickX * rotationSpeed;
+      
+      // Vertical rotation (pitch) with limits to prevent flipping
+      camera.rotation.x -= rightStickY * rotationSpeed;
+      camera.rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, camera.rotation.x)); // Limit to ±60 degrees
     }
 
     // Left stick free movement (slower speed)
