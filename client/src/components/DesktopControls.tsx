@@ -56,9 +56,20 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   // Gun shooting state
   const lastShot = useRef(0);
   const shotCooldown = 150; // Faster shooting for desktop
+  const [ammo, setAmmo] = useState(120); // Starting ammo count
+  const maxAmmo = 120;
   
   // Desktop shooting function
   const fireDesktopBullet = () => {
+    // Check if we have ammo
+    if (ammo <= 0) {
+      console.log('🚫 Out of ammo!');
+      return;
+    }
+    
+    // Consume ammo
+    setAmmo(prev => Math.max(0, prev - 1));
+    
     // Get camera position and direction for shooting
     const cameraPos = camera.position.clone();
     const cameraDir = new THREE.Vector3(0, 0, -1);
@@ -77,6 +88,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     // Play gun sound
     playGunShoot();
     
+    let hitSomething = false;
+    
     // Check for hits
     for (const intersect of intersects) {
       const hitObject = intersect.object;
@@ -89,19 +102,29 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
         }
         console.log(`🎯 Desktop shot hit ${hitObject.userData.enemyType}! ${gunDamage} damage`);
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
+        hitSomething = true;
         break;
       }
       
-      // Hit pillar
+      // Hit pillar or other objects
       if (hitObject.userData.isPillar && !hitObject.userData.destroyed) {
         hitObject.userData.destroyed = true;
         console.log('🎯 Desktop shot destroyed pillar!');
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
+        hitSomething = true;
+        break;
+      }
+      
+      // Hit any other object (terrain, walls, etc.)
+      if (hitObject.userData.isEnvironment || hitObject.material) {
+        console.log('🎯 Desktop shot hit environment!');
+        addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
+        hitSomething = true;
         break;
       }
     }
     
-    console.log('🔫 Desktop gun fired!');
+    console.log(`🔫 Desktop gun fired! Ammo: ${ammo - 1}/${maxAmmo}${hitSomething ? ' - HIT!' : ''}`);
   };
   
   // Desktop sword swing function
@@ -180,6 +203,13 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
             console.log('🦘 Jump!');
           }
           event.preventDefault();
+          break;
+        case 'KeyR':
+          // Reload ammo
+          if (ammo < maxAmmo) {
+            setAmmo(maxAmmo);
+            console.log(`🔄 Reloaded! Ammo: ${maxAmmo}/${maxAmmo}`);
+          }
           break;
       }
     };

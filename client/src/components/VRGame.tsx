@@ -87,7 +87,7 @@ export default function VRGame() {
       
       {/* World Group - Everything that moves with locomotion - starts centered in room */}
       <group name="worldGroup" position={[0, 0, 10]}>
-        {inDeathRoom && <DeathRoom />}
+        {/* Death room removed for now */}
         
         {/* White Room Floor - 5x bigger */}
         <mesh receiveShadow position={[0, 0, -50]} rotation={[-Math.PI / 2, 0, 0]}>

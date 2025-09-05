@@ -23,6 +23,8 @@ function App() {
   const [fuel, setFuel] = useState(100);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
+  const [ammo, setAmmo] = useState(120);
+  const maxAmmo = 120;
 
   return (
     <div
@@ -74,7 +76,7 @@ function App() {
           powerPreference: "high-performance",
         }}
       >
-        <XR store={store} optionalFeatures={[]} sessionInit={sessionInit}>
+        <XR store={store}>
           <Suspense fallback={null}>
             <VRGame />
           </Suspense>
@@ -86,6 +88,8 @@ function App() {
         fuel={fuel}
         jetpackEnabled={jetpackEnabled}
         currentSwordHand={currentSwordHand}
+        ammo={ammo}
+        maxAmmo={maxAmmo}
       />
     </div>
   );

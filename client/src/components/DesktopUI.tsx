@@ -4,9 +4,11 @@ interface DesktopUIProps {
   fuel: number;
   jetpackEnabled: boolean;
   currentSwordHand: 'left' | 'right';
+  ammo?: number;
+  maxAmmo?: number;
 }
 
-export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand }: DesktopUIProps) {
+export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand, ammo = 120, maxAmmo = 120 }: DesktopUIProps) {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
 
   useEffect(() => {
@@ -35,9 +37,10 @@ export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand }: De
       pointerEvents: 'none'
     }}>
       <div>🎮 DESKTOP MODE</div>
-      <div>WASD: Move | Mouse: Look</div>
-      <div>Left Click: Shoot | Right Click: Sword</div>
+      <div>WASD: Move | Mouse: Look | Space: Jump</div>
+      <div>Left Click: Shoot | Right Click: Sword | R: Reload</div>
       <div>Shift: Toggle Jetpack</div>
+      <div>🔫 Ammo: <span style={{color: ammo > 20 ? 'white' : ammo > 0 ? 'orange' : 'red'}}>{ammo}/{maxAmmo}</span></div>
       <div>🚀 Jetpack: {jetpackEnabled ? 'ON' : 'OFF'}</div>
       <div>⚡ Fuel: {fuel.toFixed(0)}/100</div>
       <div>⚔️ Next Sword: {currentSwordHand}</div>
