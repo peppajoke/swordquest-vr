@@ -42,6 +42,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const leftSwordRotation = useRef(0);
   const leftSwordRotationMode = useRef(0); // 0 = standard, 1 = side
   const rightSwordRotationMode = useRef(0); // Cycles through different positions
+  const hiddenXRDefaultsRef = useRef(false);
   // Controller sync status tracking
   const controllerSyncStatus = useRef({
     scanning: true,
@@ -119,6 +120,19 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const wasEmpty = useRef(false);
   const emptyPenaltyTime = useRef(0);
   const wasAccelerating = useRef(false);
+
+  function hideDefaultXRVisuals() {
+    [controller0Ref.current, controller1Ref.current].forEach(c =>
+      c?.traverse(child => {
+        if ((child as any).isLine || child.type === 'LineSegments') child.visible = false;
+      })
+    );
+    [controllerGrip0Ref.current, controllerGrip1Ref.current].forEach(g =>
+      g?.traverse(child => {
+        if (!child.userData?.isCustomModel) child.visible = false;
+      })
+    );
+  }
 
   // Burst speed system
   const burstSpeedMultiplier = useRef(1.0);
@@ -490,18 +504,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
     }
     
-    // Hide default controller models immediately once controllers are ready
-    if (controllerGrip0Ref.current && controllerGrip1Ref.current) {
-      controllerGrip0Ref.current.traverse((child) => {
-        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
-          child.visible = false;
-        }
-      });
-      controllerGrip1Ref.current.traverse((child) => {
-        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
-          child.visible = false;
-        }
-      });
+    // Hide default XR visuals once controllers are ready
+    if (controllerGrip0Ref.current && controllerGrip1Ref.current && !hiddenXRDefaultsRef.current) {
+      hideDefaultXRVisuals();
+      hiddenXRDefaultsRef.current = true;
     }
 
     /*
