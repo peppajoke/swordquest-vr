@@ -480,8 +480,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       
       if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
         (window as any).vrDebugLog(`✅ VR SYSTEM READY!`);
-        (window as any).vrDebugLog(`Squeeze grips to spawn swords`);
-        (window as any).vrDebugLog(`Pull triggers to fire guns`);
+        (window as any).vrDebugLog(`Squeeze RIGHT grip to spawn sword`);
+        (window as any).vrDebugLog(`Point sword where you want it`);
+        (window as any).vrDebugLog(`Press A button to capture rotation`);
+        (window as any).vrDebugLog(`Tell me what that position should be called!`);
       }
     }
     
@@ -556,17 +558,25 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
       rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
-      // Simple sword mode toggle - A button switches between neutral and side pointing
+      // A button captures current sword orientation
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
-        if (rightSwordRef.current.rotation.y === 0) {
-          // Switch to side mode
-          rightSwordRef.current.rotation.set(0, -Math.PI / 2, 0);
-          console.log('🗡️ RIGHT sword: SIDE mode');
-        } else {
-          // Switch to neutral mode  
-          rightSwordRef.current.rotation.set(0, 0, 0);
-          console.log('🗡️ RIGHT sword: NEUTRAL mode');
+        const rotation = rightSwordRef.current.rotation;
+        const rotationData = {
+          x: Number(rotation.x.toFixed(3)),
+          y: Number(rotation.y.toFixed(3)),
+          z: Number(rotation.z.toFixed(3))
+        };
+        
+        console.log('🗡️ CAPTURED SWORD ROTATION:', rotationData);
+        
+        // Display on VR overlay
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`📐 CAPTURED ROTATION:`);
+          (window as any).vrDebugLog(`X: ${rotationData.x} (${(rotationData.x * 180 / Math.PI).toFixed(1)}°)`);
+          (window as any).vrDebugLog(`Y: ${rotationData.y} (${(rotationData.y * 180 / Math.PI).toFixed(1)}°)`);
+          (window as any).vrDebugLog(`Z: ${rotationData.z} (${(rotationData.z * 180 / Math.PI).toFixed(1)}°)`);
+          (window as any).vrDebugLog(`Tell me what this position should be called!`);
         }
       }
       lastAButtonPressed.current = aButtonPressed;
