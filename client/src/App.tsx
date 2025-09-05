@@ -56,8 +56,8 @@ function App() {
     const game = <VRGame />;
     setGameInstance(game);
     
-    // Longer delay to ensure VR systems and models are ready
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Shorter delay - VR controllers will initialize themselves properly
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     setIsGameLoaded(true);
   };

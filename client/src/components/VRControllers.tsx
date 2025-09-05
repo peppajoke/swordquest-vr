@@ -31,6 +31,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
   const lastRightTrigger = useRef(false);
   const jetpackEnabled = useRef(true);
   const lastBButtonPressed = useRef(false);
+  const vrInitialized = useRef(false);
 
   // Movement and fuel system refs
   const velocity = useRef(new THREE.Vector3());
@@ -309,13 +310,19 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     const controller0 = inputSources.find(input => input.handedness === 'left');  // Controller 0 = LEFT hand
     const controller1 = inputSources.find(input => input.handedness === 'right'); // Controller 1 = RIGHT hand
     
-    // 🚨 TRIGGER ASSIGNMENT FIX: The triggers are intentionally CROSSED/SWAPPED! 🚨
-    // This is INTENTIONAL and REQUIRED for correct hand mapping in VR!
-    // RIGHT controller (0) -> LEFT trigger variable (swapped on purpose!)
-    // LEFT controller (1) -> RIGHT trigger variable (swapped on purpose!)
-    // DO NOT "FIX" THIS - IT'S THE CORRECT CROSS-MAPPING! 🚨
-
-    if (!controller0 || !controller1) return;
+    // Wait for both controllers to be available with proper gamepad data
+    if (!controller0 || !controller1 || !controller0.gamepad || !controller1.gamepad) {
+      if (!vrInitialized.current) {
+        console.log('⏳ Waiting for VR controllers to initialize...');
+      }
+      return;
+    }
+    
+    // VR is now ready - log once
+    if (!vrInitialized.current) {
+      vrInitialized.current = true;
+      console.log('✅ VR Controllers fully initialized and ready!');
+    }
 
     // Store controller refs - keep them visible so our custom objects show
     if (!controller0Ref.current) {
@@ -337,23 +344,19 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       scene.add(controllerGrip1Ref.current);
     }
     
-    // Hide default controller models but keep our custom weapons visible
-    setTimeout(() => {
-      if (controllerGrip0Ref.current) {
-        controllerGrip0Ref.current.traverse((child) => {
-          if (child.type === 'Mesh' && !child.userData.isCustomModel) {
-            child.visible = false;
-          }
-        });
-      }
-      if (controllerGrip1Ref.current) {
-        controllerGrip1Ref.current.traverse((child) => {
-          if (child.type === 'Mesh' && !child.userData.isCustomModel) {
-            child.visible = false;
-          }
-        });
-      }
-    }, 100);
+    // Hide default controller models immediately once controllers are ready
+    if (controllerGrip0Ref.current && controllerGrip1Ref.current) {
+      controllerGrip0Ref.current.traverse((child) => {
+        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
+          child.visible = false;
+        }
+      });
+      controllerGrip1Ref.current.traverse((child) => {
+        if (child.type === 'Mesh' && !child.userData.isCustomModel) {
+          child.visible = false;
+        }
+      });
+    }
 
     // Handle controller input
     const gamepad0 = controller0.gamepad;
