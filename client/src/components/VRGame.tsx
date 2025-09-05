@@ -25,6 +25,8 @@ export default function VRGame() {
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
+  const [leftClip, setLeftClip] = useState(12);
+  const [rightClip, setRightClip] = useState(12);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
 
   useEffect(() => {
@@ -100,13 +102,13 @@ export default function VRGame() {
       </group>
 
       {/* VR Components - Stay in VR space, don't move with world */}
-      <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} onJetpackChange={setJetpackEnabled} />
+      <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} onLeftClipChange={setLeftClip} onRightClipChange={setRightClip} onJetpackChange={setJetpackEnabled} />
       
       {/* Keyboard/Mouse Controls - Alternative to VR */}
       <KeyboardMouseControls onFuelChange={setFuel} />
       
       {/* VR Debug Display with HP/Fuel/Ammo - Visible in Quest 3 */}
-      <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} jetpackEnabled={jetpackEnabled} />
+      <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />
       
       {/* Death Overlay */}
       {isDead && (

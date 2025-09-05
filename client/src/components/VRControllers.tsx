@@ -7,12 +7,16 @@ import { useAudio } from "../lib/stores/useAudio";
 interface VRControllersProps {
   onFuelChange?: (fuel: number) => void;
   onAmmoChange?: (ammo: number) => void;
+  onLeftClipChange?: (leftClip: number) => void;
+  onRightClipChange?: (rightClip: number) => void;
   onJetpackChange?: (enabled: boolean) => void;
 }
 
 export default function VRControllers({
   onFuelChange,
   onAmmoChange,
+  onLeftClipChange,
+  onRightClipChange,
   onJetpackChange,
 }: VRControllersProps) {
   const { playGunShoot } = useAudio();
@@ -1147,6 +1151,14 @@ export default function VRControllers({
     // Update UI with total ammo across both clips
     if (onAmmoChange) {
       onAmmoChange(leftClip.current + rightClip.current);
+    }
+    
+    // Update individual clip displays
+    if (onLeftClipChange) {
+      onLeftClipChange(leftClip.current);
+    }
+    if (onRightClipChange) {
+      onRightClipChange(rightClip.current);
     }
 
     // No auto-recharge - reload at shoulder instead

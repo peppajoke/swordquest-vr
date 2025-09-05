@@ -17,10 +17,12 @@ interface VRDebugDisplayProps {
   fuel: number;
   maxFuel: number;
   ammo: number;
+  leftClip: number;
+  rightClip: number;
   jetpackEnabled: boolean;
 }
 
-export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugDisplayProps) {
+export function VRDebugDisplay({ fuel, maxFuel, ammo, leftClip, rightClip, jetpackEnabled }: VRDebugDisplayProps) {
   const { health, maxHealth } = useVRGame();
   const groupRef = useRef<THREE.Group>(null);
   const [debugData, setDebugData] = useState<VRDebugData>({
@@ -158,27 +160,42 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
         </>
       )}
 
-      {/* Ammo Bar Background */}
-      <mesh position={[0, -0.05, 0]}>
-        <boxGeometry args={[1, 0.06, 0.01]} />
+      {/* Left Gun Ammo Display */}
+      <mesh position={[-0.3, -0.05, 0]}>
+        <boxGeometry args={[0.4, 0.06, 0.01]} />
         <meshLambertMaterial color="#333333" />
       </mesh>
-
-      {/* Ammo Bar Fill - Always Orange */}
-      <mesh position={[-0.5 + (ammoPercentage / 100) * 0.5, -0.05, 0.005]}>
-        <boxGeometry args={[(ammoPercentage / 100), 0.05, 0.01]} />
-        <meshLambertMaterial color="#ff8800" />
+      <mesh position={[-0.5 + (leftClip / 12) * 0.2, -0.05, 0.005]}>
+        <boxGeometry args={[(leftClip / 12) * 0.4, 0.05, 0.01]} />
+        <meshLambertMaterial color="#ff4400" />
       </mesh>
-
-      {/* Ammo Count Text */}
       <Text
-        position={[0, -0.15, 0]}
-        fontSize={0.08}
+        position={[-0.3, -0.15, 0]}
+        fontSize={0.06}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
       >
-        {ammo}
+        L: {leftClip}
+      </Text>
+
+      {/* Right Gun Ammo Display */}
+      <mesh position={[0.3, -0.05, 0]}>
+        <boxGeometry args={[0.4, 0.06, 0.01]} />
+        <meshLambertMaterial color="#333333" />
+      </mesh>
+      <mesh position={[0.1 + (rightClip / 12) * 0.2, -0.05, 0.005]}>
+        <boxGeometry args={[(rightClip / 12) * 0.4, 0.05, 0.01]} />
+        <meshLambertMaterial color="#ff4400" />
+      </mesh>
+      <Text
+        position={[0.3, -0.15, 0]}
+        fontSize={0.06}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+      >
+        R: {rightClip}
       </Text>
 
       {/* Event Logs */}
