@@ -86,9 +86,9 @@ export default function VRGame() {
       <group name="worldGroup" position={[0, 0, 10]}>
         {inDeathRoom && <DeathRoom />}
         
-        {/* White Room Floor */}
-        <mesh receiveShadow position={[0, 0, -10]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[40, 20]} />
+        {/* White Room Floor - 5x bigger */}
+        <mesh receiveShadow position={[0, 0, -50]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[200, 100]} />
           <meshLambertMaterial color="#FFFFFF" />
         </mesh>
         

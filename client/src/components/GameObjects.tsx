@@ -18,40 +18,62 @@ export default function GameObjects() {
 
   return (
     <>
-      {/* Double-sized Room Walls with collision */}
+      {/* 5x Bigger Room Walls with collision */}
       {/* Back wall */}
-      <mesh position={[0, 4, -20]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[40, 8, 1]} />
+      <mesh position={[0, 10, -100]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[200, 20, 2]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Left wall */}
-      <mesh position={[-20, 4, -10]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[20, 8, 1]} />
+      <mesh position={[-100, 10, -50]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[100, 20, 2]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Right wall */}
-      <mesh position={[20, 4, -10]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[20, 8, 1]} />
+      <mesh position={[100, 10, -50]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[100, 20, 2]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Front wall (partial, with opening) */}
-      <mesh position={[-10, 4, 0]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[16, 8, 1]} />
+      <mesh position={[-50, 10, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[80, 20, 2]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
-      <mesh position={[10, 4, 0]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[16, 8, 1]} />
+      <mesh position={[50, 10, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[80, 20, 2]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Grey Ceiling */}
-      <mesh position={[0, 8, -10]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 20]} />
+      <mesh position={[0, 20, -50]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[200, 100]} />
         <meshLambertMaterial color="#808080" />
       </mesh>
+      
+      {/* Red Destructible Pillars scattered around the room */}
+      <RedPillar position={[-60, 1, -20]} destroyed={false} />
+      <RedPillar position={[40, 1, -30]} destroyed={false} />
+      <RedPillar position={[-30, 1, -60]} destroyed={false} />
+      <RedPillar position={[70, 1, -70]} destroyed={false} />
+      <RedPillar position={[20, 1, -80]} destroyed={false} />
+      <RedPillar position={[-80, 1, -40]} destroyed={false} />
+      <RedPillar position={[50, 1, -15]} destroyed={false} />
+      <RedPillar position={[-40, 1, -85]} destroyed={false} />
+      <RedPillar position={[80, 1, -25]} destroyed={false} />
+      <RedPillar position={[-20, 1, -75]} destroyed={false} />
+      <RedPillar position={[60, 1, -60]} destroyed={false} />
+      <RedPillar position={[-70, 1, -65]} destroyed={false} />
+      <RedPillar position={[30, 1, -40]} destroyed={false} />
+      <RedPillar position={[-50, 1, -30]} destroyed={false} />
+      <RedPillar position={[10, 1, -90]} destroyed={false} />
+      <RedPillar position={[-90, 1, -80]} destroyed={false} />
+      <RedPillar position={[85, 1, -50]} destroyed={false} />
+      <RedPillar position={[-15, 1, -45]} destroyed={false} />
+      <RedPillar position={[65, 1, -35]} destroyed={false} />
+      <RedPillar position={[-75, 1, -55]} destroyed={false} />
     </>
   );
 }
