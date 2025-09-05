@@ -113,6 +113,11 @@ export default function VRGame() {
           console.log(`⚔️ Desktop ${hand} sword swing!`);
         }}
         onJetpackToggle={setJetpackEnabled}
+        onClipChange={(leftClipVal, rightClipVal, currentGunVal, isReloadingVal) => {
+          setLeftClip(leftClipVal);
+          setRightClip(rightClipVal);
+          // Note: currentGun and isReloading states are managed in DesktopControls only
+        }}
       />
       
       {/* Player Collision Detection */}

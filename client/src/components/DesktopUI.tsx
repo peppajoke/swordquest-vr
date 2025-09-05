@@ -4,11 +4,13 @@ interface DesktopUIProps {
   fuel: number;
   jetpackEnabled: boolean;
   currentSwordHand: 'left' | 'right';
-  ammo?: number;
-  maxAmmo?: number;
+  leftClip?: number;
+  rightClip?: number;
+  currentGun?: 'left' | 'right';
+  isReloading?: boolean;
 }
 
-export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand, ammo = 120, maxAmmo = 120 }: DesktopUIProps) {
+export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand, leftClip = 12, rightClip = 12, currentGun = 'left', isReloading = false }: DesktopUIProps) {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,8 @@ export default function DesktopUI({ fuel, jetpackEnabled, currentSwordHand, ammo
       <div>WASD: Move | Mouse: Look | Space: Jump</div>
       <div>Left Click: Shoot | Right Click: Sword | R: Reload</div>
       <div>Shift: Toggle Jetpack</div>
-      <div>🔫 Ammo: <span style={{color: ammo > 20 ? 'white' : ammo > 0 ? 'orange' : 'red'}}>{ammo}/{maxAmmo}</span></div>
+      <div>🔫 Left: <span style={{color: leftClip > 4 ? 'white' : leftClip > 0 ? 'orange' : 'red'}}>{leftClip}/12</span> | Right: <span style={{color: rightClip > 4 ? 'white' : rightClip > 0 ? 'orange' : 'red'}}>{rightClip}/12</span> | Active: {currentGun.toUpperCase()}</div>
+      {isReloading && <div style={{color: 'yellow'}}>🔄 Reloading...</div>}
       <div>🚀 Jetpack: {jetpackEnabled ? 'ON' : 'OFF'}</div>
       <div>⚡ Fuel: {fuel.toFixed(0)}/100</div>
       <div>⚔️ Next Sword: {currentSwordHand}</div>

@@ -23,8 +23,10 @@ function App() {
   const [fuel, setFuel] = useState(100);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
-  const [ammo, setAmmo] = useState(120);
-  const maxAmmo = 120;
+  const [leftClip, setLeftClip] = useState(12);
+  const [rightClip, setRightClip] = useState(12);
+  const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left');
+  const [isReloading, setIsReloading] = useState(false);
 
   return (
     <div
@@ -88,8 +90,10 @@ function App() {
         fuel={fuel}
         jetpackEnabled={jetpackEnabled}
         currentSwordHand={currentSwordHand}
-        ammo={ammo}
-        maxAmmo={maxAmmo}
+        leftClip={leftClip}
+        rightClip={rightClip}
+        currentGun={currentGun}
+        isReloading={isReloading}
       />
     </div>
   );

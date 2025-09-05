@@ -9,9 +9,10 @@ interface DesktopControlsProps {
   onShoot?: (hand: 'left' | 'right') => void;
   onSwordSwing?: (hand: 'left' | 'right') => void;
   onJetpackToggle?: (enabled: boolean) => void;
+  onClipChange?: (leftClip: number, rightClip: number, currentGun: 'left' | 'right', isReloading: boolean) => void;
 }
 
-export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle }: DesktopControlsProps) {
+export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const { addHitEffect } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
@@ -56,22 +57,70 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   const lastSwordDamage = useRef(0);
   const swordDamageCooldown = 200; // Damage every 0.2 seconds while swinging
   
-  // Gun shooting state
+  // Gun shooting state - dual clip system like VR
   const lastShot = useRef(0);
   const shotCooldown = 150; // Faster shooting for desktop
-  const [ammo, setAmmo] = useState(120); // Starting ammo count
-  const maxAmmo = 120;
+  const [leftClip, setLeftClip] = useState(12); // Left gun clip
+  const [rightClip, setRightClip] = useState(12); // Right gun clip
+  const maxClipSize = 12; // Max rounds per clip
+  const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left'); // Which gun is active
+  const [isReloading, setIsReloading] = useState(false);
+  const [reloadTimeout, setReloadTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // Desktop shooting function
   const fireDesktopBullet = () => {
-    // Check if we have ammo
-    if (ammo <= 0) {
-      console.log('🚫 Out of ammo!');
+    // Don't fire if reloading
+    if (isReloading) {
+      console.log('🚫 Currently reloading!');
       return;
     }
     
-    // Consume ammo
-    setAmmo(prev => Math.max(0, prev - 1));
+    // Get current clip ammo
+    const currentClipAmmo = currentGun === 'left' ? leftClip : rightClip;
+    
+    // Check if current clip has ammo
+    if (currentClipAmmo <= 0) {
+      console.log(`🚫 ${currentGun} clip empty!`);
+      // Auto-switch to other gun if it has ammo
+      const otherGun = currentGun === 'left' ? 'right' : 'left';
+      const otherClipAmmo = otherGun === 'left' ? leftClip : rightClip;
+      if (otherClipAmmo > 0) {
+        setCurrentGun(otherGun);
+        console.log(`🔄 Switched to ${otherGun} gun`);
+        // Try firing with the other gun
+        fireWithGun(otherGun);
+        return;
+      } else {
+        console.log('🚫 Both clips empty! Need to reload!');
+        startAutoReload();
+        return;
+      }
+    }
+    
+    fireWithGun(currentGun);
+  };
+  
+  const fireWithGun = (gun: 'left' | 'right') => {
+    // Consume ammo from current gun
+    if (gun === 'left') {
+      setLeftClip(prev => {
+        const newValue = Math.max(0, prev - 1);
+        // Notify parent of clip change
+        if (onClipChange) {
+          onClipChange(newValue, rightClip, currentGun, isReloading);
+        }
+        return newValue;
+      });
+    } else {
+      setRightClip(prev => {
+        const newValue = Math.max(0, prev - 1);
+        // Notify parent of clip change
+        if (onClipChange) {
+          onClipChange(leftClip, newValue, currentGun, isReloading);
+        }
+        return newValue;
+      });
+    }
     
     // Get camera position and direction for shooting
     const cameraPos = camera.position.clone();
@@ -119,7 +168,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       }
       
       // Hit any other object (terrain, walls, etc.)
-      if (hitObject.userData.isEnvironment || hitObject.material) {
+      if (hitObject.userData.isEnvironment || (hitObject as any).material) {
         console.log('🎯 Desktop shot hit environment!');
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         hitSomething = true;
@@ -127,7 +176,66 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       }
     }
     
-    console.log(`🔫 Desktop gun fired! Ammo: ${ammo - 1}/${maxAmmo}${hitSomething ? ' - HIT!' : ''}`);
+    const currentClipAmmo = gun === 'left' ? leftClip : rightClip;
+    console.log(`🔫 Desktop ${gun} gun fired! Clip: ${currentClipAmmo - 1}/${maxClipSize}${hitSomething ? ' - HIT!' : ''}`);
+    
+    // Start auto-reload timer if clip is empty
+    if (currentClipAmmo - 1 <= 0) {
+      startAutoReload();
+    }
+  };
+  
+  // Auto-reload after 1.5 seconds
+  const startAutoReload = () => {
+    if (reloadTimeout) {
+      clearTimeout(reloadTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      reloadGuns();
+    }, 1500);
+    
+    setReloadTimeout(timeout);
+  };
+  
+  // Manual reload function
+  const reloadGuns = () => {
+    setIsReloading(true);
+    
+    // Clear auto-reload timeout
+    if (reloadTimeout) {
+      clearTimeout(reloadTimeout);
+      setReloadTimeout(null);
+    }
+    
+    // Reload both clips
+    setLeftClip(maxClipSize);
+    setRightClip(maxClipSize);
+    setCurrentGun('left'); // Reset to left gun
+    
+    console.log(`🔄 Both guns reloaded! Left: ${maxClipSize}/${maxClipSize}, Right: ${maxClipSize}/${maxClipSize}`);
+    
+    // Play reload sound
+    try {
+      const audioStore = require('../lib/stores/useAudio').useAudio;
+      audioStore.getState().playReload();
+    } catch (error) {
+      console.log('🔊 Reload sound error:', error);
+    }
+    
+    // Notify parent of clip change
+    if (onClipChange) {
+      onClipChange(maxClipSize, maxClipSize, 'left', true);
+    }
+    
+    // Finish reloading
+    setTimeout(() => {
+      setIsReloading(false);
+      // Notify parent that reloading is done
+      if (onClipChange) {
+        onClipChange(maxClipSize, maxClipSize, 'left', false);
+      }
+    }, 100);
   };
   
   // Continuous sword damage detection
@@ -203,10 +311,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           event.preventDefault();
           break;
         case 'KeyR':
-          // Reload ammo
-          if (ammo < maxAmmo) {
-            setAmmo(maxAmmo);
-            console.log(`🔄 Reloaded! Ammo: ${maxAmmo}/${maxAmmo}`);
+          // Manual reload
+          if (leftClip < maxClipSize || rightClip < maxClipSize) {
+            reloadGuns();
           }
           break;
       }
