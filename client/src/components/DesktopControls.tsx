@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
+import DesktopSwordVisual from './DesktopSwordVisual';
 
 interface DesktopControlsProps {
   onShoot?: (hand: 'left' | 'right') => void;
@@ -39,6 +40,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   
   // Sword swinging state
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
+  const [isSwinging, setIsSwinging] = useState(false);
+  const [swingingHand, setSwingingHand] = useState<'left' | 'right'>('right');
   const lastSwordSwing = useRef(0);
   const swingCooldown = 500; // 0.5 seconds between swings
   
@@ -95,6 +98,10 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   
   // Desktop sword swing function
   const performDesktopSwordSwing = () => {
+    // Start visual swing animation
+    setIsSwinging(true);
+    setSwingingHand(currentSwordHand);
+    
     // Get camera position and direction for sword swing
     const cameraPos = camera.position.clone();
     const cameraDir = new THREE.Vector3(0, 0, -1);
@@ -318,5 +325,16 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     camera.position.y = Math.min(18, camera.position.y);
   });
   
-  return null; // This component only handles input, no visual rendering
+  return (
+    <>
+      {/* Import and render sword visual */}
+      {isSwinging && (
+        <DesktopSwordVisual 
+          isSwinging={isSwinging}
+          hand={swingingHand}
+          onSwingComplete={() => setIsSwinging(false)}
+        />
+      )}
+    </>
+  );
 }
