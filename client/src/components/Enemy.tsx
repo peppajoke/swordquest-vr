@@ -36,18 +36,18 @@ export default function Enemy({ type, position }: EnemyProps) {
   
   function getMaxHealth(enemyType: string): number {
     switch (enemyType) {
-      case 'grunt': return 50;
-      case 'rifleman': return 75;
-      case 'heavy': return 150;
-      case 'assassin': return 40;
-      case 'bomber': return 60;
-      case 'sniper': return 80;
-      case 'berserker': return 120;
-      case 'shield': return 200;
-      case 'mage': return 90;
-      case 'boss': return 1000;
-      case 'drone': return 45;
-      case 'wasp': return 35;
+      case 'grunt': return 1;
+      case 'rifleman': return 2;
+      case 'heavy': return 4;
+      case 'assassin': return 3;
+      case 'bomber': return 3;
+      case 'sniper': return 5;
+      case 'berserker': return 4;
+      case 'shield': return 20;
+      case 'mage': return 7;
+      case 'boss': return 50;
+      case 'drone': return 1;
+      case 'wasp': return 1;
       case 'phoenix': return 250;
       default: return 50;
     }
