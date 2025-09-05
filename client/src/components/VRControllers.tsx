@@ -272,19 +272,19 @@ export default function VRControllers({
         const initialPos = new THREE.Vector3();
         hitTarget.getWorldPosition(initialPos);
         
-        // Random flying direction with upward bias
+        // MASSIVE flying direction - make them go FLYING!
         const flyDirection = new THREE.Vector3(
-          (Math.random() - 0.5) * 10, // Random X velocity
-          8 + Math.random() * 5,      // Strong upward velocity
-          (Math.random() - 0.5) * 10  // Random Z velocity
+          (Math.random() - 0.5) * 50, // Huge random X velocity
+          25 + Math.random() * 25,    // MASSIVE upward velocity (25-50)
+          (Math.random() - 0.5) * 50  // Huge random Z velocity
         );
         
         let velocity = flyDirection.clone();
-        const gravity = new THREE.Vector3(0, -15, 0); // Gravity acceleration
+        const gravity = new THREE.Vector3(0, -25, 0); // Stronger gravity
         const angularVelocity = new THREE.Vector3(
-          (Math.random() - 0.5) * 0.3,
-          (Math.random() - 0.5) * 0.3,
-          (Math.random() - 0.5) * 0.3
+          (Math.random() - 0.5) * 0.8,  // Much faster spinning
+          (Math.random() - 0.5) * 0.8,
+          (Math.random() - 0.5) * 0.8
         );
         
         const startTime = Date.now();
@@ -314,8 +314,8 @@ export default function VRControllers({
             }
           }
           
-          // Remove after 2.5 seconds total
-          if (elapsed < 2.5) {
+          // Remove after 4 seconds total (longer flight time)
+          if (elapsed < 4.0) {
             requestAnimationFrame(flyAnimation);
           } else {
             hitTarget.parent?.remove(hitTarget);
