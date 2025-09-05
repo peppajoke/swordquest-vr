@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 export function ControlsInstructions() {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   
   if (!isVisible) {
     return (
