@@ -402,7 +402,7 @@ export default function VRControllers({
         });
       } else if (hitTarget.userData.isEnemy && !hitTarget.userData.isDead) {
         // Hit enemy with gun - damage it
-        const gunDamage = 30;
+        const gunDamage = 4;
         if (hitTarget.userData.takeDamage) {
           hitTarget.userData.takeDamage(gunDamage);
         }

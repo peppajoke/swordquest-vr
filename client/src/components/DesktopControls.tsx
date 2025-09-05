@@ -209,7 +209,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       
       // Hit enemy
       if (hitObject.userData.isEnemy && !hitObject.userData.isDead) {
-        const gunDamage = 30;
+        const gunDamage = 4;
         if (hitObject.userData.takeDamage) {
           hitObject.userData.takeDamage(gunDamage);
         }

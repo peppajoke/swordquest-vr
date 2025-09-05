@@ -40,6 +40,7 @@ export const GAME_CONFIG = {
       swingDuration: 150, // ms
       swordDamage: 25, // Lower damage for continuous hits
       swordDamageVR: 45, // Higher VR sword damage
+      gunDamage: 4, // Pistol damage
     },
     burst: {
       minBoost: 1.5,
