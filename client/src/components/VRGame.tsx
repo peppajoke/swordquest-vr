@@ -91,10 +91,11 @@ export default function VRGame() {
 
   }, [initializeGame, setBackgroundMusic, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
 
-  // Loading screen should be handled outside Canvas - removed for now
-  // if (isLoading) {
-  //   return <LoadingScreen onComplete={() => setIsLoading(false)} />;
-  // }
+  // Initialize loading complete after a short delay
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
