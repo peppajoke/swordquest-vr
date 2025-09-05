@@ -363,6 +363,16 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     body.position.y = 0.02;
     gun.add(body);
     
+    // Circular sight ring at the front of the barrel
+    const sightGeometry = new THREE.RingGeometry(0.008, 0.012, 16); // Inner radius 0.008, outer radius 0.012
+    const sightMaterial = new THREE.MeshLambertMaterial({ color: '#ff6600' }); // Orange for visibility
+    const sight = new THREE.Mesh(sightGeometry, sightMaterial);
+    sight.userData.isCustomModel = true; // Mark as custom
+    sight.position.y = 0.02;
+    sight.position.z = -0.115; // Position at front of barrel
+    sight.rotation.x = Math.PI / 2; // Rotate to face forward
+    gun.add(sight);
+    
     // Rotate gun to point forward and upward
     gun.rotation.x = -Math.PI / 2 + Math.PI / 4; // 90 degrees up - 45 degrees = 45 degrees total upward
     
