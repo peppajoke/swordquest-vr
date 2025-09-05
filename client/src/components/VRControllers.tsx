@@ -1296,18 +1296,8 @@ export default function VRControllers({
         stickMoveVector.add(rightDirection.multiplyScalar(-leftStickX * 0.05)); // Inverted left/right
         stickMoveVector.add(cameraDirection.multiplyScalar(leftStickY * 0.05)); // Inverted forward/back
 
-        // Check collision
-        const newPosition = worldGroup.position.clone().add(stickMoveVector);
-        if (
-          !(
-            newPosition.x < -19 ||
-            newPosition.x > 19 ||
-            newPosition.z < -9 ||
-            newPosition.z > 19
-          )
-        ) {
-          worldGroup.position.add(stickMoveVector);
-        }
+        // No collision check - free movement
+        worldGroup.position.add(stickMoveVector);
       }
     }
 
@@ -1316,31 +1306,8 @@ export default function VRControllers({
       const moveVector = velocity.current.clone().multiplyScalar(deltaTime);
       const worldGroup = scene.getObjectByName("worldGroup") as THREE.Group;
       if (worldGroup) {
-        // Check for wall collisions before moving
-        const newPosition = worldGroup.position.clone().add(moveVector);
-        let canMove = true;
-
-        // Room boundaries (40x20 room with world group starting at [0, 0, 10])
-        // Player should stay within: x: -19 to +19, z: -9 to +19 (adjusted for spawn position)
-        if (
-          newPosition.x < -19 ||
-          newPosition.x > 19 ||
-          newPosition.z < -9 ||
-          newPosition.z > 19
-        ) {
-          console.log(
-            `🚫 Movement blocked! Position: ${newPosition.x.toFixed(2)}, ${newPosition.z.toFixed(2)} - Boundaries: x(-19 to 19), z(-9 to 19)`,
-          );
-          canMove = false;
-        } else {
-          console.log(
-            `✅ Movement allowed! Position: ${newPosition.x.toFixed(2)}, ${newPosition.z.toFixed(2)}`,
-          );
-        }
-
-        if (canMove) {
-          worldGroup.position.add(moveVector);
-        }
+        // No wall collision - free movement
+        worldGroup.position.add(moveVector);
       }
     }
 
