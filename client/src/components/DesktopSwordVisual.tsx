@@ -13,23 +13,7 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const swingProgress = useRef(0);
-  const randomDirection = useRef(new THREE.Vector3());
-  const baseRotation = useRef(new THREE.Euler());
-  
-  // Initialize random swing direction when swinging starts
-  const initializeRandomSwing = () => {
-    randomDirection.current.set(
-      (Math.random() - 0.5) * 2, // Random X direction
-      (Math.random() - 0.5) * 2, // Random Y direction  
-      (Math.random() - 0.5) * 2  // Random Z direction
-    ).normalize();
-    
-    baseRotation.current.set(
-      Math.random() * Math.PI * 0.5, // Random base X rotation
-      Math.random() * Math.PI * 0.5, // Random base Y rotation
-      Math.random() * Math.PI * 0.5  // Random base Z rotation
-    );
-  };
+  const swingTime = useRef(0);
 
   useFrame((state, deltaTime) => {
     if (!groupRef.current) return;
@@ -51,32 +35,26 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
     groupRef.current.position.copy(swordPos);
 
     if (isSwinging) {
-      // Initialize random direction if starting new swing
-      if (swingProgress.current === 0) {
-        initializeRandomSwing();
-      }
+      // Accumulate swing time for continuous animation
+      swingTime.current += deltaTime * 4; // Swing speed
       
-      // Animate swing with random directions
-      swingProgress.current += deltaTime * 6; // Continuous swing speed
+      // Create back-and-forth swinging motion using sine waves
+      // The handle base stays at the same position, blade swings around it
+      const horizontalSwing = Math.sin(swingTime.current) * 0.6; // Side to side
+      const verticalSwing = Math.sin(swingTime.current * 1.3) * 0.4; // Up and down
+      const twistSwing = Math.sin(swingTime.current * 0.8) * 0.3; // Twist motion
       
-      if (swingProgress.current >= 1) {
-        swingProgress.current = 0;
-        // Generate new random direction for next swing cycle
-        initializeRandomSwing();
-      }
-
-      // Apply random rotational swinging in all directions
-      const swingIntensity = Math.sin(swingProgress.current * Math.PI) * 0.8;
-      groupRef.current.rotation.x = baseRotation.current.x + randomDirection.current.x * swingIntensity;
-      groupRef.current.rotation.y = baseRotation.current.y + randomDirection.current.y * swingIntensity;
-      groupRef.current.rotation.z = baseRotation.current.z + randomDirection.current.z * swingIntensity;
+      // Apply swinging rotations anchored at handle base
+      groupRef.current.rotation.x = -Math.PI / 8 + verticalSwing;
+      groupRef.current.rotation.y = (hand === 'left' ? Math.PI / 6 : -Math.PI / 6) + horizontalSwing;
+      groupRef.current.rotation.z = twistSwing;
       
-      // Scale effect during swing
-      const scale = 1 + Math.sin(swingProgress.current * Math.PI) * 0.3;
+      // Slight scale pulse during swinging
+      const scale = 1 + Math.sin(swingTime.current * 2) * 0.1;
       groupRef.current.scale.setScalar(scale);
     } else {
       // Reset to idle position when not swinging
-      swingProgress.current = 0;
+      swingTime.current = 0;
       groupRef.current.rotation.x = -Math.PI / 8;
       groupRef.current.rotation.y = hand === 'left' ? Math.PI / 6 : -Math.PI / 6;
       groupRef.current.rotation.z = 0;
