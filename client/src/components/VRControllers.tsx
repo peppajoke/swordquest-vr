@@ -280,7 +280,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     // Invert the direction - VR controllers point backwards by default
     controllerDir.negate();
     
-    // Fire directly where controller is pointed - no aiming adjustments
+    // Adjust for side mode gun orientation (guns point upright but should fire level)
+    // Rotate firing direction 45 degrees down to compensate for upward gun angle
+    controllerDir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4); // Rotate 45 degrees down around X-axis
+    
     // Adjust gun position to barrel tip
     controllerPos.add(controllerDir.clone().multiplyScalar(0.25));
     
