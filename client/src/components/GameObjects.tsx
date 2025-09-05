@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
+import Enemy from './Enemy';
 
 export default function GameObjects() {
   const { pillars } = useVRGame();
@@ -53,26 +54,47 @@ export default function GameObjects() {
         <meshLambertMaterial color="#808080" />
       </mesh>
       
-      {/* Red Destructible Pillars scattered around the room - Original 20 */}
-      <RedPillar position={[-60, 1, -20]} destroyed={false} />
-      <RedPillar position={[40, 1, -30]} destroyed={false} />
-      <RedPillar position={[-30, 1, -60]} destroyed={false} />
-      <RedPillar position={[70, 1, -70]} destroyed={false} />
-      <RedPillar position={[20, 1, -80]} destroyed={false} />
-      <RedPillar position={[-80, 1, -40]} destroyed={false} />
-      <RedPillar position={[50, 1, -15]} destroyed={false} />
-      <RedPillar position={[-40, 1, -85]} destroyed={false} />
-      <RedPillar position={[80, 1, -25]} destroyed={false} />
-      <RedPillar position={[-20, 1, -75]} destroyed={false} />
-      <RedPillar position={[60, 1, -60]} destroyed={false} />
-      <RedPillar position={[-70, 1, -65]} destroyed={false} />
-      <RedPillar position={[30, 1, -40]} destroyed={false} />
-      <RedPillar position={[-50, 1, -30]} destroyed={false} />
-      <RedPillar position={[10, 1, -90]} destroyed={false} />
-      <RedPillar position={[-90, 1, -80]} destroyed={false} />
-      <RedPillar position={[85, 1, -50]} destroyed={false} />
-      <RedPillar position={[-15, 1, -45]} destroyed={false} />
-      <RedPillar position={[65, 1, -35]} destroyed={false} />
+      {/* ENEMY ARMY - 10 Different Archetypes */}
+      
+      {/* 1. GRUNT SOLDIERS - Basic melee fighters */}
+      <Enemy type="grunt" position={[-60, 0, -20]} />
+      <Enemy type="grunt" position={[40, 0, -30]} />
+      <Enemy type="grunt" position={[-30, 0, -60]} />
+      
+      {/* 2. RIFLEMEN - Medium range shooters */}
+      <Enemy type="rifleman" position={[70, 0, -70]} />
+      <Enemy type="rifleman" position={[20, 0, -80]} />
+      
+      {/* 3. HEAVY GUNNERS - Slow but devastating */}
+      <Enemy type="heavy" position={[-80, 0, -40]} />
+      <Enemy type="heavy" position={[50, 0, -15]} />
+      
+      {/* 4. ASSASSINS - Fast melee with teleport */}
+      <Enemy type="assassin" position={[-40, 0, -85]} />
+      <Enemy type="assassin" position={[80, 0, -25]} />
+      
+      {/* 5. BOMBERS - AOE explosion attacks */}
+      <Enemy type="bomber" position={[-20, 0, -75]} />
+      <Enemy type="bomber" position={[60, 0, -60]} />
+      
+      {/* 6. SNIPERS - Long range precise shots */}
+      <Enemy type="sniper" position={[-70, 0, -65]} />
+      <Enemy type="sniper" position={[30, 0, -40]} />
+      
+      {/* 7. BERSERKERS - Rage mode melee */}
+      <Enemy type="berserker" position={[-50, 0, -30]} />
+      <Enemy type="berserker" position={[10, 0, -90]} />
+      
+      {/* 8. SHIELD GUARDS - Defensive with shields */}
+      <Enemy type="shield" position={[-90, 0, -80]} />
+      <Enemy type="shield" position={[85, 0, -50]} />
+      
+      {/* 9. MAGES - Magic projectile casters */}
+      <Enemy type="mage" position={[-15, 0, -45]} />
+      <Enemy type="mage" position={[65, 0, -35]} />
+      
+      {/* 10. BOSS - The Big Bad with massive health */}
+      <Enemy type="boss" position={[0, 0, -50]} />
       <RedPillar position={[-75, 1, -55]} destroyed={false} />
       
       {/* Additional 100 Random Red Pillars */}

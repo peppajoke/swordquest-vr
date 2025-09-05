@@ -368,6 +368,27 @@ export default function VRControllers({
             .getState()
             .addHitEffect([turretPos.x, turretPos.y + 1, turretPos.z]);
         });
+      } else if (hitTarget.userData.isEnemy && !hitTarget.userData.isDead) {
+        // Hit enemy with gun - damage it
+        const gunDamage = 30;
+        if (hitTarget.userData.takeDamage) {
+          hitTarget.userData.takeDamage(gunDamage);
+        }
+        console.log(`🎯 ${hitTarget.userData.enemyType} shot! ${gunDamage} damage`);
+
+        // Play gun hit sound
+        import("../lib/stores/useAudio").then(({ useAudio }) => {
+          useAudio.getState().playGunHit();
+        });
+
+        // Create hit effect
+        const enemyPos = new THREE.Vector3();
+        hitTarget.getWorldPosition(enemyPos);
+        import("../lib/stores/useVRGame").then(({ useVRGame }) => {
+          useVRGame
+            .getState()
+            .addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
+        });
       }
     }
 
@@ -1544,6 +1565,32 @@ export default function VRControllers({
                 child.userData.health = 0;
                 // Turret destruction is handled in GameObjects.tsx
               }
+            }
+          }
+
+          // Hit enemies with sword
+          if (child.userData.isEnemy && !child.userData.isDead) {
+            const enemyPos = new THREE.Vector3();
+            child.getWorldPosition(enemyPos);
+
+            const distance = swordPos.distanceTo(enemyPos);
+            if (distance < 1.2) {
+              // Hit distance for enemies
+              const swordDamage = 45; // Higher damage with sword
+              if (child.userData.takeDamage) {
+                child.userData.takeDamage(swordDamage);
+              }
+              console.log(
+                `⚔️ ${child.userData.enemyType} slashed! ${swordDamage} damage`,
+              );
+
+              // Play sword hit sound
+              import("../lib/stores/useAudio").then(({ useAudio }) => {
+                useAudio.getState().playSwordHit();
+              });
+
+              // Create hit effect
+              addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
             }
           }
 
