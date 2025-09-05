@@ -10,42 +10,47 @@ export default function GameObjects() {
   
   // No turrets in starting room
   const turrets = useMemo(() => [], []);
+  
+  // Add invisible collision boxes for walls
+  useFrame(() => {
+    // Wall collision is handled in VRControllers via userData.isWall
+  });
 
   return (
     <>
-      {/* Room Walls */}
+      {/* Double-sized Room Walls with collision */}
       {/* Back wall */}
-      <mesh position={[0, 2, -10]} receiveShadow>
-        <boxGeometry args={[20, 4, 0.2]} />
-        <meshLambertMaterial color="#555555" />
+      <mesh position={[0, 4, -20]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[40, 8, 1]} />
+        <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Left wall */}
-      <mesh position={[-10, 2, -5]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <boxGeometry args={[10, 4, 0.2]} />
-        <meshLambertMaterial color="#555555" />
+      <mesh position={[-20, 4, -10]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[20, 8, 1]} />
+        <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Right wall */}
-      <mesh position={[10, 2, -5]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <boxGeometry args={[10, 4, 0.2]} />
-        <meshLambertMaterial color="#555555" />
+      <mesh position={[20, 4, -10]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[20, 8, 1]} />
+        <meshLambertMaterial color="#8B4513" />
       </mesh>
       
       {/* Front wall (partial, with opening) */}
-      <mesh position={[-5, 2, 0]} receiveShadow>
-        <boxGeometry args={[8, 4, 0.2]} />
-        <meshLambertMaterial color="#555555" />
+      <mesh position={[-10, 4, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[16, 8, 1]} />
+        <meshLambertMaterial color="#8B4513" />
       </mesh>
-      <mesh position={[5, 2, 0]} receiveShadow>
-        <boxGeometry args={[8, 4, 0.2]} />
-        <meshLambertMaterial color="#555555" />
+      <mesh position={[10, 4, 0]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[16, 8, 1]} />
+        <meshLambertMaterial color="#8B4513" />
       </mesh>
       
-      {/* Ceiling */}
-      <mesh position={[0, 4, -5]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
-        <meshLambertMaterial color="#444444" />
+      {/* Grey Ceiling */}
+      <mesh position={[0, 8, -10]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[40, 20]} />
+        <meshLambertMaterial color="#808080" />
       </mesh>
     </>
   );

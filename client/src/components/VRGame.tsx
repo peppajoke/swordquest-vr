@@ -114,14 +114,14 @@ export default function VRGame() {
         shadow-camera-bottom={-10}
       />
       
-      {/* World Group - Everything that moves with locomotion */}
-      <group name="worldGroup">
+      {/* World Group - Everything that moves with locomotion - starts centered in room */}
+      <group name="worldGroup" position={[0, 0, 10]}>
         {inDeathRoom && <DeathRoom />}
         
-        {/* Room Floor */}
-        <mesh receiveShadow position={[0, 0, -5]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[20, 10]} />
-          <meshLambertMaterial color="#666666" />
+        {/* White Room Floor */}
+        <mesh receiveShadow position={[0, 0, -10]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[40, 20]} />
+          <meshLambertMaterial color="#FFFFFF" />
         </mesh>
         
         {/* Game Objects - targets and environment */}

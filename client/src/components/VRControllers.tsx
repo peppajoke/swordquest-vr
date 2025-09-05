@@ -624,12 +624,24 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       }
     }
 
-    // Apply movement to worldGroup
+    // Apply movement to worldGroup with wall collision
     if (velocity.current.length() > 0.01) {
       const moveVector = velocity.current.clone().multiplyScalar(deltaTime);
       const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
       if (worldGroup) {
-        worldGroup.position.add(moveVector);
+        // Check for wall collisions before moving
+        const newPosition = worldGroup.position.clone().add(moveVector);
+        let canMove = true;
+        
+        // Room boundaries (doubled size: 40x20 room centered at [0, 0, -10])
+        // Player should stay within: x: -18 to +18, z: -18 to -2 (inside room with buffer)
+        if (newPosition.x < -18 || newPosition.x > 18 || newPosition.z < -18 || newPosition.z > -2) {
+          canMove = false;
+        }
+        
+        if (canMove) {
+          worldGroup.position.add(moveVector);
+        }
       }
     }
 
