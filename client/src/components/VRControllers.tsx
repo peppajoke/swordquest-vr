@@ -274,15 +274,20 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     const controllerPos = new THREE.Vector3();
     const controllerDir = new THREE.Vector3();
     
-    controller.getWorldPosition(controllerPos);
-    controller.getWorldDirection(controllerDir);
-    
-    // Invert the direction - VR controllers point backwards by default
-    controllerDir.negate();
-    
-    // Adjust for side mode gun orientation (guns point upright but should fire level)
-    // Rotate firing direction 45 degrees down to compensate for upward gun angle
-    controllerDir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4); // Rotate 45 degrees down around X-axis
+    // Find the gun sight and use its direction for accurate aiming
+    const gun = controller.getObjectByName('gunSight');
+    if (gun) {
+      gun.getWorldPosition(controllerPos);
+      gun.getWorldDirection(controllerDir);
+      // Sight points in the negative Z direction by default, so negate to get forward direction
+      controllerDir.negate();
+    } else {
+      // Fallback to controller direction if sight not found
+      controller.getWorldPosition(controllerPos);
+      controller.getWorldDirection(controllerDir);
+      controllerDir.negate();
+      controllerDir.applyAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4);
+    }
     
     // Adjust gun position to barrel tip
     controllerPos.add(controllerDir.clone().multiplyScalar(0.25));
@@ -368,7 +373,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     const sightMaterial = new THREE.MeshLambertMaterial({ color: '#000000' }); // Black for visibility
     const sight = new THREE.Mesh(sightGeometry, sightMaterial);
     sight.userData.isCustomModel = true; // Mark as custom
-    sight.position.y = 0.08; // Position on top of barrel
+    sight.name = 'gunSight'; // Name it so we can find it later for aiming
+    sight.position.y = 0.05; // Lower the sight ring
     sight.position.z = -0.05; // Position at barrel location
     sight.rotation.x = 0; // Keep flat on top
     gun.add(sight);
