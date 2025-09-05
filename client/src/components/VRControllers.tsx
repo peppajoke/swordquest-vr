@@ -38,6 +38,37 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
   
+  /*
+   * ========================================================================
+   * CRITICAL: VR CONTROLLER HANDEDNESS DETECTION SYSTEM
+   * ========================================================================
+   * 
+   * PROBLEM SOLVED:
+   * Three.js WebXR controller indices (0, 1) are NOT guaranteed to map to 
+   * specific hands. They can change when:
+   * - Headset goes to sleep/standby mode
+   * - Controllers disconnect/reconnect  
+   * - System restarts or reloads
+   * 
+   * SOLUTION:
+   * We use event-based handedness detection to dynamically determine which
+   * Three.js controller index corresponds to which physical hand:
+   * 
+   * 1. Create both Three.js controllers (0 and 1) without assumptions
+   * 2. Listen for 'connected' events on each controller
+   * 3. Read the handedness from the event data ('left' or 'right')
+   * 4. Store the mapping: handToIndexMap[handedness] = controllerIndex
+   * 5. Use this mapping throughout the code for all interactions
+   * 
+   * NEVER ASSUME:
+   * - controller0 = left hand  ❌ WRONG
+   * - controller1 = right hand ❌ WRONG
+   * 
+   * ALWAYS USE:
+   * - handToIndexMap.current.left = actual left controller index ✅ CORRECT
+   * - handToIndexMap.current.right = actual right controller index ✅ CORRECT
+   */
+  
   // Track which Three.js controller index corresponds to which hand
   const handToIndexMap = useRef<{ left?: number; right?: number }>({});
   const controllersSetup = useRef(false);
@@ -313,7 +344,16 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     
     if (!session) return;
 
-    // Set up Three.js controllers (we don't know which is which yet)
+    /*
+     * ========================================================================
+     * STEP 1: CREATE THREE.JS CONTROLLERS WITHOUT HAND ASSUMPTIONS
+     * ========================================================================
+     * 
+     * We create both controllers (0 and 1) but DO NOT assume which is which.
+     * The actual handedness will be determined by the 'connected' events below.
+     */
+    
+    // Set up Three.js controllers - indices 0 and 1 (handedness unknown at this point)
     if (!controller0Ref.current) {
       controller0Ref.current = gl.xr.getController(0);
       scene.add(controller0Ref.current);
@@ -331,38 +371,65 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       scene.add(controllerGrip1Ref.current);
     }
     
+    /*
+     * ========================================================================
+     * STEP 2: DETECT ACTUAL HANDEDNESS VIA 'CONNECTED' EVENTS
+     * ========================================================================
+     * 
+     * This is THE CRITICAL PART that solves the handedness problem.
+     * When each controller connects, we read its actual handedness and store
+     * the mapping between Three.js index and physical hand.
+     * 
+     * NEVER MODIFY THIS LOGIC WITHOUT UNDERSTANDING THE PROBLEM IT SOLVES.
+     */
+    
     // Set up event listeners to detect handedness (only once)
     if (!controllersSetup.current) {
       controllersSetup.current = true;
       
+      // Listen for controller 0 connection to determine its handedness
       controller0Ref.current.addEventListener('connected', (event) => {
         const handedness = event.data.handedness;
         if (handedness === 'left' || handedness === 'right') {
           handToIndexMap.current[handedness] = 0;
-          console.log(`🎮 Controller 0 detected as ${handedness} hand`);
+          console.log(`🎮 HANDEDNESS DETECTED: Controller 0 = ${handedness} hand`);
         }
       });
       
+      // Listen for controller 1 connection to determine its handedness
       controller1Ref.current.addEventListener('connected', (event) => {
         const handedness = event.data.handedness;
         if (handedness === 'left' || handedness === 'right') {
           handToIndexMap.current[handedness] = 1;
-          console.log(`🎮 Controller 1 detected as ${handedness} hand`);
+          console.log(`🎮 HANDEDNESS DETECTED: Controller 1 = ${handedness} hand`);
         }
       });
     }
     
+    /*
+     * ========================================================================
+     * STEP 3: WAIT FOR HANDEDNESS DETECTION TO COMPLETE
+     * ========================================================================
+     * 
+     * We cannot proceed until we know which controller index corresponds to
+     * which physical hand. This prevents any incorrect hand assignments.
+     */
+    
     // Wait until we know which controller is which
-    const leftIndex = handToIndexMap.current.left;
-    const rightIndex = handToIndexMap.current.right;
+    const leftIndex = handToIndexMap.current.left;   // Could be 0 or 1
+    const rightIndex = handToIndexMap.current.right; // Could be 0 or 1
+    
     if (leftIndex === undefined || rightIndex === undefined) {
+      // Still waiting for handedness detection - do nothing until complete
       return;
     }
     
     if (!vrInitialized.current) {
       vrInitialized.current = true;
-      console.log('✅ Controller handedness mapping complete!');
-      console.log(`Left hand = Controller ${leftIndex}, Right hand = Controller ${rightIndex}`);
+      console.log('✅ HANDEDNESS MAPPING COMPLETE!');
+      console.log(`🤚 Left physical hand = Three.js Controller ${leftIndex}`);
+      console.log(`🤚 Right physical hand = Three.js Controller ${rightIndex}`);
+      console.log('📋 All subsequent interactions use this mapping');
     }
     
     // Hide default controller models immediately once controllers are ready
@@ -379,20 +446,49 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       });
     }
 
-    // Get gamepads using our detected mapping - need to access from session
+    /*
+     * ========================================================================
+     * STEP 4: GET GAMEPADS USING WEBXR HANDEDNESS (NOT THREE.JS INDICES)
+     * ========================================================================
+     * 
+     * We get the gamepads directly from WebXR inputSources by handedness.
+     * This is reliable because WebXR handedness is always correct.
+     * 
+     * DO NOT try to get gamepads from Three.js controllers - use WebXR directly.
+     */
+    
+    // Get gamepads by WebXR handedness (always reliable)
     const inputSources = Array.from(session.inputSources);
     const leftInputSource = inputSources.find(source => source.handedness === 'left');
     const rightInputSource = inputSources.find(source => source.handedness === 'right');
-    const leftGamepad = leftInputSource?.gamepad;
-    const rightGamepad = rightInputSource?.gamepad;
+    const leftGamepad = leftInputSource?.gamepad;   // Left physical hand gamepad
+    const rightGamepad = rightInputSource?.gamepad; // Right physical hand gamepad
     
     if (!leftGamepad || !rightGamepad) return;
     
-    // LEFT HAND INPUT PROCESSING
+    /*
+     * ========================================================================
+     * STEP 6: PROCESS INPUT FROM PHYSICAL HANDS
+     * ========================================================================
+     * 
+     * Now we process button input from each physical hand's gamepad.
+     * The gamepads are correctly identified by WebXR handedness, so this
+     * mapping is always accurate.
+     * 
+     * BUTTON MAPPING (Quest controllers):
+     * - Button 0: Trigger
+     * - Button 1: Grip/Squeeze
+     * - Button 3: X button (LEFT) / A button (RIGHT)  
+     * - Button 4: Y button (LEFT) / B button (RIGHT)
+     * - Button 5: Menu button (LEFT) / Oculus button (RIGHT)
+     */
+    
+    // LEFT PHYSICAL HAND INPUT PROCESSING
     if (leftGamepad.buttons.length > 1) {
-      leftGrabbing.current = leftGamepad.buttons[1].pressed;
-      leftTrigger.current = leftGamepad.buttons[0].pressed;
+      leftGrabbing.current = leftGamepad.buttons[1].pressed;  // Left grip = spawn left sword
+      leftTrigger.current = leftGamepad.buttons[0].pressed;   // Left trigger = fire left gun
       
+      // X button on LEFT physical hand rotates LEFT sword
       const xButtonPressed = leftGamepad.buttons[3]?.pressed || false;
       if (xButtonPressed && !lastXButtonPressed.current && leftSwordRef.current) {
         leftSwordRotation.current += Math.PI / 2;
@@ -402,11 +498,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       lastXButtonPressed.current = xButtonPressed;
     }
     
-    // RIGHT HAND INPUT PROCESSING  
+    // RIGHT PHYSICAL HAND INPUT PROCESSING  
     if (rightGamepad.buttons.length > 1) {
-      rightGrabbing.current = rightGamepad.buttons[1].pressed;
-      rightTrigger.current = rightGamepad.buttons[0].pressed;
+      rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
+      rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
+      // A button on RIGHT physical hand rotates RIGHT sword (button index 4 on right controller)
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
       if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
         rightSwordRotation.current += Math.PI / 2;
@@ -415,6 +512,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
       lastAButtonPressed.current = aButtonPressed;
       
+      // B button on RIGHT physical hand toggles jetpack (button index 5 on right controller)
       const bButtonPressed = rightGamepad.buttons[5]?.pressed || false;
       if (bButtonPressed && !lastBButtonPressed.current) {
         jetpackEnabled.current = !jetpackEnabled.current;
@@ -441,27 +539,52 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightStickY = rightGamepad.axes[3] || 0;
     }
 
-    // Get controller objects using our detected mapping
-    const leftControllerObj = leftIndex === 0 ? controllerGrip0Ref.current : controllerGrip1Ref.current;
-    const rightControllerObj = rightIndex === 0 ? controllerGrip0Ref.current : controllerGrip1Ref.current;
+    /*
+     * ========================================================================
+     * STEP 5: GET CONTROLLER OBJECTS USING OUR DETECTED MAPPING
+     * ========================================================================
+     * 
+     * Now we use our handedness mapping to get the correct Three.js controller
+     * objects for weapon attachment and 3D positioning.
+     * 
+     * This is where the magic happens - we use our detected mapping to ensure
+     * weapons attach to the correct physical hands.
+     */
+    
+    // Get Three.js controller objects using our detected handedness mapping
+    const leftControllerObj = leftIndex === 0 ? controllerGrip0Ref.current : controllerGrip1Ref.current;   // Left physical hand 3D object
+    const rightControllerObj = rightIndex === 0 ? controllerGrip0Ref.current : controllerGrip1Ref.current; // Right physical hand 3D object
     
     if (!leftControllerObj || !rightControllerObj) return;
 
-    // LEFT HAND WEAPON MANAGEMENT
+    /*
+     * ========================================================================
+     * STEP 7: ATTACH WEAPONS TO CORRECT PHYSICAL HANDS
+     * ========================================================================
+     * 
+     * We attach weapons to the Three.js controller objects that correspond
+     * to the correct physical hands using our detected mapping.
+     * 
+     * This ensures weapons always appear in the right hands regardless of
+     * which Three.js controller index they ended up being assigned to.
+     */
+    
+    // LEFT PHYSICAL HAND WEAPON MANAGEMENT
     if (!leftGunRef.current) {
       const gun = createGun();
       leftGunRef.current = gun;
-      leftControllerObj.add(gun);
+      leftControllerObj.add(gun); // Attach to LEFT physical hand (whatever index it is)
     }
     
+    // LEFT physical hand grip spawns LEFT sword
     if (leftGrabbing.current) {
       if (!leftSwordRef.current) {
-        console.log(`⚔️ LEFT sword spawned on controller ${leftIndex}`);
+        console.log(`⚔️ LEFT physical hand sword spawned (on Three.js controller ${leftIndex})`);
         const sword = createSword();
-        sword.scale.x = -1;
+        sword.scale.x = -1; // Mirror for left hand dual-wielding
         sword.rotation.z = leftSwordRotation.current;
         leftSwordRef.current = sword;
-        leftControllerObj.add(sword);
+        leftControllerObj.add(sword); // Attach to LEFT physical hand
       }
     } else {
       if (leftSwordRef.current) {
@@ -470,21 +593,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       }
     }
 
-    // RIGHT HAND WEAPON MANAGEMENT
+    // RIGHT PHYSICAL HAND WEAPON MANAGEMENT  
     if (!rightGunRef.current) {
       const gun = createGun();
       rightGunRef.current = gun;
-      rightControllerObj.add(gun);
+      rightControllerObj.add(gun); // Attach to RIGHT physical hand (whatever index it is)
     }
     
+    // RIGHT physical hand grip spawns RIGHT sword
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
-        console.log(`⚔️ RIGHT sword spawned on controller ${rightIndex}`);
+        console.log(`⚔️ RIGHT physical hand sword spawned (on Three.js controller ${rightIndex})`);
         const sword = createSword();
-        sword.rotation.y = Math.PI;
+        sword.rotation.y = Math.PI; // Standard orientation for right hand
         sword.rotation.z = rightSwordRotation.current;
         rightSwordRef.current = sword;
-        rightControllerObj.add(sword);
+        rightControllerObj.add(sword); // Attach to RIGHT physical hand
       }
     } else {
       if (rightSwordRef.current) {
@@ -773,15 +897,25 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
 
     // Gun firing logic - always available
     
-    // GUN FIRING
+    /*
+     * ========================================================================
+     * STEP 8: FIRE GUNS FROM CORRECT PHYSICAL HANDS
+     * ========================================================================
+     * 
+     * Gun firing uses the correct controller objects based on our mapping.
+     * Bullets always fire from the intended physical hand.
+     */
+    
+    // LEFT PHYSICAL HAND GUN FIRING
     if (leftTrigger.current && !lastLeftTrigger.current) {
-      console.log(`🔫 LEFT gun fired from controller ${leftIndex}`);
+      console.log(`🔫 LEFT physical hand gun fired (Three.js controller ${leftIndex})`);
       fireInstantBullet(leftControllerObj, 'left', scene);
     }
     lastLeftTrigger.current = leftTrigger.current;
     
+    // RIGHT PHYSICAL HAND GUN FIRING
     if (rightTrigger.current && !lastRightTrigger.current) {
-      console.log(`🔫 RIGHT gun fired from controller ${rightIndex}`);
+      console.log(`🔫 RIGHT physical hand gun fired (Three.js controller ${rightIndex})`);
       fireInstantBullet(rightControllerObj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
