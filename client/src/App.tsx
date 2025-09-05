@@ -6,7 +6,9 @@ import { ControlsInstructions } from "./components/ControlsInstructions";
 import "@fontsource/inter";
 import "./index.css";
 
-const store = createXRStore();
+const store = createXRStore({
+  hand: false, // Disable hand tracking - controllers only
+});
 
 function App() {
   
@@ -47,7 +49,7 @@ function App() {
           powerPreference: "high-performance"
         }}
       >
-        <XR store={store}>
+        <XR store={store} optionalFeatures={[]}>
           <Suspense fallback={null}>
             <VRGame />
           </Suspense>
