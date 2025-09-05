@@ -14,6 +14,8 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
   const groupRef = useRef<THREE.Group>(null);
   const swingProgress = useRef(0);
   const swingTime = useRef(0);
+  const swingDuration = 0.5; // Total swing duration in seconds
+  const isSwingActive = useRef(false);
 
   useFrame((state, deltaTime) => {
     if (!groupRef.current) return;
@@ -34,27 +36,47 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
     
     groupRef.current.position.copy(swordPos);
 
-    if (isSwinging) {
-      // Accumulate swing time for continuous animation
-      swingTime.current += deltaTime * 4; // Swing speed
+    if (isSwinging && !isSwingActive.current) {
+      // Start a new swing animation
+      isSwingActive.current = true;
+      swingTime.current = 0;
+    }
+    
+    if (isSwingActive.current) {
+      // Progress swing animation
+      swingTime.current += deltaTime;
       
-      // Create back-and-forth swinging motion using sine waves
-      // The handle base stays at the same position, blade swings around it
-      const horizontalSwing = Math.sin(swingTime.current) * 0.6; // Side to side
-      const verticalSwing = Math.sin(swingTime.current * 1.3) * 0.4; // Up and down
-      const twistSwing = Math.sin(swingTime.current * 0.8) * 0.3; // Twist motion
+      // Calculate swing progress (0 to 1)
+      const progress = Math.min(swingTime.current / swingDuration, 1);
       
-      // Apply swinging rotations anchored at handle base
+      // Create a big, fast swing motion using easing
+      const swingEase = Math.sin(progress * Math.PI); // Smooth start and end
+      
+      // Much wider and faster swing motion
+      const horizontalSwing = swingEase * (hand === 'left' ? -1.8 : 1.8); // Much wider horizontal
+      const verticalSwing = swingEase * 1.2; // Bigger vertical motion
+      const twistSwing = swingEase * (hand === 'left' ? 1.0 : -1.0); // Strong twist
+      
+      // Apply dramatic swinging rotations anchored at handle base
       groupRef.current.rotation.x = -Math.PI / 8 + verticalSwing;
       groupRef.current.rotation.y = (hand === 'left' ? Math.PI / 6 : -Math.PI / 6) + horizontalSwing;
       groupRef.current.rotation.z = twistSwing;
       
-      // Slight scale pulse during swinging
-      const scale = 1 + Math.sin(swingTime.current * 2) * 0.1;
+      // Scale effect during swing
+      const scale = 1 + swingEase * 0.2;
       groupRef.current.scale.setScalar(scale);
-    } else {
+      
+      // End swing when animation completes
+      if (progress >= 1) {
+        isSwingActive.current = false;
+        swingTime.current = 0;
+        // Call completion callback
+        if (onSwingComplete) {
+          onSwingComplete();
+        }
+      }
+    } else if (!isSwinging && !isSwingActive.current) {
       // Reset to idle position when not swinging
-      swingTime.current = 0;
       groupRef.current.rotation.x = -Math.PI / 8;
       groupRef.current.rotation.y = hand === 'left' ? Math.PI / 6 : -Math.PI / 6;
       groupRef.current.rotation.z = 0;

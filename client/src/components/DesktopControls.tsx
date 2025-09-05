@@ -53,9 +53,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   const [swingingHand, setSwingingHand] = useState<'left' | 'right'>('right');
   const lastSwordSwing = useRef(0);
   const swingCooldown = 500; // 0.5 seconds between swings
-  const [rightMouseDown, setRightMouseDown] = useState(false);
+  const [swordSwinging, setSwordSwinging] = useState(false);
   const lastSwordDamage = useRef(0);
-  const swordDamageCooldown = 200; // Damage every 0.2 seconds while swinging
+  const swordDamageCooldown = 500; // Single damage per swing
   
   // Gun shooting state - dual clip system like VR
   const lastShot = useRef(0);
@@ -358,22 +358,23 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           fireDesktopBullet();
           lastShot.current = currentTime;
         }
-      } else if (event.button === 2) { // Right click - start continuous sword swinging
-        if (!rightMouseDown) {
-          setRightMouseDown(true);
+      } else if (event.button === 2) { // Right click - trigger single swing
+        if (currentTime > lastSwordSwing.current + swingCooldown && !isSwinging) {
           setIsSwinging(true);
           setSwingingHand(currentSwordHand);
-          console.log('⚔️ Desktop sword swinging started!');
+          lastSwordSwing.current = currentTime;
+          console.log('⚔️ Desktop sword swing started!');
+          
+          // Trigger sword swing callback
+          if (onSwordSwing) {
+            onSwordSwing(currentSwordHand);
+          }
         }
       }
     };
     
     const handleMouseUp = (event: MouseEvent) => {
-      if (event.button === 2) { // Right click release - stop sword swinging
-        setRightMouseDown(false);
-        setIsSwinging(false);
-        console.log('⚔️ Desktop sword swinging stopped!');
-      }
+      // Mouse up no longer affects sword swinging - let animation complete naturally
     };
     
     const handlePointerLockChange = () => {
@@ -521,7 +522,10 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       <DesktopSwordVisual 
         isSwinging={isSwinging}
         hand={swingingHand}
-        onSwingComplete={() => {}} // No longer needed since we control via mouse
+        onSwingComplete={() => {
+          setIsSwinging(false);
+          console.log('⚔️ Desktop sword swing completed!');
+        }}
         isVisible={true}
       />
     </>
