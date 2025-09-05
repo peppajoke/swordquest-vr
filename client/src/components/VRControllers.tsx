@@ -876,16 +876,19 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     }
     
     if (onAmmoChange) {
-      onAmmoChange(ammo.current);
+      onAmmoChange(Math.floor(ammo.current)); // Always pass integer ammo
     }
     
     // Auto-recharge ammo slowly
     if (ammo.current < maxAmmo.current) {
-      ammo.current += 3 * deltaTime; // Recharge 3 ammo per second
+      ammo.current += 0.5 * deltaTime; // Recharge 0.5 ammo per second (much slower)
       if (ammo.current > maxAmmo.current) {
         ammo.current = maxAmmo.current;
       }
     }
+    
+    // Ensure ammo is always an integer
+    ammo.current = Math.floor(ammo.current);
 
     // Handle direction locking
     if (swordsHeld > lastSwordsHeld.current) {
