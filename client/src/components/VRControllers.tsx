@@ -6,9 +6,10 @@ import { useVRGame } from '../lib/stores/useVRGame';
 interface VRControllersProps {
   onFuelChange?: (fuel: number) => void;
   onAmmoChange?: (ammo: number) => void;
+  onJetpackChange?: (enabled: boolean) => void;
 }
 
-export default function VRControllers({ onFuelChange, onAmmoChange }: VRControllersProps) {
+export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackChange }: VRControllersProps) {
   const { 
     addHitEffect, 
     explodePillar 
@@ -388,6 +389,9 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       if (bButtonPressed && !lastBButtonPressed.current) {
         jetpackEnabled.current = !jetpackEnabled.current;
         console.log(jetpackEnabled.current ? '🚀 Jetpack ENABLED' : '🚫 Jetpack DISABLED');
+        if (onJetpackChange) {
+          onJetpackChange(jetpackEnabled.current);
+        }
       }
       lastBButtonPressed.current = bButtonPressed;
       

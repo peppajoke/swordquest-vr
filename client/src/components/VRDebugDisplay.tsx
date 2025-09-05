@@ -18,9 +18,10 @@ interface VRDebugDisplayProps {
   fuel: number;
   maxFuel: number;
   ammo: number;
+  jetpackEnabled: boolean;
 }
 
-export function VRDebugDisplay({ fuel, maxFuel, ammo }: VRDebugDisplayProps) {
+export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugDisplayProps) {
   const { health, maxHealth } = useVRGame();
   const groupRef = useRef<THREE.Group>(null);
   const [debugData, setDebugData] = useState<VRDebugData>({
@@ -105,17 +106,22 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo }: VRDebugDisplayProps) {
         <meshLambertMaterial color="#00ff00" />
       </mesh>
       
-      {/* Fuel Bar Background */}
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[1, 0.06, 0.01]} />
-        <meshLambertMaterial color="#333333" />
-      </mesh>
-      
-      {/* Fuel Bar Fill - Always Yellow */}
-      <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, 0.05, 0.005]}>
-        <boxGeometry args={[(fuelPercentage / 100), 0.05, 0.01]} />
-        <meshLambertMaterial color="#ffff00" />
-      </mesh>
+      {/* Fuel Bar - Only show when jetpack is enabled */}
+      {jetpackEnabled && (
+        <>
+          {/* Fuel Bar Background */}
+          <mesh position={[0, 0.05, 0]}>
+            <boxGeometry args={[1, 0.06, 0.01]} />
+            <meshLambertMaterial color="#333333" />
+          </mesh>
+          
+          {/* Fuel Bar Fill - Always Yellow */}
+          <mesh position={[-0.5 + (fuelPercentage / 100) * 0.5, 0.05, 0.005]}>
+            <boxGeometry args={[(fuelPercentage / 100), 0.05, 0.01]} />
+            <meshLambertMaterial color="#ffff00" />
+          </mesh>
+        </>
+      )}
       
       {/* Ammo Bar Background */}
       <mesh position={[0, -0.05, 0]}>
