@@ -516,13 +516,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
           rightSwordRef.current.rotation.x = -Math.PI / 4; // 45 degrees upward around X axis
           
           // Log detailed rotation info to VR debug display
+          const rotationInfo = [
+            `RIGHT SWORD → STANDARD MODE:`,
+            `- X: ${(-Math.PI / 4 * 180 / Math.PI).toFixed(1)}° (upward tilt)`,
+            `- Y: 0° (no twist)`,
+            `- Z: ${(Math.PI / 2 * 180 / Math.PI).toFixed(1)}° (base rotation)`,
+            `- Raw: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`
+          ];
+          
+          // Send to VR debug display
           if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-            (window as any).vrDebugLog(`RIGHT SWORD → STANDARD MODE:`);
-            (window as any).vrDebugLog(`- X: ${(-Math.PI / 4 * 180 / Math.PI).toFixed(1)}° (upward tilt)`);
-            (window as any).vrDebugLog(`- Y: 0° (no twist)`);
-            (window as any).vrDebugLog(`- Z: ${(Math.PI / 2 * 180 / Math.PI).toFixed(1)}° (base rotation)`);
-            (window as any).vrDebugLog(`- Raw: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`);
+            rotationInfo.forEach(msg => (window as any).vrDebugLog(msg));
           }
+          
+          // Also log to console for verification
+          console.log('=== RIGHT SWORD ROTATION DEBUG ===');
+          rotationInfo.forEach(msg => console.log(msg));
           
           console.log('🔄 RIGHT hand sword: STANDARD mode (45 degrees upward)');
         } else {
@@ -532,13 +541,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
           rightSwordRef.current.rotation.z = Math.PI / 2 + Math.PI; // Flipped 180 degrees
           
           // Log detailed rotation info to VR debug display
+          const rotationInfo = [
+            `RIGHT SWORD → SIDE MODE:`,
+            `- X: 0° (no tilt)`,
+            `- Y: 0° (no twist)`,
+            `- Z: ${((Math.PI / 2 + Math.PI) * 180 / Math.PI).toFixed(1)}° (base + 180°)`,
+            `- Raw: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`
+          ];
+          
+          // Send to VR debug display
           if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-            (window as any).vrDebugLog(`RIGHT SWORD → SIDE MODE:`);
-            (window as any).vrDebugLog(`- X: 0° (no tilt)`);
-            (window as any).vrDebugLog(`- Y: 0° (no twist)`);
-            (window as any).vrDebugLog(`- Z: ${((Math.PI / 2 + Math.PI) * 180 / Math.PI).toFixed(1)}° (base + 180°)`);
-            (window as any).vrDebugLog(`- Raw: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`);
+            rotationInfo.forEach(msg => (window as any).vrDebugLog(msg));
           }
+          
+          // Also log to console for verification
+          console.log('=== RIGHT SWORD ROTATION DEBUG ===');
+          rotationInfo.forEach(msg => console.log(msg));
           
           console.log('🔄 RIGHT hand sword: SIDE mode (flipped 180 degrees)');
         }
