@@ -285,8 +285,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     body.position.y = 0.02;
     gun.add(body);
     
-    // Rotate entire gun 90 degrees downward
-    gun.rotation.x = Math.PI / 2; // 90 degrees downward
+    // Rotate entire gun forward (90 degrees downward + 180 degrees forward)
+    gun.rotation.x = Math.PI / 2 + Math.PI; // 90 degrees downward + 180 degrees forward
     
     return gun;
   }
