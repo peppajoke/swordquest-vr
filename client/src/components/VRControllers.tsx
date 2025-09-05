@@ -1069,10 +1069,10 @@ export default function VRControllers({
      * We average the directions from both hands if both swords are active.
      */
 
-    // Check if we're in 3D flight mode (turbo + off ground)
+    // Check if we're in 3D flight mode (jetpack enabled)
     const isGrounded = camera.position.y <= 1.8; // Player height when standing
     const isTurboMode = burstSpeedMultiplier.current > 1.0;
-    const allow3DFlight = isTurboMode && !isGrounded;
+    const allow3DFlight = jetpackEnabled.current; // Allow 3D flight whenever jetpack is enabled
 
     // Get direction from LEFT hand if left sword is active
     if (leftControllerObj && leftSwordRef.current) {
@@ -1430,6 +1430,28 @@ export default function VRControllers({
       if (worldGroup) {
         // No wall collision - free movement
         worldGroup.position.add(moveVector);
+      }
+    }
+
+    // Apply gravity when jetpack is disabled
+    const worldGroup = scene.getObjectByName("worldGroup") as THREE.Group;
+    if (worldGroup && !jetpackEnabled.current) {
+      const groundLevel = -1.8; // Ground level (player height is 1.8, so world at -1.8 means player at 0)
+      const currentHeight = -worldGroup.position.y; // Convert world position to player height
+      
+      if (currentHeight > 0) { // If player is above ground
+        const gravityStrength = 9.8; // Gravity acceleration
+        const fallSpeed = gravityStrength * deltaTime;
+        
+        // Apply gravity by moving world group up (which moves player down)
+        worldGroup.position.y += fallSpeed;
+        
+        // Prevent going below ground
+        if (worldGroup.position.y > -groundLevel) {
+          worldGroup.position.y = -groundLevel;
+        }
+        
+        console.log(`⬇️ GRAVITY: Player falling, height: ${currentHeight.toFixed(1)}`);
       }
     }
 
