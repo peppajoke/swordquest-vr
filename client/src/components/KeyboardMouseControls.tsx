@@ -35,8 +35,6 @@ export function KeyboardMouseControls({ onFuelChange }: KeyboardMouseControlsPro
     const { scene } = state;
     const deltaTime = 1 / 60;
     const moveSpeed = 0.1;
-    
-    // Force clean reload to fix cached errors
 
     // Get world group for movement
     const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
