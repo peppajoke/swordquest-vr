@@ -289,8 +289,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     body.position.y = 0.02;
     gun.add(body);
     
-    // Rotate entire gun forward and up 135 degrees (90 degrees downward + 180 degrees forward + 90 degrees up)
-    gun.rotation.x = Math.PI / 2 + Math.PI + Math.PI / 2; // 90 degrees downward + 180 degrees forward + 90 degrees up
+    // Rotate entire gun forward and up 67.5 degrees (meeting in the middle)
+    gun.rotation.x = Math.PI / 2 + Math.PI + Math.PI / 8; // 90 degrees downward + 180 degrees forward + 22.5 degrees up
     
     return gun;
   }
@@ -387,8 +387,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       // Show sword
       if (!rightSwordRef.current) {
         const sword = createSword();
-        // Flip right-hand sword horizontally
-        sword.rotation.y = Math.PI; // 180 degrees horizontal flip
+        // No flip needed for right-hand sword
         rightSwordRef.current = sword;
         controller0Obj.add(sword);
       }
