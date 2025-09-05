@@ -121,8 +121,8 @@ export const useVRGame = create<VRGameState>()(
     maxHealth: 100,
     isDead: false,
     gameOver: false,
-    inDeathRoom: true,
-    gameStarted: false,
+    inDeathRoom: false,
+    gameStarted: true,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -147,8 +147,8 @@ export const useVRGame = create<VRGameState>()(
         distanceTraveled: 0,
         lastSpawnZ: -10,
         nextTargetId: 7,
-        inDeathRoom: true,
-        gameStarted: false
+        inDeathRoom: false,
+        gameStarted: true
       });
     },
 
@@ -372,9 +372,11 @@ export const useVRGame = create<VRGameState>()(
       set({ health: newHealth, isDead, gameOver: isDead });
       
       if (isDead) {
-        console.log('💀 GAME OVER - Entering death room...');
-        // Enter death room instead of auto-respawn
-        get().enterDeathRoom();
+        console.log('💀 GAME OVER - Rebooting in 3 seconds...');
+        // Auto-reboot after 3 seconds
+        setTimeout(() => {
+          get().respawn();
+        }, 3000);
       } else {
         console.log(`💥 Took ${damage} damage! Health: ${newHealth}/${state.maxHealth}`);
       }

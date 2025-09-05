@@ -96,14 +96,11 @@ export default function VRGame() {
   //   return <LoadingScreen onComplete={() => setIsLoading(false)} />;
   // }
 
-  // Always render the base game, just change the environment
-  const showDeathRoom = inDeathRoom;
-
   return (
     <>
-      {/* Environment Lighting - changes based on room */}
-      <color attach="background" args={showDeathRoom ? ["#222222"] : ["#001122"]} />
-      <ambientLight intensity={showDeathRoom ? 1.0 : 0.3} />
+      {/* Environment Lighting */}
+      <color attach="background" args={["#001122"]} />
+      <ambientLight intensity={0.3} />
       <directionalLight
         position={[5, 10, 5]}
         intensity={1}
@@ -117,26 +114,22 @@ export default function VRGame() {
         shadow-camera-bottom={-10}
       />
       
-      {/* World Group - Changes content based on room */}
+      {/* World Group - Everything that moves with locomotion */}
       <group name="worldGroup">
-        {showDeathRoom ? (
-          <DeathRoom />
-        ) : (
-          <>
-            {/* Ground - Covers entire expanded map area */}
-            <mesh receiveShadow position={[0, 0, -50]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[150, 200]} />
-              <meshLambertMaterial color="#2d3436" />
-            </mesh>
-            
-            {/* Game Objects - targets and environment */}
-            <GameObjects />
-          </>
-        )}
+        {inDeathRoom && <DeathRoom />}
+        
+        {/* Ground - Covers entire expanded map area */}
+        <mesh receiveShadow position={[0, 0, -50]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[150, 200]} />
+          <meshLambertMaterial color="#2d3436" />
+        </mesh>
+        
+        {/* Game Objects - targets and environment */}
+        <GameObjects />
         <SwordEffects />
       </group>
 
-      {/* VR Components - ALWAYS LOADED regardless of room */}
+      {/* VR Components - Stay in VR space, don't move with world */}
       <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} />
       
       {/* Keyboard/Mouse Controls - Alternative to VR */}
