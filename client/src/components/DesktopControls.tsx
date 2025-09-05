@@ -67,7 +67,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   const [isReloading, setIsReloading] = useState(false);
   const [reloadTimeout, setReloadTimeout] = useState<NodeJS.Timeout | null>(null);
   
-  // Desktop shooting function
+  // Desktop shooting function - alternates between clips for even usage
   const fireDesktopBullet = () => {
     // Don't fire if reloading
     if (isReloading) {
@@ -75,29 +75,36 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       return;
     }
     
-    // Get current clip ammo
-    const currentClipAmmo = currentGun === 'left' ? leftClip : rightClip;
+    // Check if both clips are empty
+    if (leftClip <= 0 && rightClip <= 0) {
+      console.log('🚫 Both clips empty! Auto-reloading...');
+      startAutoReload();
+      return;
+    }
     
-    // Check if current clip has ammo
-    if (currentClipAmmo <= 0) {
-      console.log(`🚫 ${currentGun} clip empty!`);
-      // Auto-switch to other gun if it has ammo
-      const otherGun = currentGun === 'left' ? 'right' : 'left';
-      const otherClipAmmo = otherGun === 'left' ? leftClip : rightClip;
-      if (otherClipAmmo > 0) {
-        setCurrentGun(otherGun);
-        console.log(`🔄 Switched to ${otherGun} gun`);
-        // Try firing with the other gun
-        fireWithGun(otherGun);
-        return;
+    // Determine which gun to use for even distribution
+    let gunToUse: 'left' | 'right';
+    
+    if (leftClip <= 0) {
+      // Left empty, use right
+      gunToUse = 'right';
+    } else if (rightClip <= 0) {
+      // Right empty, use left  
+      gunToUse = 'left';
+    } else {
+      // Both have ammo, alternate based on which has more or use current
+      if (leftClip > rightClip) {
+        gunToUse = 'left';
+      } else if (rightClip > leftClip) {
+        gunToUse = 'right';
       } else {
-        console.log('🚫 Both clips empty! Need to reload!');
-        startAutoReload();
-        return;
+        // Equal ammo, alternate
+        gunToUse = currentGun === 'left' ? 'right' : 'left';
       }
     }
     
-    fireWithGun(currentGun);
+    setCurrentGun(gunToUse);
+    fireWithGun(gunToUse);
   };
   
   const fireWithGun = (gun: 'left' | 'right') => {
@@ -179,8 +186,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     const currentClipAmmo = gun === 'left' ? leftClip : rightClip;
     console.log(`🔫 Desktop ${gun} gun fired! Clip: ${currentClipAmmo - 1}/${maxClipSize}${hitSomething ? ' - HIT!' : ''}`);
     
-    // Start auto-reload timer if clip is empty
-    if (currentClipAmmo - 1 <= 0) {
+    // Only start auto-reload if BOTH clips are empty
+    const newLeftClip = gun === 'left' ? currentClipAmmo - 1 : leftClip;
+    const newRightClip = gun === 'right' ? currentClipAmmo - 1 : rightClip;
+    
+    if (newLeftClip <= 0 && newRightClip <= 0) {
       startAutoReload();
     }
   };
