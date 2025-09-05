@@ -189,7 +189,6 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
         color="#ffff00"
         anchorX="left"
         anchorY="top"
-        font="/fonts/Inter-Regular.woff"
       >
         {`Event Logs:\n${debugData.eventLogs.slice(-5).join('\n')}`}
       </Text>
@@ -202,7 +201,6 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
           color="#ff4444"
           anchorX="left"
           anchorY="top"
-          font="/fonts/Inter-Regular.woff"
         >
           {`Error Messages:\n${debugData.errorLogs.slice(-3).join('\n')}`}
         </Text>

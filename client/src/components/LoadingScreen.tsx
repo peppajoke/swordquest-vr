@@ -5,7 +5,6 @@ interface LoadingScreenProps {
 }
 
 export function LoadingScreen({ onComplete }: LoadingScreenProps) {
-  console.log('📱 LoadingScreen component rendering...');
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('Initializing VR Systems...');
 
@@ -48,8 +47,6 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
     const timer = setTimeout(updateProgress, 500);
     return () => clearTimeout(timer);
   }, [onComplete]);
-
-  console.log('📱 LoadingScreen rendering with progress:', progress, 'status:', status);
 
   return (
     <div style={{ 

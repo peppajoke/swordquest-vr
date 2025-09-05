@@ -1,0 +1,35 @@
+🎮 Game loaded, showing main UI...
+Console.js:61 🎮 VRGame component rendering...
+Console.js:61 🖼️ Canvas created successfully {gl: WebGLRenderer, camera: PerspectiveCamera, raycaster: Raycaster, set: ƒ, get: ƒ, …}
+97211718-5853-4729-9bc2-7f8cf2e97d2e:514 unsupported GPOS table LookupType 8 format 2
+97211718-5853-4729-9bc2-7f8cf2e97d2e:514 unsupported GPOS table LookupType 5 format 1
+97211718-5853-4729-9bc2-7f8cf2e97d2e:602 unsupported GSUB table LookupType 6 format 2
+97211718-5853-4729-9bc2-7f8cf2e97d2e:602 unsupported GSUB table LookupType 6 format 1
+Console.js:61 🎮 VRGame component rendering...
+d244d38c-de06-4f59-9ad3-7ea341602de6:10 Failure loading font https://e3e1bbc7-93a8-4dca-a389-6d06b94cf9cc-00-33im33c5sc54l.spock.replit.dev/fonts/Inter-Regular.woff RangeError: Offset is outside the bounds of the DataView
+    at DataView.prototype.getUint32 (<anonymous>)
+    at Object.readUint (97211718-5853-4729-9bc2-7f8cf2e97d2e:64:32)
+    at Object._readFont (97211718-5853-4729-9bc2-7f8cf2e97d2e:31:21)
+    at Object.parse (97211718-5853-4729-9bc2-7f8cf2e97d2e:20:18)
+    at parse2 (7b9acb86-f742-40ce-97ab-c83f551d8ef2:320:29)
+    at request.onload (d244d38c-de06-4f59-9ad3-7ea341602de6:21:29)
+onError @ d244d38c-de06-4f59-9ad3-7ea341602de6:10
+request.onload @ d244d38c-de06-4f59-9ad3-7ea341602de6:25
+XMLHttpRequest.send
+doLoadFont @ d244d38c-de06-4f59-9ad3-7ea341602de6:30
+loadFont @ d244d38c-de06-4f59-9ad3-7ea341602de6:43
+resolveUserFonts @ d244d38c-de06-4f59-9ad3-7ea341602de6:98
+(anonymous) @ d244d38c-de06-4f59-9ad3-7ea341602de6:127
+calculateFontRuns @ 28910927-77d6-4bab-a0fb-4eeed7ae60ed:27
+typeset @ 28910927-77d6-4bab-a0fb-4eeed7ae60ed:70
+(anonymous) @ 27203871-72cb-46f3-b0e2-bdc1532c8c29:7
+(anonymous) @ 27203871-72cb-46f3-b0e2-bdc1532c8c29:6
+callModule @ 9b59dc2a-0e78-4727-812b-79568093716d:61
+(anonymous) @ 9b59dc2a-0e78-4727-812b-79568093716d:129Understand this error
+Console.js:61 🚀 App component rendering...
+Console.js:61 📊 App state - isGameLoaded: true gameInstance: true
+Console.js:61 🎮 Game loaded, showing main UI...
+Console.js:61 🎮 VRGame component rendering...
+Console.js:61 🚀 App component rendering...
+Console.js:61 📊 App state - isGameLoaded: true gameInstance: true
+Console.js:61 🎮 Game loaded, showing main UI...
