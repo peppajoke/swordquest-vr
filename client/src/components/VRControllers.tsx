@@ -775,7 +775,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     
     // Auto-recharge ammo slowly
     if (ammo.current < maxAmmo.current) {
-      ammo.current += 15 * deltaTime; // Recharge 15 ammo per second
+      ammo.current += 3 * deltaTime; // Recharge 3 ammo per second
       if (ammo.current > maxAmmo.current) {
         ammo.current = maxAmmo.current;
       }
