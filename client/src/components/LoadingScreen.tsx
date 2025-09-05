@@ -5,6 +5,7 @@ interface LoadingScreenProps {
 }
 
 export function LoadingScreen({ onComplete }: LoadingScreenProps) {
+  console.log('📱 LoadingScreen component rendering...');
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('Initializing VR Systems...');
 
@@ -48,29 +49,47 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
     return () => clearTimeout(timer);
   }, [onComplete]);
 
+  console.log('📱 LoadingScreen rendering with progress:', progress, 'status:', status);
+
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-      <div className="text-center">
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      width: '100vw', 
+      height: '100vh', 
+      backgroundColor: 'black', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      zIndex: 9999 
+    }}>
+      <div style={{ textAlign: 'center', color: 'white' }}>
         {/* VR Sword Fighting Game Title */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">⚔️ VR SWORD FIGHTER ⚔️</h1>
-          <p className="text-gray-300 text-lg">Immersive Combat Experience</p>
+        <div style={{ marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>⚔️ VR SWORD FIGHTER ⚔️</h1>
+          <p style={{ color: '#d1d5db', fontSize: '1.125rem' }}>Immersive Combat Experience</p>
         </div>
         
         {/* Loading Bar */}
-        <div className="w-96 bg-gray-700 rounded-full h-4 mb-4">
+        <div style={{ width: '24rem', height: '1rem', backgroundColor: '#374151', borderRadius: '9999px', marginBottom: '1rem' }}>
           <div 
-            className="bg-gradient-to-r from-blue-500 to-purple-600 h-4 rounded-full transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
+            style={{ 
+              width: `${progress}%`, 
+              height: '1rem', 
+              background: 'linear-gradient(to right, #3b82f6, #8b5cf6)', 
+              borderRadius: '9999px',
+              transition: 'all 0.3s ease-out'
+            }}
           />
         </div>
         
         {/* Status Text */}
-        <p className="text-white text-xl mb-6">{status}</p>
-        <p className="text-gray-400">{Math.round(progress)}% Complete</p>
+        <p style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>{status}</p>
+        <p style={{ color: '#9ca3af' }}>{Math.round(progress)}% Complete</p>
         
         {/* VR Instructions */}
-        <div className="mt-8 text-gray-300 text-sm max-w-md mx-auto">
+        <div style={{ marginTop: '2rem', color: '#d1d5db', fontSize: '0.875rem', maxWidth: '28rem', margin: 'auto' }}>
           <p>🥽 Put on your VR headset</p>
           <p>🤏 Squeeze grips for swords</p>
           <p>🔫 Pull triggers for guns</p>

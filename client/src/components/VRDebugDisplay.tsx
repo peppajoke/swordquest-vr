@@ -33,7 +33,9 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
   });
 
   // Check for debug mode from environment variables
-  const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true' || import.meta.env.DEBUG_MODE === 'true';
+  const debugMode = import.meta.env.VITE_DEBUG_MODE === 'true' || 
+                   import.meta.env.DEBUG_MODE === 'true' ||
+                   (typeof window !== 'undefined' && (window as any).DEBUG_MODE === 'true');
 
   useEffect(() => {
     // Create global debug system for Quest 3
@@ -47,8 +49,9 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
 
       // Add a global error handler to capture uncaught exceptions
       const originalErrorHandler = (window as any).onerror;
-      (window as any).onerror = (message: string, source: string, lineno: number, colno: number, error: Error) => {
+      (window as any).onerror = (message: string, source?: string, lineno?: number, colno?: number, error?: Error) => {
         try {
+          console.log('Global error caught:', { message, source, lineno, colno, error, debugMode });
           if (debugMode) {
             setDebugData(prev => ({
               ...prev,
@@ -62,7 +65,7 @@ export function VRDebugDisplay({ fuel, maxFuel, ammo, jetpackEnabled }: VRDebugD
         if (originalErrorHandler) {
           return originalErrorHandler(message, source, lineno, colno, error);
         }
-        // Return false to prevent the default browser error handling
+        // Continue with default error handling
         return false;
       };
 

@@ -10,8 +10,11 @@ import "./index.css";
 const store = createXRStore();
 
 function App() {
+  console.log('🚀 App component rendering...');
   const [isGameLoaded, setIsGameLoaded] = useState(false);
   const [gameInstance, setGameInstance] = useState<JSX.Element | null>(null);
+  
+  console.log('📊 App state - isGameLoaded:', isGameLoaded, 'gameInstance:', !!gameInstance);
   
   // Preload game systems
   const handleLoadingComplete = async () => {
@@ -64,8 +67,11 @@ function App() {
   
   // Show loading screen first, then load game
   if (!isGameLoaded) {
+    console.log('📱 Showing LoadingScreen...');
     return <LoadingScreen onComplete={handleLoadingComplete} />;
   }
+  
+  console.log('🎮 Game loaded, showing main UI...');
   
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
