@@ -1471,6 +1471,14 @@ export default function VRControllers({
               explodePillar(child.uuid);
               child.userData.destroyed = true;
 
+              // Play sword hit sound for pillar collision
+              try {
+                const audioStore = require('../lib/stores/useAudio').useAudio;
+                audioStore.getState().playSwordHit();
+              } catch (error) {
+                console.log('🔊 Sword hit sound error:', error);
+              }
+
               // Create explosion effect
               addHitEffect([pillarPos.x, pillarPos.y, pillarPos.z]);
 
