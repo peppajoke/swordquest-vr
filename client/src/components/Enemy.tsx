@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import HealthBar from "./HealthBar";
 import enemyConfig from "../data/enemyConfig.json";
+import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
 
 interface EnemyProps {
@@ -30,10 +31,6 @@ function getEnemyProperty(enemyType: string, property: keyof (typeof enemyConfig
   return config ? config[property] : enemyConfig.enemyTypes.grunt[property];
 }
 
-function getMaxHealth(enemyType: string): number {
-  return getEnemyProperty(enemyType, 'health') as number;
-}
-
 function getEnemyColor(enemyType: string): string {
   return getEnemyProperty(enemyType, 'color') as string;
 }
@@ -42,68 +39,61 @@ function getEnemySize(enemyType: string): [number, number, number] {
   return getEnemyProperty(enemyType, 'size') as [number, number, number];
 }
 
-function getAttackDamage(enemyType: string, rageMode: boolean = false): number {
-  const config = enemyConfig.enemyTypes[enemyType as keyof typeof enemyConfig.enemyTypes];
-  if (config && enemyType === 'berserker' && rageMode && 'rageDamage' in config) {
-    return config.rageDamage as number;
-  }
-  return getEnemyProperty(enemyType, 'attackDamage') as number;
-}
-
 export default function Enemy({ type, position }: EnemyProps) {
   const meshRef = useRef<THREE.Group>(null);
-  const [health, setHealth] = useState(getMaxHealth(type));
-  const [maxHealth] = useState(getMaxHealth(type));
-  const [isDead, setIsDead] = useState(false);
-  const [lastAttack, setLastAttack] = useState(0);
+  const [enemyState, setEnemyState] = useState<EnemyState>(() => ({
+    health: EnemyAIService.getMaxHealth(type),
+    maxHealth: EnemyAIService.getMaxHealth(type),
+    isDead: false,
+    lastAttackTime: 0,
+    position: new THREE.Vector3(...position),
+    rageMode: false,
+    teleportCooldown: 0
+  }));
   const [isAttacking, setIsAttacking] = useState(false);
-  const [rageMode, setRageMode] = useState(false);
-  const [teleportCooldown, setTeleportCooldown] = useState(0);
 
   const { addHitEffect, gameResetKey } = useVRGame();
 
   // Reset enemy when game resets
   useEffect(() => {
     if (gameResetKey > 0) {
-      setHealth(getMaxHealth(type));
-      setIsDead(false);
-      setLastAttack(0);
+      setEnemyState({
+        health: EnemyAIService.getMaxHealth(type),
+        maxHealth: EnemyAIService.getMaxHealth(type),
+        isDead: false,
+        lastAttackTime: 0,
+        position: new THREE.Vector3(...position),
+        rageMode: false,
+        teleportCooldown: 0
+      });
       setIsAttacking(false);
-      setRageMode(false);
-      setTeleportCooldown(0);
       console.log(`🔄 ${type} enemy reset!`);
     }
-  }, [gameResetKey, type]);
-
-  function getAttackSpeed(enemyType: string): number {
-    const config = enemyConfig.enemyTypes[enemyType as keyof typeof enemyConfig.enemyTypes];
-    if (config && enemyType === 'berserker' && rageMode) {
-      return 600; // Faster in rage mode
-    }
-    return config ? config.attackCooldown : 2000;
-  }
+  }, [gameResetKey, type, position]);
 
   function takeDamage(damage: number) {
-    if (isDead) return;
+    if (enemyState.isDead) return;
 
-    const newHealth = Math.max(0, health - damage);
-    setHealth(newHealth);
+    const currentTime = Date.now();
+    const enemyDied = EnemyAIService.takeDamage(enemyState, damage, currentTime);
+    
+    setEnemyState(prev => ({ ...prev })); // Trigger re-render
 
-    // Berserker rage mode when low health
-    if (type === "berserker" && newHealth < maxHealth * 0.3 && !rageMode) {
-      setRageMode(true);
-      console.log("🔥 BERSERKER RAGE ACTIVATED!");
-    }
-
-    if (newHealth <= 0) {
-      setIsDead(true);
+    // Handle death
+    if (enemyDied) {
       // Mark death start time for animation
       if (meshRef.current) {
-        meshRef.current.userData.deathStartTime = Date.now();
+        meshRef.current.userData.deathStartTime = currentTime;
       }
       // Award points based on enemy type
       const points = type === "boss" ? 500 : type === "heavy" ? 100 : 50;
       console.log(`💀 ${type.toUpperCase()} defeated! +${points} points`);
+    }
+
+    // Handle berserker rage mode
+    if (type === "berserker" && enemyState.health < enemyState.maxHealth * 0.3 && !enemyState.rageMode) {
+      setEnemyState(prev => ({ ...prev, rageMode: true }));
+      console.log("🔥 BERSERKER RAGE ACTIVATED!");
     }
   }
 
@@ -112,12 +102,12 @@ export default function Enemy({ type, position }: EnemyProps) {
       // Mark for collision detection
       meshRef.current.userData.isEnemy = true;
       meshRef.current.userData.enemyType = type;
-      meshRef.current.userData.health = health;
-      meshRef.current.userData.maxHealth = maxHealth;
+      meshRef.current.userData.health = enemyState.health;
+      meshRef.current.userData.maxHealth = enemyState.maxHealth;
       meshRef.current.userData.takeDamage = takeDamage;
-      meshRef.current.userData.isDead = isDead;
+      meshRef.current.userData.isDead = enemyState.isDead;
     }
-  }, [health, maxHealth, isDead, type]);
+  }, [enemyState.health, enemyState.maxHealth, enemyState.isDead, type]);
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -133,8 +123,8 @@ export default function Enemy({ type, position }: EnemyProps) {
     const distance = enemyPos.distanceTo(playerPos);
 
     // Always update collision data and dead status for immediate response
-    meshRef.current.userData.health = health;
-    meshRef.current.userData.isDead = isDead;
+    meshRef.current.userData.health = enemyState.health;
+    meshRef.current.userData.isDead = enemyState.isDead;
 
     // Distance-based performance optimization using central config
     const MAX_ACTIVE_DISTANCE = COMBAT_CONFIG.collision.maxCheckDistance;
@@ -142,7 +132,7 @@ export default function Enemy({ type, position }: EnemyProps) {
     const MID_DISTANCE = COMBAT_CONFIG.collision.midDistance;
     
     // Skip expensive AI computations for very distant enemies
-    if (distance > MAX_ACTIVE_DISTANCE && !isDead) {
+    if (distance > MAX_ACTIVE_DISTANCE && !enemyState.isDead) {
       // Only update position for very basic collision detection
       return;
     }
@@ -153,13 +143,13 @@ export default function Enemy({ type, position }: EnemyProps) {
     
     // Use frame-based skipping instead of time-based for better performance
     const frameNum = Math.floor(currentTime / 16) % frameSkip;
-    if (frameNum !== 0 && !isDead) {
+    if (frameNum !== 0 && !enemyState.isDead) {
       // Skip this frame for distant enemies
       return;
     }
 
     // Death animation sequence using central config
-    if (isDead) {
+    if (enemyState.isDead) {
       const deathTime =
         currentTime - (meshRef.current.userData.deathStartTime || currentTime);
 
@@ -213,223 +203,53 @@ export default function Enemy({ type, position }: EnemyProps) {
       return;
     }
 
-    // AI Behaviors based on type
-    switch (type) {
-      case "grunt":
-        // Basic melee - walk toward player if close
-        if (distance < 15 && distance > 2) {
-          const direction = playerPos.clone().sub(enemyPos).normalize();
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
-        }
-        break;
-
-      case "rifleman":
-        // Medium range shooting
-        if (distance < 20 && distance > 8) {
-          meshRef.current.lookAt(playerPos);
-        }
-        break;
-
-      case "heavy":
-        // Slow movement, high damage
-        if (distance < 12 && distance > 3) {
-          const direction = playerPos.clone().sub(enemyPos).normalize();
-          meshRef.current.position.add(
-            direction.multiplyScalar(deltaTime * 0.8),
-          );
-        }
-        break;
-
-      case "assassin":
-        // Teleport closer if far away
-        if (distance > 15 && currentTime > teleportCooldown) {
-          const teleportPos = playerPos
-            .clone()
-            .add(
-              new THREE.Vector3(
-                (Math.random() - 0.5) * 6,
-                0,
-                (Math.random() - 0.5) * 6,
-              ),
-            );
-          meshRef.current.position.copy(teleportPos);
-          setTeleportCooldown(currentTime + 5000);
-          console.log("🥷 Assassin teleported!");
-        } else if (distance < 8) {
-          // Fast melee approach
-          const direction = playerPos.clone().sub(enemyPos).normalize();
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 4));
-        }
-        break;
-
-      case "berserker":
-        // Aggressive charging
-        if (distance < 20) {
-          const direction = playerPos.clone().sub(enemyPos).normalize();
-          const speed = rageMode ? 5 : 2.5;
-          meshRef.current.position.add(
-            direction.multiplyScalar(deltaTime * speed),
-          );
-
-          // Berserker visual effects when in rage
-          if (rageMode) {
-            meshRef.current.rotation.y += deltaTime * 5;
-          }
-        }
-        break;
-
-      case "sniper":
-        // Keep distance and aim
-        if (distance < 25 && distance > 15) {
-          meshRef.current.lookAt(playerPos);
-        } else if (distance < 10) {
-          // Back away
-          const direction = enemyPos.clone().sub(playerPos).normalize();
-          meshRef.current.position.add(
-            direction.multiplyScalar(deltaTime * 1.5),
-          );
-        }
-        break;
-
-      case "shield":
-        // Defensive positioning
-        if (distance < 8) {
-          meshRef.current.lookAt(playerPos);
-        }
-        break;
-
-      case "mage":
-        // Keep medium distance
-        if (distance < 15 && distance > 8) {
-          meshRef.current.lookAt(playerPos);
-        } else if (distance < 6) {
-          // Retreat
-          const direction = enemyPos.clone().sub(playerPos).normalize();
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
-        }
-        break;
-
-      case "boss":
-        // Multi-phase behavior
-        if (distance < 30) {
-          meshRef.current.lookAt(playerPos);
-          // Slow approach
-          if (distance > 8) {
-            const direction = playerPos.clone().sub(enemyPos).normalize();
-            meshRef.current.position.add(
-              direction.multiplyScalar(deltaTime * 1),
-            );
-          }
-        }
-        break;
-
-      case "drone":
-        // Hover and strafe around player
-        if (distance < 20) {
-          meshRef.current.lookAt(playerPos);
-          // Circular movement pattern
-          const angle = currentTime * 0.001; // Slow rotation
-          const radius = 8;
-          const targetX = playerPos.x + Math.cos(angle) * radius;
-          const targetZ = playerPos.z + Math.sin(angle) * radius;
-          const targetY = playerPos.y + 3; // Stay airborne
-
-          const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
-          const direction = targetPos.clone().sub(enemyPos).normalize();
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 2));
-        }
-        break;
-
-      case "wasp":
-        // Fast, erratic flight patterns
-        if (distance < 15) {
-          // Quick dives toward player
-          const direction = playerPos.clone().sub(enemyPos).normalize();
-          // Add random jitter for erratic movement
-          direction.x += (Math.random() - 0.5) * 0.5;
-          direction.z += (Math.random() - 0.5) * 0.5;
-          direction.y += Math.sin(currentTime * 0.01) * 0.3; // Bobbing flight
-          direction.normalize();
-
-          meshRef.current.position.add(direction.multiplyScalar(deltaTime * 4));
-          meshRef.current.lookAt(playerPos);
-        }
-        break;
-
-      case "phoenix":
-        // Majestic aerial predator
-        if (distance < 25) {
-          // Swooping attacks from above
-          const currentY = meshRef.current.position.y;
-          const targetY = playerPos.y + 6; // Stay well above player
-
-          if (distance > 10) {
-            // Approach from above
-            const direction = playerPos.clone().sub(enemyPos).normalize();
-            direction.y = (targetY - currentY) * 0.1; // Gradual height adjustment
-            meshRef.current.position.add(
-              direction.multiplyScalar(deltaTime * 2.5),
-            );
-          } else {
-            // Circle overhead for attack positioning
-            const angle = currentTime * 0.002;
-            const radius = 6;
-            const targetX = playerPos.x + Math.cos(angle) * radius;
-            const targetZ = playerPos.z + Math.sin(angle) * radius;
-
-            const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
-            const direction = targetPos.clone().sub(enemyPos).normalize();
-            meshRef.current.position.add(
-              direction.multiplyScalar(deltaTime * 1.5),
-            );
-          }
-          meshRef.current.lookAt(playerPos);
-        }
-        break;
+    // Update enemy state position for AI service
+    enemyState.position = enemyPos;
+    
+    // Use AI service for decision making
+    const aiResult = EnemyAIService.updateEnemyAI(
+      type,
+      enemyState,
+      playerPos,
+      currentTime,
+      deltaTime
+    );
+    
+    // Handle AI results
+    if (aiResult.shouldTeleport && meshRef.current) {
+      const teleportPos = playerPos
+        .clone()
+        .add(
+          new THREE.Vector3(
+            (Math.random() - 0.5) * 6,
+            0,
+            (Math.random() - 0.5) * 6,
+          ),
+        );
+      meshRef.current.position.copy(teleportPos);
+      setEnemyState(prev => ({ ...prev, teleportCooldown: currentTime + 5000 }));
+    }
+    
+    if (aiResult.shouldMove && aiResult.newPosition && meshRef.current) {
+      meshRef.current.position.copy(aiResult.newPosition);
+    }
+    
+    if (aiResult.logMessage) {
+      console.log(aiResult.logMessage);
+    }
+    
+    // Berserker visual effects when in rage
+    if (type === "berserker" && enemyState.rageMode && meshRef.current) {
+      meshRef.current.rotation.y += deltaTime * 5;
     }
 
-    // Attack logic for all types
-    if (
-      distance < getAttackRange(type) &&
-      currentTime > lastAttack + getAttackSpeed(type)
-    ) {
+    // Handle attack logic through AI service
+    if (aiResult.shouldAttack) {
       performAttack(enemyPos, playerPos, scene, currentTime);
-      setLastAttack(currentTime);
+      setEnemyState(prev => ({ ...prev, lastAttackTime: currentTime }));
     }
   });
 
-  function getAttackRange(enemyType: string): number {
-    switch (enemyType) {
-      case "grunt":
-        return 3;
-      case "rifleman":
-        return 18;
-      case "heavy":
-        return 5;
-      case "assassin":
-        return 2.5;
-      case "bomber":
-        return 4;
-      case "sniper":
-        return 25;
-      case "berserker":
-        return 3.5;
-      case "shield":
-        return 4;
-      case "mage":
-        return 12;
-      case "boss":
-        return 15;
-      case "drone":
-        return 12;
-      case "wasp":
-        return 6;
-      case "phoenix":
-        return 20;
-      default:
-        return 3;
-    }
-  }
 
   function performAttack(
     enemyPos: THREE.Vector3,
@@ -438,7 +258,7 @@ export default function Enemy({ type, position }: EnemyProps) {
     currentTime: number,
   ) {
     const direction = playerPos.clone().sub(enemyPos).normalize();
-    const damage = getAttackDamage(type, rageMode);
+    const damage = EnemyAIService.getAttackDamage(type, enemyState.rageMode);
 
     setIsAttacking(true);
     setTimeout(() => setIsAttacking(false), 300);
@@ -655,7 +475,7 @@ export default function Enemy({ type, position }: EnemyProps) {
     console.log(`💥 ${type} EXPLOSION! ${damage} AOE damage`);
   }
 
-  if (isDead) return null;
+  if (enemyState.isDead) return null;
 
   const size = getEnemySize(type);
   const color = getEnemyColor(type);
@@ -668,14 +488,14 @@ export default function Enemy({ type, position }: EnemyProps) {
         <meshLambertMaterial
           color={isAttacking ? "#FF0000" : color}
           transparent={true}
-          opacity={rageMode ? 0.9 : 1.0}
+          opacity={enemyState.rageMode ? 0.9 : 1.0}
         />
       </mesh>
 
       {/* Health Bar Component */}
       <HealthBar
-        health={health}
-        maxHealth={maxHealth}
+        health={enemyState.health}
+        maxHealth={enemyState.maxHealth}
         position={[position[0], position[1], position[2]]}
         enemyType={type}
       />
@@ -699,7 +519,7 @@ export default function Enemy({ type, position }: EnemyProps) {
         </mesh>
       )}
 
-      {rageMode && (
+      {enemyState.rageMode && (
         <mesh position={[0, size[1] + 1, 0]}>
           <sphereGeometry args={[0.3]} />
           <meshLambertMaterial
