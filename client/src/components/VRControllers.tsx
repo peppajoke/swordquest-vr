@@ -653,10 +653,10 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         rightDirection.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
         rightDirection.normalize();
         
-        // Calculate movement vector (slower speed: 0.05 vs grip movement 0.1)
+        // Calculate movement vector (slower speed: 0.05 vs grip movement 0.1) - inverted controls
         const stickMoveVector = new THREE.Vector3();
-        stickMoveVector.add(rightDirection.multiplyScalar(leftStickX * 0.05));
-        stickMoveVector.add(cameraDirection.multiplyScalar(-leftStickY * 0.05)); // Negative for forward
+        stickMoveVector.add(rightDirection.multiplyScalar(-leftStickX * 0.05)); // Inverted left/right
+        stickMoveVector.add(cameraDirection.multiplyScalar(leftStickY * 0.05)); // Inverted forward/back
         
         // Check collision
         const newPosition = worldGroup.position.clone().add(stickMoveVector);
