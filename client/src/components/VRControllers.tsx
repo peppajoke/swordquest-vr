@@ -1103,7 +1103,7 @@ export default function VRControllers({
 
         const currentSpeed = velocity.current.length();
         if (currentSpeed > 0) {
-          const newDirection = lockedDirection.current || handDirection;
+          const newDirection = handDirection; // Always use current direction for steering
           velocity.current.copy(
             newDirection.clone().normalize().multiplyScalar(currentSpeed),
           );
@@ -1252,12 +1252,9 @@ export default function VRControllers({
       }
     }
 
-    // Handle direction locking
-    if (swordsHeld > lastSwordsHeld.current) {
-      lockedDirection.current = handDirection.clone().normalize();
-    } else if (swordsHeld < lastSwordsHeld.current) {
-      lockedDirection.current = null;
-    }
+    // Allow continuous steering - no direction locking
+    // Always use current hand direction for real-time steering
+    lockedDirection.current = null;
     lastSwordsHeld.current = swordsHeld;
 
     // Movement system
@@ -1278,7 +1275,7 @@ export default function VRControllers({
       const desiredSpeed =
         maxSpeed.current * speedMultiplier * fuelMultiplier * burstMultiplier;
 
-      const currentMovementDirection = lockedDirection.current || handDirection;
+      const currentMovementDirection = handDirection; // Always use current direction for steering
       const targetDirection = currentMovementDirection
         .clone()
         .multiplyScalar(desiredSpeed);
