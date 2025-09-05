@@ -371,6 +371,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     if (!controller0Obj || !controller1Obj) return;
 
     // ✓ RIGHT HAND ITEMS (controller0 = RIGHT hand - CORRECT!)
+    // Always show gun
+    if (!rightGunRef.current) {
+      const gun = createGun();
+      rightGunRef.current = gun;
+      controller0Obj.add(gun);
+    }
+    
+    // Show/hide sword based on grip
     if (rightGrabbing.current) {
       // Show sword
       if (!rightSwordRef.current) {
@@ -380,26 +388,23 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         rightSwordRef.current = sword;
         controller0Obj.add(sword);
       }
-      // Hide gun
-      if (rightGunRef.current) {
-        controller0Obj.remove(rightGunRef.current);
-        rightGunRef.current = undefined;
-      }
     } else {
       // Hide sword
       if (rightSwordRef.current) {
         controller0Obj.remove(rightSwordRef.current);
         rightSwordRef.current = undefined;
       }
-      // Show gun
-      if (!rightGunRef.current) {
-        const gun = createGun();
-        rightGunRef.current = gun;
-        controller0Obj.add(gun);
-      }
     }
 
     // ✓ LEFT HAND ITEMS (controller1 = LEFT hand - CORRECT!)
+    // Always show gun
+    if (!leftGunRef.current) {
+      const gun = createGun();
+      leftGunRef.current = gun;
+      controller1Obj.add(gun);
+    }
+    
+    // Show/hide sword based on grip
     if (leftGrabbing.current) {
       // Show sword
       if (!leftSwordRef.current) {
@@ -407,22 +412,11 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
         leftSwordRef.current = sword;
         controller1Obj.add(sword);
       }
-      // Hide gun
-      if (leftGunRef.current) {
-        controller1Obj.remove(leftGunRef.current);
-        leftGunRef.current = undefined;
-      }
     } else {
       // Hide sword
       if (leftSwordRef.current) {
         controller1Obj.remove(leftSwordRef.current);
         leftSwordRef.current = undefined;
-      }
-      // Show gun
-      if (!leftGunRef.current) {
-        const gun = createGun();
-        leftGunRef.current = gun;
-        controller1Obj.add(gun);
       }
     }
 
@@ -639,16 +633,16 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
       }
     }
 
-    // Gun firing logic - only when not holding swords
+    // Gun firing logic - always available
     
     // ✓ RIGHT GUN FIRING (controller0 = RIGHT hand - CORRECT!)
-    if (!rightSwordRef.current && rightTrigger.current && !lastRightTrigger.current) {
+    if (rightTrigger.current && !lastRightTrigger.current) {
       fireInstantBullet(controller0Obj, 'right', scene);
     }
     lastRightTrigger.current = rightTrigger.current;
     
     // ✓ LEFT GUN FIRING (controller1 = LEFT hand - CORRECT!)
-    if (!leftSwordRef.current && leftTrigger.current && !lastLeftTrigger.current) {
+    if (leftTrigger.current && !lastLeftTrigger.current) {
       fireInstantBullet(controller1Obj, 'left', scene);
     }
     lastLeftTrigger.current = leftTrigger.current;
