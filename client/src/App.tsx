@@ -109,9 +109,15 @@ function App() {
           antialias: true,
           powerPreference: "high-performance"
         }}
+        onCreated={(state) => {
+          console.log('🖼️ Canvas created successfully', state);
+        }}
+        onError={(error) => {
+          console.error('❌ Canvas error:', error);
+        }}
       >
         <XR store={store}>
-          <Suspense fallback={null}>
+          <Suspense fallback={<mesh><boxGeometry /><meshNormalMaterial /></mesh>}>
             {gameInstance}
           </Suspense>
         </XR>

@@ -64,6 +64,8 @@ export default function VRGame() {
   }, [initializeGame, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
 
   // Game is now fully loaded when this component renders
+  console.log('🎮 VRGame component rendering...');
+  
   return (
     <>
       {/* Environment Lighting */}
