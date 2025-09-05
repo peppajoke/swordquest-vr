@@ -350,14 +350,14 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     grip.position.y = -0.04;
     gun.add(grip);
     
-    // Barrel (shorter, thicker, rotated and positioned closer to player)
-    const barrelGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.125); // Made thicker: 0.008 -> 0.015
+    // Barrel (2x longer, thicker, rotated and positioned closer to player)
+    const barrelGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.25); // Made 2x longer: 0.125 -> 0.25
     const barrelMaterial = new THREE.MeshLambertMaterial({ color: '#1a1a1a' });
     const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
     barrel.userData.isCustomModel = true; // Mark as custom
     barrel.rotation.x = Math.PI / 2; // Rotate 90 degrees to point forward
     barrel.position.y = 0.02;
-    barrel.position.z = -0.05; // Move further back toward player
+    barrel.position.z = -0.1125; // Adjusted for longer barrel center
     gun.add(barrel);
     
     // Body
@@ -368,16 +368,26 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     body.position.y = 0.02;
     gun.add(body);
     
-    // Circular sight ring on top of the barrel
-    const sightGeometry = new THREE.RingGeometry(0.008, 0.012, 16); // Inner radius 0.008, outer radius 0.012
-    const sightMaterial = new THREE.MeshLambertMaterial({ color: '#000000' }); // Black for visibility
-    const sight = new THREE.Mesh(sightGeometry, sightMaterial);
-    sight.userData.isCustomModel = true; // Mark as custom
-    sight.name = 'gunSight'; // Name it so we can find it later for aiming
-    sight.position.y = 0.05; // Lower the sight ring
-    sight.position.z = -0.05; // Position at barrel location
-    sight.rotation.x = 0; // Keep flat on top
-    gun.add(sight);
+    // Front sight ring at tip of barrel
+    const frontSightGeometry = new THREE.RingGeometry(0.008, 0.012, 16);
+    const frontSightMaterial = new THREE.MeshLambertMaterial({ color: '#000000' });
+    const frontSight = new THREE.Mesh(frontSightGeometry, frontSightMaterial);
+    frontSight.userData.isCustomModel = true;
+    frontSight.name = 'gunSight'; // This is the primary aiming reference
+    frontSight.position.y = 0.05;
+    frontSight.position.z = -0.2375; // At tip of longer barrel
+    frontSight.rotation.x = 0;
+    gun.add(frontSight);
+    
+    // Rear sight ring at back of barrel
+    const rearSightGeometry = new THREE.RingGeometry(0.008, 0.012, 16);
+    const rearSightMaterial = new THREE.MeshLambertMaterial({ color: '#000000' });
+    const rearSight = new THREE.Mesh(rearSightGeometry, rearSightMaterial);
+    rearSight.userData.isCustomModel = true;
+    rearSight.position.y = 0.05;
+    rearSight.position.z = 0.0125; // At back of barrel
+    rearSight.rotation.x = 0;
+    gun.add(rearSight);
     
     // Rotate gun to point forward and upward
     gun.rotation.x = -Math.PI / 2 + Math.PI / 4; // 90 degrees up - 45 degrees = 45 degrees total upward
