@@ -39,7 +39,15 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const lastXButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
-  const rotationTestStep = useRef(0); // Track which rotation test we're on
+  // Controller sync status tracking
+  const controllerSyncStatus = useRef({
+    scanning: true,
+    leftDetected: false,
+    rightDetected: false,
+    leftIndex: -1,
+    rightIndex: -1,
+    lastUpdate: Date.now()
+  });
   
   /*
    * ========================================================================
@@ -384,6 +392,18 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
      * NEVER MODIFY THIS LOGIC WITHOUT UNDERSTANDING THE PROBLEM IT SOLVES.
      */
     
+    // Show controller sync status in VR overlay
+    if (controllerSyncStatus.current.scanning) {
+      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog(`🔍 SCANNING FOR VR CONTROLLERS...`);
+        const connected = [controller0Ref.current, controller1Ref.current].filter(c => c && gl.xr.getSession()).length;
+        (window as any).vrDebugLog(`Controllers connected: ${connected}/2`);
+        if (connected > 0) {
+          (window as any).vrDebugLog(`🔧 Setting up hand detection...`);
+        }
+      }
+    }
+    
     // Set up event listeners to detect handedness (only once)
     if (!controllersSetup.current) {
       controllersSetup.current = true;
@@ -393,7 +413,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         const handedness = event.data.handedness;
         if (handedness === 'left' || handedness === 'right') {
           handToIndexMap.current[handedness] = 0;
+          controllerSyncStatus.current[`${handedness}Detected`] = true;
+          controllerSyncStatus.current[`${handedness}Index`] = 0;
+          
           console.log(`🎮 HANDEDNESS DETECTED: Controller 0 = ${handedness} hand`);
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`✅ ${handedness.toUpperCase()} hand detected (controller 0)`);
+          }
         }
       });
       
@@ -402,7 +428,13 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
         const handedness = event.data.handedness;
         if (handedness === 'left' || handedness === 'right') {
           handToIndexMap.current[handedness] = 1;
+          controllerSyncStatus.current[`${handedness}Detected`] = true;
+          controllerSyncStatus.current[`${handedness}Index`] = 1;
+          
           console.log(`🎮 HANDEDNESS DETECTED: Controller 1 = ${handedness} hand`);
+          if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+            (window as any).vrDebugLog(`✅ ${handedness.toUpperCase()} hand detected (controller 1)`);
+          }
         }
       });
     }
@@ -421,8 +453,22 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
     const rightIndex = handToIndexMap.current.right; // Could be 0 or 1
     
     if (leftIndex === undefined || rightIndex === undefined) {
-      // Still waiting for handedness detection - do nothing until complete
+      // Still waiting for handedness detection - show status
+      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog(`⏳ Waiting for hand detection...`);
+        (window as any).vrDebugLog(`Left: ${leftIndex !== undefined ? '✅' : '❌'} Right: ${rightIndex !== undefined ? '✅' : '❌'}`);
+      }
       return;
+    }
+    
+    // Mark controller sync as complete
+    if (controllerSyncStatus.current.scanning) {
+      controllerSyncStatus.current.scanning = false;
+      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog(`🎮 CONTROLLER SYNC COMPLETE!`);
+        (window as any).vrDebugLog(`Left: controller ${leftIndex}, Right: controller ${rightIndex}`);
+        (window as any).vrDebugLog(`🔧 Setting up guns and swords...`);
+      }
     }
     
     if (!vrInitialized.current) {
@@ -431,6 +477,12 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       console.log(`🤚 Left physical hand = Three.js Controller ${leftIndex}`);
       console.log(`🤚 Right physical hand = Three.js Controller ${rightIndex}`);
       console.log('📋 All subsequent interactions use this mapping');
+      
+      if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog(`✅ VR SYSTEM READY!`);
+        (window as any).vrDebugLog(`Squeeze grips to spawn swords`);
+        (window as any).vrDebugLog(`Pull triggers to fire guns`);
+      }
     }
     
     // Hide default controller models immediately once controllers are ready
@@ -504,84 +556,17 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightGrabbing.current = rightGamepad.buttons[1].pressed; // Right grip = spawn right sword
       rightTrigger.current = rightGamepad.buttons[0].pressed;  // Right trigger = fire right gun
       
-      // A button on RIGHT physical hand cycles through rotation tests (button index 4 on right controller)
+      // Simple sword mode toggle - A button switches between neutral and side pointing
       const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
-      
-      // Debug: Log button state and controller integrity every frame
-      console.log(`🎮 Frame: A=${aButtonPressed}, lastA=${lastAButtonPressed.current}, grip=${rightGrabbing.current}, sword=${!!rightSwordRef.current}, buttons=${rightGamepad.buttons.length}`);
-      
-      // More robust button state tracking with extra logging
-      if (aButtonPressed !== lastAButtonPressed.current) {
-        console.log(`🎮 A BUTTON CHANGED: ${lastAButtonPressed.current} → ${aButtonPressed}, sword exists: ${!!rightSwordRef.current}`);
-        console.log(`🎮 Controller state: buttons available=${rightGamepad.buttons.length}, grip=${rightGrabbing.current}`);
-        
-        // Only process on button PRESS (not release) and only if sword exists
-        if (aButtonPressed && rightSwordRef.current) {
-          console.log(`🔄 PROCESSING A BUTTON PRESS - current step: ${rotationTestStep.current}`);
-          
-          rotationTestStep.current = (rotationTestStep.current + 1) % 8; // Expanded to 8 tests
-          
-          console.log(`🔄 ROTATION TEST ${rotationTestStep.current + 1}/8`);
-          
-          try {
-            // Verify sword still exists before touching it
-            if (!rightSwordRef.current) {
-              console.error(`❌ SWORD DISAPPEARED DURING ROTATION!`);
-              return;
-            }
-            
-            // Reset to neutral first
-            rightSwordRef.current.rotation.set(0, 0, 0);
-            
-            let description = "";
-            
-            switch (rotationTestStep.current) {
-              case 0:
-                description = "NEUTRAL - no rotation";
-                break;
-              case 1:
-                rightSwordRef.current.rotation.y = Math.PI / 2; // +90° Y
-                description = "Y+90° - should point LEFT from your view";
-                break;
-              case 2:
-                rightSwordRef.current.rotation.y = -Math.PI / 2; // -90° Y  
-                description = "Y-90° - should point RIGHT from your view";
-                break;
-              case 3:
-                rightSwordRef.current.rotation.x = Math.PI / 2; // +90° X
-                description = "X+90° - should point DOWN from your view";
-                break;
-              case 4:
-                rightSwordRef.current.rotation.x = -Math.PI / 2; // -90° X
-                description = "X-90° - should point UP from your view";
-                break;
-              case 5:
-                rightSwordRef.current.rotation.z = Math.PI / 2; // +90° Z
-                description = "Z+90° - should ROLL 90° clockwise";
-                break;
-              case 6:
-                rightSwordRef.current.rotation.y = -Math.PI / 4; // -45° Y
-                rightSwordRef.current.rotation.x = -Math.PI / 2; // -90° X
-                description = "COMBO: X-90° + Y-45° - up and right";
-                break;
-              case 7:
-                rightSwordRef.current.rotation.y = Math.PI; // 180° Y
-                description = "Y+180° - should point BACKWARD";
-                break;
-            }
-            
-            // Log to debug display
-            if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
-              (window as any).vrDebugLog(`TEST ${rotationTestStep.current + 1}/8: ${description}`);
-            }
-            
-            console.log(`✅ Applied: ${description}`);
-            console.log(`✅ Rotation values: x=${rightSwordRef.current.rotation.x.toFixed(2)} y=${rightSwordRef.current.rotation.y.toFixed(2)} z=${rightSwordRef.current.rotation.z.toFixed(2)}`);
-          } catch (error) {
-            console.error(`❌ ERROR during rotation test:`, error);
-          }
-        } else if (aButtonPressed && !rightSwordRef.current) {
-          console.log(`🎮 A pressed but no sword - grip first!`);
+      if (aButtonPressed && !lastAButtonPressed.current && rightSwordRef.current) {
+        if (rightSwordRef.current.rotation.y === 0) {
+          // Switch to side mode
+          rightSwordRef.current.rotation.set(0, -Math.PI / 2, 0);
+          console.log('🗡️ RIGHT sword: SIDE mode');
+        } else {
+          // Switch to neutral mode  
+          rightSwordRef.current.rotation.set(0, 0, 0);
+          console.log('🗡️ RIGHT sword: NEUTRAL mode');
         }
       }
       lastAButtonPressed.current = aButtonPressed;
@@ -674,35 +659,26 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       rightControllerObj.add(gun); // Attach to RIGHT physical hand (whatever index it is)
     }
     
-    // RIGHT physical hand grip spawns RIGHT sword - FORCE state consistency
-    console.log(`🗡️ Sword logic: grip=${rightGrabbing.current}, swordExists=${!!rightSwordRef.current}`);
+    // RIGHT physical hand grip spawns RIGHT sword
     
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
-        console.log(`⚔️ SPAWNING RIGHT sword on controller ${rightIndex}`);
-        try {
-          const sword = createSword();
-          // Start with neutral rotation for testing
-          sword.rotation.set(0, 0, 0);
-          rightSwordRef.current = sword;
-          rightControllerObj.add(sword); // Attach to RIGHT physical hand
-          console.log(`✅ Sword spawned successfully`);
-        } catch (error) {
-          console.error(`❌ Failed to spawn sword:`, error);
+        const sword = createSword();
+        sword.rotation.set(0, 0, 0);
+        rightSwordRef.current = sword;
+        rightControllerObj.add(sword);
+        
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`🗡️ RIGHT sword spawned`);
         }
       }
     } else {
-      // FORCE REMOVE sword when grip is released
       if (rightSwordRef.current) {
-        console.log(`🗡️ REMOVING RIGHT sword - grip released`);
-        try {
-          rightControllerObj.remove(rightSwordRef.current);
-          rightSwordRef.current = undefined;
-          // Reset rotation test when sword is removed
-          rotationTestStep.current = 0;
-          console.log(`✅ Sword removed successfully`);
-        } catch (error) {
-          console.error(`❌ Failed to remove sword:`, error);
+        rightControllerObj.remove(rightSwordRef.current);
+        rightSwordRef.current = undefined;
+        
+        if (typeof window !== 'undefined' && (window as any).vrDebugLog) {
+          (window as any).vrDebugLog(`🗡️ RIGHT sword removed`);
         }
       }
     }
