@@ -25,7 +25,7 @@ export default function VRGame() {
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
-  const [jetpackEnabled, setJetpackEnabled] = useState(true);
+  const [jetpackEnabled, setJetpackEnabled] = useState(false);
 
   useEffect(() => {
     // Initialize audio store with sound files

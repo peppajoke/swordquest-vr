@@ -30,7 +30,7 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
   const rightTrigger = useRef(false);
   const lastLeftTrigger = useRef(false);
   const lastRightTrigger = useRef(false);
-  const jetpackEnabled = useRef(true);
+  const jetpackEnabled = useRef(false);
   const lastBButtonPressed = useRef(false);
   const vrInitialized = useRef(false);
   const lastAButtonPressed = useRef(false);
