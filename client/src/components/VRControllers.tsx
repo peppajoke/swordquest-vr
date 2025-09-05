@@ -518,11 +518,6 @@ export default function VRControllers({ onFuelChange, onAmmoChange, onJetpackCha
       hideDefaultXRVisuals();
       hiddenXRDefaultsRef.current = true;
     }
-    
-    // Continuous hiding to catch any dynamically added controller models
-    if (controller0Ref.current || controller1Ref.current || controllerGrip0Ref.current || controllerGrip1Ref.current) {
-      hideDefaultXRVisuals();
-    }
 
     /*
      * ========================================================================
