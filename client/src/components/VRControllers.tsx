@@ -229,8 +229,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     sword.userData.isCustomModel = true; // Mark as custom model
     sword.userData.isSword = true; // Mark as sword for collision detection
     
-    // Handle (bigger)
-    const handleGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25);
+    // Handle (much shorter - 80% reduction)
+    const handleGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.05);
     const handleMaterial = new THREE.MeshLambertMaterial({ color: '#4a4a4a' });
     const handle = new THREE.Mesh(handleGeometry, handleMaterial);
     handle.userData.isCustomModel = true; // Mark as custom
@@ -289,8 +289,8 @@ export default function VRControllers({ onFuelChange, onAmmoChange }: VRControll
     body.position.y = 0.02;
     gun.add(body);
     
-    // Rotate entire gun forward and up 45 degrees (90 degrees downward + 180 degrees forward - 45 degrees up)
-    gun.rotation.x = Math.PI / 2 + Math.PI - Math.PI / 4; // 90 degrees downward + 180 degrees forward - 45 degrees up
+    // Rotate entire gun forward and up 135 degrees (90 degrees downward + 180 degrees forward + 90 degrees up)
+    gun.rotation.x = Math.PI / 2 + Math.PI + Math.PI / 2; // 90 degrees downward + 180 degrees forward + 90 degrees up
     
     return gun;
   }
