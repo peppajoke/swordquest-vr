@@ -1104,6 +1104,11 @@ export default function VRControllers({
           console.log(
             `🔄 LEFT gun reloaded! Clip: ${leftClip.current}/${maxClipSize.current}`,
           );
+          
+          // Play reload sound
+          import('../lib/stores/useAudio').then(({ useAudio }) => {
+            useAudio.getState().playReload();
+          });
         }
       } else {
         leftReloading.current = false;
@@ -1129,6 +1134,11 @@ export default function VRControllers({
           console.log(
             `🔄 RIGHT gun reloaded! Clip: ${rightClip.current}/${maxClipSize.current}`,
           );
+          
+          // Play reload sound
+          import('../lib/stores/useAudio').then(({ useAudio }) => {
+            useAudio.getState().playReload();
+          });
         }
       } else {
         rightReloading.current = false;

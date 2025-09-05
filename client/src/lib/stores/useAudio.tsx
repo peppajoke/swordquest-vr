@@ -11,6 +11,7 @@ interface AudioState {
   accelerationSound: HTMLAudioElement | null;
   boostSound: HTMLAudioElement | null;
   gunAmmoSound: HTMLAudioElement | null;
+  reloadSound: HTMLAudioElement | null;
   currentAccelerationSound: HTMLAudioElement | null;
   isMuted: boolean;
   
@@ -25,6 +26,7 @@ interface AudioState {
   setAccelerationSound: (sound: HTMLAudioElement) => void;
   setBoostSound: (sound: HTMLAudioElement) => void;
   setGunAmmoSound: (sound: HTMLAudioElement) => void;
+  setReloadSound: (sound: HTMLAudioElement) => void;
   
   // Control functions
   toggleMute: () => void;
@@ -37,6 +39,7 @@ interface AudioState {
   playAcceleration: () => void;
   playBoost: () => void;
   playGunAmmo: () => void;
+  playReload: () => void;
   stopAcceleration: () => void;
 }
 
@@ -51,6 +54,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   accelerationSound: null,
   boostSound: null,
   gunAmmoSound: null,
+  reloadSound: null,
   currentAccelerationSound: null,
   isMuted: false, // Audio enabled by default
   
@@ -64,6 +68,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   setAccelerationSound: (sound) => set({ accelerationSound: sound }),
   setBoostSound: (sound) => set({ boostSound: sound }),
   setGunAmmoSound: (sound) => set({ gunAmmoSound: sound }),
+  setReloadSound: (sound) => set({ reloadSound: sound }),
   
   toggleMute: () => {
     const { isMuted } = get();
@@ -188,6 +193,17 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.4;
+      soundClone.currentTime = 0; // Play from beginning
+      soundClone.play().catch(error => {});
+    }
+  },
+  
+  playReload: () => {
+    const { reloadSound, successSound, isMuted } = get();
+    const sound = reloadSound || successSound; // Fallback to success sound
+    if (sound && !isMuted) {
+      const soundClone = sound.cloneNode() as HTMLAudioElement;
+      soundClone.volume = 0.6;
       soundClone.currentTime = 0; // Play from beginning
       soundClone.play().catch(error => {});
     }

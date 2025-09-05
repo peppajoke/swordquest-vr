@@ -20,7 +20,7 @@ export default function VRGame() {
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
-    setBoostSound, setGunAmmoSound 
+    setBoostSound, setGunAmmoSound, setReloadSound 
   } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
@@ -40,6 +40,7 @@ export default function VRGame() {
         const accelerationSound = new Audio('/sounds/acceleration.mp3');
         const boostSound = new Audio('/sounds/boost.mp3');
         const gunAmmoSound = new Audio('/sounds/gun_ammo.mp3');
+        const reloadSound = new Audio('/sounds/reload.mp3');
         
         // Set all sounds in the store
         setHitSound(hitSound);
@@ -51,6 +52,7 @@ export default function VRGame() {
         setAccelerationSound(accelerationSound);
         setBoostSound(boostSound);
         setGunAmmoSound(gunAmmoSound);
+        setReloadSound(reloadSound);
         
         console.log('🔊 Audio system initialized!');
       } catch (error) {
@@ -61,7 +63,7 @@ export default function VRGame() {
     loadAudio();
     initializeGame();
     console.log('🎮 VRGame fully loaded and ready!');
-  }, [initializeGame, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound]);
+  }, [initializeGame, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound, setReloadSound]);
 
   // Game is now fully loaded when this component renders
   return (
