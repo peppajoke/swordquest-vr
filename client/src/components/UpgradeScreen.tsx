@@ -65,18 +65,15 @@ function pickRandom<T>(arr: T[], n: number): T[] {
 }
 
 export default function UpgradeScreen() {
-  const { playerStats, setPlayerStats, maxHealth, setHealth, heal, setShowUpgradeScreen } =
+  const { playerStats, setPlayerStats, heal, setShowUpgradeScreen } =
     useVRGame((s) => ({
       playerStats: s.playerStats,
       setPlayerStats: s.setPlayerStats,
-      maxHealth: s.maxHealth,
-      setHealth: s.setHealth,
       heal: s.heal,
       setShowUpgradeScreen: s.setShowUpgradeScreen,
     }));
 
   const [choices] = useState<Upgrade[]>(() => pickRandom(UPGRADE_POOL, 3));
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -223,8 +220,7 @@ export default function UpgradeScreen() {
             key={upgrade.name}
             className="upgrade-card"
             onClick={() => applyUpgrade(upgrade)}
-            onMouseEnter={() => setHoveredIdx(idx)}
-            onMouseLeave={() => setHoveredIdx(null)}
+  
           >
             <div className="upgrade-card-name">{upgrade.name}</div>
             <div className="upgrade-card-desc">{upgrade.description}</div>
