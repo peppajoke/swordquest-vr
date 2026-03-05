@@ -21,8 +21,13 @@ export default function WeaponPickup({ onPicked }: WeaponPickupProps) {
   const gunRef = useRef<THREE.Group>(null);
   const t = useRef(0);
 
-  const swordPos = new THREE.Vector3(-4, 1.4, -10);
-  const gunPos = new THREE.Vector3(4, 1.4, -10);
+  // Positions in LOCAL space of worldGroup (which is at z=10)
+  // World z = local z + 10. Camera at world z=-5, so local z=-25 = world z=-15 (in front)
+  const swordLocalPos = new THREE.Vector3(-5, 1.4, -25);
+  const gunLocalPos   = new THREE.Vector3( 5, 1.4, -25);
+  // World positions for proximity check (camera.position is world space)
+  const swordWorldPos = new THREE.Vector3(-5, 1.4, -25 + 10); // z=-15
+  const gunWorldPos   = new THREE.Vector3( 5, 1.4, -25 + 10); // z=-15
 
   useFrame((_, delta) => {
     if (picked) return;
@@ -30,22 +35,22 @@ export default function WeaponPickup({ onPicked }: WeaponPickupProps) {
 
     // Float animation
     if (swordRef.current) {
-      swordRef.current.position.y = swordPos.y + Math.sin(t.current * 1.4) * 0.12;
+      swordRef.current.position.y = swordLocalPos.y + Math.sin(t.current * 1.4) * 0.12;
       swordRef.current.rotation.y = t.current * 0.6;
     }
     if (gunRef.current) {
-      gunRef.current.position.y = gunPos.y + Math.sin(t.current * 1.4 + Math.PI) * 0.12;
+      gunRef.current.position.y = gunLocalPos.y + Math.sin(t.current * 1.4 + Math.PI) * 0.12;
       gunRef.current.rotation.y = -t.current * 0.6;
     }
 
-    // Proximity check
+    // Proximity check — compare world positions (camera is in world space)
     const camPos = camera.position.clone();
-    if (camPos.distanceTo(swordPos) < PICKUP_RADIUS) {
+    if (camPos.distanceTo(swordWorldPos) < PICKUP_RADIUS) {
       setPicked(true);
       setActiveWeapon('sword');
       setPlayerStats({ str: 2, agi: 0, vit: 0 });
       onPicked('sword');
-    } else if (camPos.distanceTo(gunPos) < PICKUP_RADIUS) {
+    } else if (camPos.distanceTo(gunWorldPos) < PICKUP_RADIUS) {
       setPicked(true);
       setActiveWeapon('gun');
       setPlayerStats({ str: 0, agi: 2, vit: 0 });
@@ -58,7 +63,7 @@ export default function WeaponPickup({ onPicked }: WeaponPickupProps) {
   return (
     <group>
       {/* ── Sword ── */}
-      <group ref={swordRef} position={swordPos.toArray() as [number,number,number]}>
+      <group ref={swordRef} position={swordLocalPos.toArray() as [number,number,number]}>
         {/* Glow halo */}
         <mesh>
           <sphereGeometry args={[0.55, 16, 16]} />
@@ -87,13 +92,13 @@ export default function WeaponPickup({ onPicked }: WeaponPickupProps) {
       </group>
 
       {/* Sword label — simple sprite plane */}
-      <mesh position={[swordPos.x, swordPos.y - 0.75, swordPos.z]}>
+      <mesh position={[swordLocalPos.x, swordLocalPos.y - 0.75, swordLocalPos.z]}>
         <planeGeometry args={[1.4, 0.35]} />
         <meshBasicMaterial color="#c0a040" transparent opacity={0.0} />
       </mesh>
 
       {/* ── Gun ── */}
-      <group ref={gunRef} position={gunPos.toArray() as [number,number,number]}>
+      <group ref={gunRef} position={gunLocalPos.toArray() as [number,number,number]}>
         {/* Glow halo */}
         <mesh>
           <sphereGeometry args={[0.55, 16, 16]} />
@@ -117,8 +122,8 @@ export default function WeaponPickup({ onPicked }: WeaponPickupProps) {
       </group>
 
       {/* Point lights for atmosphere */}
-      <pointLight position={swordPos.toArray() as [number,number,number]} color="#c0a040" intensity={1.2} distance={4} />
-      <pointLight position={gunPos.toArray() as [number,number,number]} color="#4a90e2" intensity={1.2} distance={4} />
+      <pointLight position={swordLocalPos.toArray() as [number,number,number]} color="#c0a040" intensity={1.2} distance={4} />
+      <pointLight position={gunLocalPos.toArray() as [number,number,number]} color="#4a90e2" intensity={1.2} distance={4} />
     </group>
   );
 }

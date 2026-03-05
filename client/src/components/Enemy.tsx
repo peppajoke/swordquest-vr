@@ -226,12 +226,18 @@ export default function Enemy({ type, position }: EnemyProps) {
             (Math.random() - 0.5) * 6,
           ),
         );
-      meshRef.current.position.copy(teleportPos);
+      // Convert world teleport target to local space before applying
+      const teleportLocal = teleportPos.clone();
+      if (meshRef.current.parent) meshRef.current.parent.worldToLocal(teleportLocal);
+      meshRef.current.position.copy(teleportLocal);
       setEnemyState(prev => ({ ...prev, teleportCooldown: currentTime + 5000 }));
     }
     
     if (aiResult.shouldMove && aiResult.newPosition && meshRef.current) {
-      meshRef.current.position.copy(aiResult.newPosition);
+      // AI computes position in world space; convert to local before applying
+      const localPos = aiResult.newPosition.clone();
+      if (meshRef.current.parent) meshRef.current.parent.worldToLocal(localPos);
+      meshRef.current.position.copy(localPos);
     }
     
     if (aiResult.logMessage) {

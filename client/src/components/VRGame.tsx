@@ -14,6 +14,7 @@ import { useVRGame } from '../lib/stores/useVRGame';
 import { getStartingStats } from '../lib/weapons';
 import { useAudio } from '../lib/stores/useAudio';
 import WeaponPickup from './WeaponPickup';
+import { registerTestHarness } from '../lib/testHarness';
 
 interface VRGameProps {
   startWeapon?: 'sword' | 'gun';
@@ -23,6 +24,9 @@ interface VRGameProps {
 export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGameProps) {
   const { scene, camera } = useThree();
   const isVRPresenting = !!useXR((s) => s.session);
+
+  // Register dev test harness
+  useEffect(() => { registerTestHarness(camera, scene); }, []);
 
   // Set initial camera tilt; weapon + stats set on pickup (not on mount)
   useEffect(() => {
