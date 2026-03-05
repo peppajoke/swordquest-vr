@@ -21,7 +21,8 @@ export default function DesktopUI({
   const roomClearedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waveFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon, roomCleared } = useVRGame();
+  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon, roomCleared, health, maxHealth } = useVRGame();
+  const isLowHealth = health < maxHealth * 0.25;
 
   // Always use store values — DesktopControls keeps them live via setDesktopAmmo
   const leftClipDisplay = desktopLeftClip;
@@ -71,6 +72,27 @@ export default function DesktopUI({
 
   return (
     <>
+      {/* Low health vignette */}
+      {isLowHealth && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 500,
+            background: 'radial-gradient(ellipse at center, transparent 40%, rgba(220,20,20,0.45) 100%)',
+            animation: 'lowHealthPulse 1.2s ease-in-out infinite',
+          }}
+        />
+      )}
+      <style>{`
+        @keyframes lowHealthPulse {
+          0%   { opacity: 0.3; }
+          50%  { opacity: 0.7; }
+          100% { opacity: 0.3; }
+        }
+      `}</style>
+
       {/* ROOM CLEARED overlay */}
       {showRoomCleared && (
         <div
@@ -210,6 +232,34 @@ export default function DesktopUI({
         }}
       >
 
+
+        {/* Health bar */}
+        <div style={{ marginBottom: '6px' }}>
+          <div style={{
+            fontSize: '13px',
+            color: isLowHealth ? (Math.floor(Date.now() / 300) % 2 === 0 ? '#ff2222' : '#ff8888') : '#ff6666',
+            fontWeight: isLowHealth ? 'bold' : 'normal',
+            marginBottom: '2px',
+            transition: 'color 0.15s',
+          }}>
+            ❤️ HP: {health}/{maxHealth}
+          </div>
+          <div style={{
+            width: '100%',
+            height: '6px',
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '3px',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              width: `${(health / maxHealth) * 100}%`,
+              height: '100%',
+              backgroundColor: isLowHealth ? '#dd1111' : health < maxHealth * 0.5 ? '#ff8800' : '#22cc55',
+              borderRadius: '3px',
+              transition: 'width 0.2s, background-color 0.3s',
+            }} />
+          </div>
+        </div>
 
         {/* Weapon indicator */}
         <div style={{

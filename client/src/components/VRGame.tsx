@@ -57,6 +57,23 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
 
+  // Ambient drone — starts on first user interaction (satisfies autoplay policy)
+  useEffect(() => {
+    if (isVRPresenting) return;
+    const onInteract = () => {
+      startAmbient();
+      window.removeEventListener('click', onInteract);
+      window.removeEventListener('keydown', onInteract);
+    };
+    window.addEventListener('click', onInteract);
+    window.addEventListener('keydown', onInteract);
+    return () => {
+      window.removeEventListener('click', onInteract);
+      window.removeEventListener('keydown', onInteract);
+      stopAmbient();
+    };
+  }, [isVRPresenting]);
+
   useEffect(() => {
     // Initialize audio store with sound files
     const loadAudio = async () => {
