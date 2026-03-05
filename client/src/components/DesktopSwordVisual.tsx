@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -8,6 +8,7 @@ interface DesktopSwordVisualProps {
   activeWeapon: 'sword' | 'gun';
   onSwingComplete: () => void;
   isVisible?: boolean;
+  recoilSignal?: number; // increments each shot — triggers recoil
 }
 
 export default function DesktopSwordVisual({
@@ -16,19 +17,31 @@ export default function DesktopSwordVisual({
   activeWeapon,
   onSwingComplete,
   isVisible = true,
+  recoilSignal = 0,
 }: DesktopSwordVisualProps) {
   const { camera } = useThree();
 
   // Sword refs
   const swordGroupRef = useRef<THREE.Group>(null);
   const swingTime = useRef(0);
-  const swingDuration = 0.2;
+  const swingDuration = 0.4; // slow, weighty
   const isSwingActive = useRef(false);
   const swingProgress = useRef(0);
+  const swingCount = useRef(0); // increments each swing; even = left sweep, odd = right sweep
 
   // Gun refs
   const leftGunRef = useRef<THREE.Group>(null);
   const rightGunRef = useRef<THREE.Group>(null);
+
+  // Recoil
+  const recoilRef = useRef(0);
+
+  // Trigger recoil when recoilSignal changes
+  useEffect(() => {
+    if (recoilSignal > 0) {
+      recoilRef.current = 1;
+    }
+  }, [recoilSignal]);
 
   useFrame((_, deltaTime) => {
     const cameraPos = camera.position.clone();
@@ -39,6 +52,9 @@ export default function DesktopSwordVisual({
     const upDir = new THREE.Vector3(0, 1, 0);
     upDir.applyQuaternion(camera.quaternion);
 
+    // Decay recoil
+    recoilRef.current = Math.max(0, recoilRef.current - deltaTime / 0.12);
+
     // ---- SWORD ----
     if (swordGroupRef.current) {
       const swordPos = cameraPos.clone()
@@ -47,12 +63,14 @@ export default function DesktopSwordVisual({
         .add(upDir.clone().multiplyScalar(-0.35));
       swordGroupRef.current.position.copy(swordPos);
 
-      // Align sword base rotation to match camera
+      // Align sword base rotation to camera
       swordGroupRef.current.quaternion.copy(camera.quaternion);
 
       if (isSwinging && !isSwingActive.current) {
+        // New swing starting — record direction
         isSwingActive.current = true;
         swingTime.current = 0;
+        swingCount.current += 1;
       }
 
       if (isSwingActive.current) {
@@ -60,28 +78,22 @@ export default function DesktopSwordVisual({
         const progress = Math.min(swingTime.current / swingDuration, 1);
         swingProgress.current = progress;
 
-        const ease = Math.sin(progress * Math.PI); // 0 → 1 → 0 smooth arc
-        const handMult = hand === 'left' ? -1 : 1;
+        // Smooth ease: natural acceleration + deceleration
+        const smoothProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
 
-        // Clean horizontal slash arc:
-        // Start: rotated to right side (+45°), End: follows through to left (-45°)
-        // The sweep angle goes from +45° to -45° as progress goes 0→1
-        const sweepAngle = (0.785 - progress * 1.57) * handMult; // ~45° to -45°
-        const forwardPeak = ease * 0.1; // slight forward push at peak
+        // dir = 1 → leftward sweep (even swings), dir = -1 → rightward sweep (odd swings)
+        const dir = swingCount.current % 2 === 0 ? 1 : -1;
 
-        // Apply rotations on top of camera quaternion (already set above)
+        // Apply rotations on top of camera quaternion (already set)
         const swingRotation = new THREE.Euler(
-          -Math.PI / 8,          // tilt forward (idle angle)
-          sweepAngle,            // horizontal sweep
-          0,
+          -Math.PI / 8,                               // slight downward tilt, constant
+          dir * (1.2 - smoothProgress * 2.4),         // sweeps from +1.2 to -1.2 (or reverse)
+          dir * (smoothProgress - 0.5) * 0.4,         // subtle roll
           'YXZ',
         );
         const swingQuat = new THREE.Quaternion();
         swingQuat.setFromEuler(swingRotation);
         swordGroupRef.current.quaternion.multiply(swingQuat);
-
-        // Slight forward offset at peak of swing
-        swordGroupRef.current.position.add(cameraDir.clone().multiplyScalar(forwardPeak));
 
         if (progress >= 1) {
           isSwingActive.current = false;
@@ -102,13 +114,14 @@ export default function DesktopSwordVisual({
     // ---- GUNS ----
     // Left gun
     if (leftGunRef.current) {
+      const recoilPush = activeWeapon === 'gun' ? recoilRef.current * 0.08 : 0;
+      // Recoil pushes gun back (opposite of cameraDir)
       const gunPos = cameraPos.clone()
-        .add(cameraDir.clone().multiplyScalar(0.55))
+        .add(cameraDir.clone().multiplyScalar(0.55 - recoilPush))
         .add(rightDir.clone().multiplyScalar(-0.3))
         .add(upDir.clone().multiplyScalar(-0.28));
       leftGunRef.current.position.copy(gunPos);
       leftGunRef.current.quaternion.copy(camera.quaternion);
-      // Small toe-out angle
       const toeLeft = new THREE.Quaternion();
       toeLeft.setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.1);
       leftGunRef.current.quaternion.multiply(toeLeft);
@@ -116,13 +129,13 @@ export default function DesktopSwordVisual({
 
     // Right gun
     if (rightGunRef.current) {
+      const recoilPush = activeWeapon === 'gun' ? recoilRef.current * 0.08 : 0;
       const gunPos = cameraPos.clone()
-        .add(cameraDir.clone().multiplyScalar(0.55))
+        .add(cameraDir.clone().multiplyScalar(0.55 - recoilPush))
         .add(rightDir.clone().multiplyScalar(0.3))
         .add(upDir.clone().multiplyScalar(-0.28));
       rightGunRef.current.position.copy(gunPos);
       rightGunRef.current.quaternion.copy(camera.quaternion);
-      // Small toe-out angle
       const toeRight = new THREE.Quaternion();
       toeRight.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -0.1);
       rightGunRef.current.quaternion.multiply(toeRight);
@@ -133,6 +146,11 @@ export default function DesktopSwordVisual({
 
   const showSword = activeWeapon === 'sword';
   const showGuns = activeWeapon === 'gun';
+
+  // Trail opacity: brightest at mid-swing, fades at start/end
+  const trailOpacity = isSwingActive.current
+    ? Math.max(0, 1 - Math.abs(swingProgress.current - 0.5) * 2)
+    : 0;
 
   return (
     <>
@@ -157,16 +175,16 @@ export default function DesktopSwordVisual({
             <meshLambertMaterial color="#C0C0C0" emissive="#404040" emissiveIntensity={0.3} />
           </mesh>
 
-          {/* Swing trail — visible only during swing */}
-          {isSwingActive.current && (
-            <mesh position={[0, 0.2, 0]} rotation={[0, 0, swingProgress.current * Math.PI / 4]}>
-              <boxGeometry args={[0.05, 0.8, 0.001]} />
+          {/* Swing trail — visible during swing, fades at start/end */}
+          {isSwingActive.current && trailOpacity > 0 && (
+            <mesh position={[0, 0.2, 0]}>
+              <boxGeometry args={[0.06, 0.75, 0.001]} />
               <meshLambertMaterial
                 color="#FFFFFF"
                 transparent
-                opacity={0.6 * (1 - swingProgress.current)}
-                emissive="#FFFFFF"
-                emissiveIntensity={0.8 * (1 - swingProgress.current)}
+                opacity={trailOpacity * 0.65}
+                emissive="#88CCFF"
+                emissiveIntensity={trailOpacity * 1.2}
               />
             </mesh>
           )}
@@ -183,7 +201,7 @@ export default function DesktopSwordVisual({
               <boxGeometry args={[0.08, 0.06, 0.25]} />
               <meshLambertMaterial color="#333333" />
             </mesh>
-            {/* Barrel — sticks forward (negative Z in Three.js) */}
+            {/* Barrel */}
             <mesh position={[0, 0.01, -0.2]} rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.02, 0.02, 0.15, 8]} />
               <meshLambertMaterial color="#222222" />

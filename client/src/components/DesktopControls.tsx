@@ -16,7 +16,7 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const { isPresenting: isVRPresented } = useXR();
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
 
   // Movement state
@@ -66,6 +66,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const [isReloading, setIsReloading] = useState(false);
   const [reloadTimeout, setReloadTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  // Recoil signal — increments each shot, passed to DesktopSwordVisual
+  const [shotCount, setShotCount] = useState(0);
+
   // Boost state refs (for use inside useFrame without stale closure)
   const boostActiveRef = useRef(false);
   const normalSpeed = PLAYER_CONFIG.movement.jetpackSpeed;
@@ -77,7 +80,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     setActiveWeapon(w);
   };
 
-  // Gun firing
+  // Gun firing — compute new values first to avoid stale closures
   const fireDesktopBullet = () => {
     if (isReloading) return;
     if (leftClip <= 0 && rightClip <= 0) {
@@ -97,24 +100,37 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   };
 
   const fireWithGun = (gun: 'left' | 'right') => {
-    if (gun === 'left') {
-      setLeftClip(prev => {
-        const nv = Math.max(0, prev - 1);
-        if (onClipChange) onClipChange(nv, rightClip, currentGun, isReloading);
-        return nv;
-      });
-    } else {
-      setRightClip(prev => {
-        const nv = Math.max(0, prev - 1);
-        if (onClipChange) onClipChange(leftClip, nv, currentGun, isReloading);
-        return nv;
-      });
-    }
+    // Compute new clip values synchronously to avoid stale closures
+    const newLeft = gun === 'left' ? Math.max(0, leftClip - 1) : leftClip;
+    const newRight = gun === 'right' ? Math.max(0, rightClip - 1) : rightClip;
 
+    // Update store (HUD reads from here)
+    setDesktopAmmo(newLeft, newRight, gun, false);
+    // Update local state
+    setLeftClip(newLeft);
+    setRightClip(newRight);
+    // Notify parent if wired
+    if (onClipChange) onClipChange(newLeft, newRight, gun, false);
+
+    // Recoil signal
+    setShotCount(c => c + 1);
+    if (onShoot) onShoot(gun);
+
+    // --- Compute barrel origin ---
     const cameraPos = camera.position.clone();
     const cameraDir = new THREE.Vector3(0, 0, -1);
     cameraDir.applyQuaternion(camera.quaternion);
-    const shootPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(0.5));
+    const rightDir = new THREE.Vector3(1, 0, 0);
+    rightDir.applyQuaternion(camera.quaternion);
+    const upDir = new THREE.Vector3(0, 1, 0);
+    upDir.applyQuaternion(camera.quaternion);
+
+    // Barrel tip: offset by gun position (left or right side) + forward
+    const lateralOffset = gun === 'right' ? 0.35 : -0.35;
+    const shootPos = cameraPos.clone()
+      .add(cameraDir.clone().multiplyScalar(0.9))   // 0.6 + 0.3 forward to barrel tip
+      .add(rightDir.clone().multiplyScalar(lateralOffset))
+      .add(upDir.clone().multiplyScalar(-0.35));
 
     const raycaster = new THREE.Raycaster(shootPos, cameraDir);
     let intersects: THREE.Intersection[] = [];
@@ -148,6 +164,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       (beam.material as THREE.Material).dispose();
     }, 100);
 
+    // Muzzle flash from barrel position
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
     playGunShoot();
 
@@ -169,9 +186,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       }
     }
 
-    const newLeftClip = gun === 'left' ? Math.max(0, leftClip - 1) : leftClip;
-    const newRightClip = gun === 'right' ? Math.max(0, rightClip - 1) : rightClip;
-    if (newLeftClip <= 0 && newRightClip <= 0) startAutoReload();
+    if (newLeft <= 0 && newRight <= 0) startAutoReload();
   };
 
   const startAutoReload = () => {
@@ -186,13 +201,15 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     setLeftClip(maxClipSize);
     setRightClip(maxClipSize);
     setCurrentGun('left');
+    setDesktopAmmo(maxClipSize, maxClipSize, 'left', true);
+    if (onClipChange) onClipChange(maxClipSize, maxClipSize, 'left', true);
     try {
       const audioStore = require('../lib/stores/useAudio').useAudio;
       audioStore.getState().playReload();
     } catch {}
-    if (onClipChange) onClipChange(maxClipSize, maxClipSize, 'left', true);
     setTimeout(() => {
       setIsReloading(false);
+      setDesktopAmmo(maxClipSize, maxClipSize, 'left', false);
       if (onClipChange) onClipChange(maxClipSize, maxClipSize, 'left', false);
     }, 100);
   };
@@ -282,32 +299,30 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     const handleMouseDown = (event: MouseEvent) => {
       const currentTime = Date.now();
-      const currentWeapon = weaponRef.current;
+      const currentWeapon = weaponRef.current; // ref avoids stale closure
 
       if (event.button === 0) {
-        // Left click: shoot only in gun mode
-        if (currentWeapon === 'gun') {
-          if (currentTime > lastShot.current + shotCooldown) {
-            fireDesktopBullet();
-            lastShot.current = currentTime;
-          }
-        }
-        // In sword mode: left click does nothing (avoids click-to-look conflict)
-      } else if (event.button === 2) {
-        // Right click: swing only in sword mode
+        // Left click: active weapon action
         if (currentWeapon === 'sword') {
+          // Swing sword
           if (currentTime > lastSwordSwing.current + swingCooldown && !isSwinging) {
             setIsSwinging(true);
             setSwingingHand(currentSwordHand);
             lastSwordSwing.current = currentTime;
             if (onSwordSwing) onSwordSwing(currentSwordHand);
           }
+        } else if (currentWeapon === 'gun') {
+          // Fire gun
+          if (currentTime > lastShot.current + shotCooldown) {
+            fireDesktopBullet();
+            lastShot.current = currentTime;
+          }
         }
       }
+      // Right click: no action (context menu is already suppressed)
     };
 
     const handleWheel = (event: WheelEvent) => {
-      // Scroll up (negative deltaY) = sword, scroll down = gun; or just toggle
       if (event.deltaY < 0) {
         switchWeapon('sword');
       } else {
@@ -421,6 +436,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         activeWeapon={weaponState}
         onSwingComplete={() => setIsSwinging(false)}
         isVisible={!isVRPresented}
+        recoilSignal={shotCount}
       />
     </>
   );
