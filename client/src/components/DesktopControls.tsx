@@ -558,7 +558,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     // Wall collision (basic bounds checking)
     const bounds = 95; // Room boundaries
     camera.position.x = Math.max(-bounds, Math.min(bounds, camera.position.x));
-    camera.position.z = Math.max(-95, Math.min(5, camera.position.z));
+    camera.position.z = Math.max(-95, Math.min(1, camera.position.z));
     
     // Ceiling check
     camera.position.y = Math.min(18, camera.position.y);

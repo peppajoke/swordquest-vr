@@ -81,7 +81,7 @@ function App() {
         shadows
         style={{ display: 'block', width: '100%', height: '100%' }}
         camera={{
-          position: [0, 1.6, 3],
+          position: [0, 1.6, -5],
           fov: 75,
           near: 0.1,
           far: 1000,
