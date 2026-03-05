@@ -57,17 +57,7 @@ export default function DesktopSwordVisual({
 
     // ---- SWORD ----
     if (swordGroupRef.current) {
-      const swordPos = cameraPos.clone()
-        .add(cameraDir.clone().multiplyScalar(0.6))
-        .add(rightDir.clone().multiplyScalar(hand === 'left' ? -0.35 : 0.35))
-        .add(upDir.clone().multiplyScalar(-0.35));
-      swordGroupRef.current.position.copy(swordPos);
-
-      // Align sword base rotation to camera
-      swordGroupRef.current.quaternion.copy(camera.quaternion);
-
       if (isSwinging && !isSwingActive.current) {
-        // New swing starting — record direction
         isSwingActive.current = true;
         swingTime.current = 0;
         swingCount.current += 1;
@@ -76,37 +66,61 @@ export default function DesktopSwordVisual({
       if (isSwingActive.current) {
         swingTime.current += deltaTime;
         const progress = Math.min(swingTime.current / swingDuration, 1);
-        swingProgress.current = progress;
 
-        // Smooth ease: natural acceleration + deceleration
+        // Smooth ease in/out
         const smoothProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
 
-        // dir = 1 → leftward sweep (even swings), dir = -1 → rightward sweep (odd swings)
+        // Alternate direction each swing: even = right-to-left, odd = left-to-right
         const dir = swingCount.current % 2 === 0 ? 1 : -1;
 
-        // Apply rotations on top of camera quaternion (already set)
-        const swingRotation = new THREE.Euler(
-          -Math.PI / 8,                               // slight downward tilt, constant
-          dir * (1.2 - smoothProgress * 2.4),         // sweeps from +1.2 to -1.2 (or reverse)
-          dir * (smoothProgress - 0.5) * 0.4,         // subtle roll
+        // The sword hand travels in a wide arc across the screen.
+        // arcAngle goes from one side to the other (-70° to +70°)
+        const arcSpan = Math.PI * 0.75; // total sweep angle (135°)
+        const arcAngle = dir * (arcSpan * 0.5 - smoothProgress * arcSpan);
+
+        // Hand position: orbiting around a point 0.5 units in front of the camera
+        // at arm's length (0.55 units), sweeping left-to-right
+        const armLength = 0.55;
+        const handX = Math.sin(arcAngle) * armLength;
+        const handZ = Math.cos(arcAngle) * armLength * 0.4; // slight depth variation
+        const handY = -0.3 - Math.abs(Math.sin(arcAngle)) * 0.1; // dips slightly at center
+
+        const swordPos = cameraPos.clone()
+          .add(cameraDir.clone().multiplyScalar(0.5 + handZ))
+          .add(rightDir.clone().multiplyScalar(handX))
+          .add(upDir.clone().multiplyScalar(handY));
+
+        swordGroupRef.current.position.copy(swordPos);
+
+        // Rotate blade to point ALONG the arc (tangent to the sweep)
+        // Tangent angle = arcAngle + 90° (perpendicular to radius)
+        swordGroupRef.current.quaternion.copy(camera.quaternion);
+        const bladeAngle = arcAngle + Math.PI / 2; // blade faces direction of travel
+        const slashRot = new THREE.Euler(
+          -Math.PI / 10,        // slight downward tilt
+          -bladeAngle * dir,    // blade points in direction of travel
+          dir * 0.3,            // slight roll into the slash
           'YXZ',
         );
-        const swingQuat = new THREE.Quaternion();
-        swingQuat.setFromEuler(swingRotation);
-        swordGroupRef.current.quaternion.multiply(swingQuat);
+        const slashQuat = new THREE.Quaternion().setFromEuler(slashRot);
+        swordGroupRef.current.quaternion.multiply(slashQuat);
 
         if (progress >= 1) {
           isSwingActive.current = false;
           swingTime.current = 0;
-          swingProgress.current = 0;
           onSwingComplete();
         }
-      } else if (!isSwinging && !isSwingActive.current) {
-        // Idle: sword points forward-down at hand level
-        const idleRotation = new THREE.Euler(-Math.PI / 8, hand === 'left' ? Math.PI / 6 : -Math.PI / 6, 0, 'YXZ');
-        const idleQuat = new THREE.Quaternion();
-        idleQuat.setFromEuler(idleRotation);
-        swordGroupRef.current.quaternion.multiply(idleQuat);
+      } else {
+        // Idle: sword rests at hip-right (or hip-left), pointing forward
+        const idleX = hand === 'left' ? -0.35 : 0.35;
+        const swordPos = cameraPos.clone()
+          .add(cameraDir.clone().multiplyScalar(0.5))
+          .add(rightDir.clone().multiplyScalar(idleX))
+          .add(upDir.clone().multiplyScalar(-0.35));
+        swordGroupRef.current.position.copy(swordPos);
+        swordGroupRef.current.quaternion.copy(camera.quaternion);
+        const idleRot = new THREE.Euler(-Math.PI / 10, hand === 'left' ? Math.PI / 8 : -Math.PI / 8, 0, 'YXZ');
+        swordGroupRef.current.quaternion.multiply(new THREE.Quaternion().setFromEuler(idleRot));
         swingProgress.current = 0;
       }
     }

@@ -15,7 +15,7 @@ import { useAudio } from '../lib/stores/useAudio';
 
 export default function VRGame() {
   const { scene } = useThree();
-  const { isPresenting: isVRPresenting } = useXR();
+  const isVRPresenting = !!useXR((s) => s.session);
   const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 

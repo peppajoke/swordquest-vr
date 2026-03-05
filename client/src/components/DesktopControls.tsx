@@ -15,7 +15,7 @@ interface DesktopControlsProps {
 
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
-  const { isPresenting: isVRPresented } = useXR();
+  const isVRPresented = !!useXR((s) => s.session);
   const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
 
