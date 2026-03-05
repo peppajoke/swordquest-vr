@@ -89,6 +89,8 @@ export default function Enemy({ type, position }: EnemyProps) {
       // Award points based on enemy type
       const points = type === "boss" ? 500 : type === "heavy" ? 100 : 50;
       console.log(`💀 ${type.toUpperCase()} defeated! +${points} points`);
+      // Track kill for HUD counter + combo
+      useVRGame.getState().addKill();
     }
 
     // Handle berserker rage mode

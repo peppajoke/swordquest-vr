@@ -15,7 +15,8 @@ export default function DesktopUI({
   isReloading = false,
 }: DesktopUIProps) {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel } = useVRGame();
+  const [comboPulse, setComboPulse] = useState(false);
+  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon } = useVRGame();
 
   // Always use store values — DesktopControls keeps them live via setDesktopAmmo
   const leftClipDisplay = desktopLeftClip;
@@ -30,6 +31,15 @@ export default function DesktopUI({
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     return () => document.removeEventListener('pointerlockchange', handlePointerLockChange);
   }, []);
+
+  // Pulse effect for high combos
+  useEffect(() => {
+    if (comboCount > 3) {
+      setComboPulse(true);
+      const t = setTimeout(() => setComboPulse(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [comboCount]);
 
   return (
     <>
@@ -48,6 +58,61 @@ export default function DesktopUI({
         }}
       >
         ⊕
+      </div>
+
+      {/* Kill Counter + Stats Panel (top-left) */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '20px',
+          left: '20px',
+          color: 'white',
+          fontFamily: 'monospace',
+          fontSize: '13px',
+          backgroundColor: 'rgba(0,0,0,0.65)',
+          padding: '8px 12px',
+          borderRadius: '5px',
+          zIndex: 1000,
+          pointerEvents: 'none',
+          lineHeight: '1.7',
+          minWidth: '140px',
+        }}
+      >
+        {/* Kills */}
+        <div style={{ color: '#cccccc' }}>
+          ☠️ Kills: <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{killCount}</span>
+        </div>
+
+        {/* Combo — only show if active */}
+        {comboCount > 1 && (
+          <div style={{
+            color: comboCount > 3 ? (comboPulse ? '#ffff00' : '#ffcc00') : '#ffdd88',
+            fontWeight: comboCount > 3 ? 'bold' : 'normal',
+            textShadow: comboCount > 3 ? '0 0 8px #ffcc00' : 'none',
+            transition: 'all 0.15s ease',
+          }}>
+            ⚡ Combo: x{comboCount}{comboCount > 3 ? ' 🔥' : ''}
+          </div>
+        )}
+
+        {/* Divider */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', margin: '4px 0' }} />
+
+        {/* Player Stats */}
+        <div style={{ color: '#aaaaaa', fontSize: '12px' }}>
+          STR <span style={{ color: '#ff8866' }}>{playerStats.str}</span>
+          {' │ '}
+          AGI <span style={{ color: '#88ff88' }}>{playerStats.agi}</span>
+          {' │ '}
+          VIT <span style={{ color: '#6699ff' }}>{playerStats.vit}</span>
+        </div>
+
+        {/* Active weapon name */}
+        <div style={{ color: '#88ccff', fontSize: '12px' }}>
+          {activeWeapon === 'sword'
+            ? `⚔️ ${activeMeleeWeapon}`
+            : `🔫 ${activeRangedWeapon}`}
+        </div>
       </div>
 
       {/* HUD Panel */}

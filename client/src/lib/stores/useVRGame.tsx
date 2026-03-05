@@ -42,6 +42,10 @@ interface VRGameState {
   inDeathRoom: boolean;
   gameStarted: boolean;
   gameResetKey: number;
+  killCount: number;
+  comboCount: number;
+  comboTimer: number;
+  runStartTime: number;
   
   // Endless runner mechanics
   gameSpeed: number;
@@ -66,6 +70,8 @@ interface VRGameState {
   updateMovement: (deltaTime: number) => void;
   spawnNewTargets: () => void;
   cleanupOldTargets: (playerZ: number) => void;
+  addKill: () => void;
+  resetRun: () => void;
   setHealth: (health: number) => void;
   takeDamage: (damage: number) => void;
   heal: (amount: number) => void;
@@ -125,6 +131,8 @@ export const useVRGame = create<VRGameState>()(
     inDeathRoom: false,
     gameStarted: true,
     gameResetKey: 0,
+    killCount: 0,
+    runStartTime: Date.now(),
     activeWeapon: 'sword' as 'sword' | 'gun',
     isBoostActive: false,
     weaponLocked: false,
@@ -137,7 +145,9 @@ export const useVRGame = create<VRGameState>()(
     desktopRightClip: 12,
     desktopCurrentGun: 'left' as 'left' | 'right',
     desktopIsReloading: false,
-    
+    comboCount: 0,
+    comboTimer: 0,
+
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
     baseSpeed: 0.02,
@@ -166,7 +176,9 @@ export const useVRGame = create<VRGameState>()(
         lastSpawnZ: -10,
         nextTargetId: 7,
         inDeathRoom: false,
-        gameStarted: true
+        gameStarted: true,
+        killCount: 0,
+        runStartTime: Date.now(),
       });
     },
 
@@ -176,12 +188,13 @@ export const useVRGame = create<VRGameState>()(
       
       if (target && !target.destroyed) {
         
-        set({
+        set(state => ({
           targets: targets.map(t => 
             t.id === id ? { ...t, destroyed: true } : t
           ),
-          score: score + 10
-        });
+          score: score + 10,
+          killCount: state.killCount + 1,
+        }));
 
         // Play sword hit sound - direct access to avoid async issues
         try {
@@ -379,6 +392,10 @@ export const useVRGame = create<VRGameState>()(
       }
     },
 
+    incrementKillCount: () => {
+      set(state => ({ killCount: state.killCount + 1 }));
+    },
+
     setHealth: (health: number) => {
       const { maxHealth } = get();
       set({ health: Math.max(0, Math.min(maxHealth, health)) });
@@ -394,11 +411,7 @@ export const useVRGame = create<VRGameState>()(
       set({ health: newHealth, isDead, gameOver: isDead });
       
       if (isDead) {
-        console.log('💀 GAME OVER - Rebooting in 3 seconds...');
-        // Auto-reboot after 3 seconds
-        setTimeout(() => {
-          get().respawn();
-        }, 3000);
+        console.log('💀 GAME OVER');
       } else {
         console.log(`💥 Took ${damage} damage! Health: ${newHealth}/${state.maxHealth}`);
       }
@@ -420,6 +433,8 @@ export const useVRGame = create<VRGameState>()(
         gameOver: false,
         score: 0,
         inDeathRoom: false,
+        killCount: 0,
+        runStartTime: Date.now(),
         gameResetKey: (state.gameResetKey || 0) + 1 // Force enemy reset
       }));
       console.log('🔄 Game Reset! All enemies restored.');
@@ -463,7 +478,9 @@ export const useVRGame = create<VRGameState>()(
         health: 100,
         gameOver: false,
         score: 0,
-        gameStarted: true
+        gameStarted: true,
+        killCount: 0,
+        runStartTime: Date.now(),
       });
       console.log('🎮 Game Started! Welcome to VR Sword Fighter!');
     },
@@ -485,6 +502,21 @@ export const useVRGame = create<VRGameState>()(
 
     setDesktopAmmo: (left: number, right: number, gun: 'left' | 'right', reloading: boolean) => {
       set({ desktopLeftClip: left, desktopRightClip: right, desktopCurrentGun: gun, desktopIsReloading: reloading });
+    },
+
+    addKill: () => {
+      const now = Date.now();
+      const { killCount, comboCount, comboTimer } = get();
+      const withinCombo = now - comboTimer < 3000;
+      set({
+        killCount: killCount + 1,
+        comboCount: withinCombo ? comboCount + 1 : 1,
+        comboTimer: now,
+      });
+    },
+
+    resetRun: () => {
+      set({ killCount: 0, comboCount: 0, comboTimer: 0 });
     },
   }))
 );
