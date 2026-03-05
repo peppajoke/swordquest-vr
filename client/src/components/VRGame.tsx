@@ -14,8 +14,15 @@ import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
 export default function VRGame() {
-  const { scene } = useThree();
+  const { scene, camera } = useThree();
   const isVRPresenting = !!useXR((s) => s.session);
+
+  // Set initial camera tilt to look slightly down toward enemies
+  useEffect(() => {
+    if (!isVRPresenting) {
+      camera.rotation.x = -0.18; // ~10° down — eyes on the action
+    }
+  }, []);
   const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 

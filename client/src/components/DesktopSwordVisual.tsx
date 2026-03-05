@@ -24,7 +24,7 @@ export default function DesktopSwordVisual({
   // Sword refs
   const swordGroupRef = useRef<THREE.Group>(null);
   const swingTime = useRef(0);
-  const swingDuration = 0.4; // slow, weighty
+  const swingDuration = 0.28; // snappy but readable
   const isSwingActive = useRef(false);
   const swingProgress = useRef(0);
   const swingCount = useRef(0); // increments each swing; even = left sweep, odd = right sweep
@@ -75,7 +75,7 @@ export default function DesktopSwordVisual({
 
         // The sword hand travels in a wide arc across the screen.
         // arcAngle goes from one side to the other (-70° to +70°)
-        const arcSpan = Math.PI * 0.75; // total sweep angle (135°)
+        const arcSpan = Math.PI * 0.85; // total sweep angle (153°) — wide dramatic slash
         const arcAngle = dir * (arcSpan * 0.5 - smoothProgress * arcSpan);
 
         // Hand position: orbiting around a point 0.5 units in front of the camera
@@ -92,14 +92,15 @@ export default function DesktopSwordVisual({
 
         swordGroupRef.current.position.copy(swordPos);
 
-        // Rotate blade to point ALONG the arc (tangent to the sweep)
-        // Tangent angle = arcAngle + 90° (perpendicular to radius)
+        // Rotate blade:
+        // - Blade stays mostly UPRIGHT (long axis vertical) so the sweep is a real slash
+        // - Small Y nudge: cutting edge leads slightly into the swing direction
+        // - Z roll: blade tilts right at start, left at end (follows the arc)
         swordGroupRef.current.quaternion.copy(camera.quaternion);
-        const bladeAngle = arcAngle + Math.PI / 2; // blade faces direction of travel
         const slashRot = new THREE.Euler(
-          -Math.PI / 10,        // slight downward tilt
-          -bladeAngle * dir,    // blade points in direction of travel
-          dir * 0.3,            // slight roll into the slash
+          -Math.PI / 8,              // tilt blade slightly forward/down
+          dir * arcAngle * 0.25,     // small Y follow — edge leads into the swing
+          dir * -arcAngle * 0.6,     // Z roll: tilts into start position, follows through
           'YXZ',
         );
         const slashQuat = new THREE.Quaternion().setFromEuler(slashRot);
