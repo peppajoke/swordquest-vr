@@ -80,13 +80,13 @@ export default function DesktopSwordVisual({
 
         // Hand position: orbiting around a point 0.5 units in front of the camera
         // at arm's length (0.55 units), sweeping left-to-right
-        const armLength = 0.55;
+        const armLength = 0.7;
         const handX = Math.sin(arcAngle) * armLength;
-        const handZ = Math.cos(arcAngle) * armLength * 0.4; // slight depth variation
-        const handY = -0.3 - Math.abs(Math.sin(arcAngle)) * 0.1; // dips slightly at center
+        const handZ = Math.cos(arcAngle) * armLength * 0.3;
+        const handY = -0.35 - Math.abs(Math.sin(arcAngle)) * 0.1;
 
         const swordPos = cameraPos.clone()
-          .add(cameraDir.clone().multiplyScalar(0.5 + handZ))
+          .add(cameraDir.clone().multiplyScalar(0.9 + handZ))
           .add(rightDir.clone().multiplyScalar(handX))
           .add(upDir.clone().multiplyScalar(handY));
 
@@ -113,9 +113,9 @@ export default function DesktopSwordVisual({
         }
       } else {
         // Idle: sword rests at hip-right (or hip-left), pointing forward
-        const idleX = hand === 'left' ? -0.35 : 0.35;
+        const idleX = hand === 'left' ? -0.45 : 0.45;
         const swordPos = cameraPos.clone()
-          .add(cameraDir.clone().multiplyScalar(0.5))
+          .add(cameraDir.clone().multiplyScalar(0.9))
           .add(rightDir.clone().multiplyScalar(idleX))
           .add(upDir.clone().multiplyScalar(-0.35));
         swordGroupRef.current.position.copy(swordPos);
