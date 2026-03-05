@@ -74,6 +74,12 @@ interface VRGameState {
   enterDeathRoom: () => void;
   exitDeathRoom: () => void;
   startGame: () => void;
+
+  // Desktop mode state
+  activeWeapon: 'sword' | 'gun';
+  isBoostActive: boolean;
+  setActiveWeapon: (weapon: 'sword' | 'gun') => void;
+  setBoostActive: (active: boolean) => void;
 }
 
 const createInitialTargets = (): Target[] => [];
@@ -97,6 +103,8 @@ export const useVRGame = create<VRGameState>()(
     inDeathRoom: false,
     gameStarted: true,
     gameResetKey: 0,
+    activeWeapon: 'sword' as 'sword' | 'gun',
+    isBoostActive: false,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -426,6 +434,14 @@ export const useVRGame = create<VRGameState>()(
         gameStarted: true
       });
       console.log('🎮 Game Started! Welcome to VR Sword Fighter!');
-    }
+    },
+
+    setActiveWeapon: (weapon: 'sword' | 'gun') => {
+      set({ activeWeapon: weapon });
+    },
+
+    setBoostActive: (active: boolean) => {
+      set({ isBoostActive: active });
+    },
   }))
 );

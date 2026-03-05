@@ -104,18 +104,16 @@ export default function VRGame() {
       <VRControllers onFuelChange={setFuel} onAmmoChange={setAmmo} onLeftClipChange={setLeftClip} onRightClipChange={setRightClip} onJetpackChange={setJetpackEnabled} />
       
       {/* Desktop Controls - WASD + Mouse alternative to VR */}
-      <DesktopControls 
+      <DesktopControls
         onShoot={(hand) => {
           // desktop gun fired
         }}
         onSwordSwing={(hand) => {
           setCurrentSwordHand(hand === 'left' ? 'right' : 'left');
         }}
-        onJetpackToggle={setJetpackEnabled}
-        onClipChange={(leftClipVal, rightClipVal, currentGunVal, isReloadingVal) => {
+        onClipChange={(leftClipVal, rightClipVal, _currentGunVal, _isReloadingVal) => {
           setLeftClip(leftClipVal);
           setRightClip(rightClipVal);
-          // Note: currentGun and isReloading states are managed in DesktopControls only
         }}
       />
       

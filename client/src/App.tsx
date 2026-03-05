@@ -99,10 +99,7 @@ function App() {
       </Canvas>
       
       {/* Desktop UI Overlay */}
-      <DesktopUI 
-        fuel={fuel}
-        jetpackEnabled={jetpackEnabled}
-        currentSwordHand={currentSwordHand}
+      <DesktopUI
         leftClip={leftClip}
         rightClip={rightClip}
         currentGun={currentGun}
