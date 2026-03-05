@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
+import { useXR } from '@react-three/xr';
 import VRControllers from './VRControllers';
 import GameObjects from './GameObjects';
 import SwordEffects from './SwordEffects';
@@ -14,6 +15,7 @@ import { useAudio } from '../lib/stores/useAudio';
 
 export default function VRGame() {
   const { scene } = useThree();
+  const { isPresenting: isVRPresenting } = useXR();
   const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
@@ -121,7 +123,8 @@ export default function VRGame() {
       <PlayerCollisionDetector />
       
       {/* VR Debug Display with HP/Fuel/Ammo - Visible in Quest 3 */}
-      <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />
+      {/* VRDebugDisplay only in VR — desktop uses DesktopUI HTML overlay instead */}
+      {isVRPresenting && <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />}
       
       {/* Death Overlay */}
       {isDead && (
