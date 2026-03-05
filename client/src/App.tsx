@@ -46,30 +46,8 @@ function App() {
         overflow: "hidden",
       }}
     >
-      {/* VR Entry Button */}
-      <div
-        style={{
-          position: "absolute",
-          top: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 1000,
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          padding: "10px 20px",
-          borderRadius: "8px",
-          color: "white",
-          fontFamily: "Inter, sans-serif",
-        }}
-      >
-        <h1 style={{ margin: "0 0 10px 0", fontSize: "24px" }}>
-          VR Sword Fighting
-        </h1>
-        {/* Only show VR-specific hint when in VR mode */}
-        {isVRPresenting && (
-          <p style={{ margin: "0 0 15px 0", fontSize: "14px" }}>
-            Squeeze controllers to spawn swords!
-          </p>
-        )}
+      {/* VR Entry Button — minimal, top right */}
+      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 1000 }}>
         <VRButton store={store} />
       </div>
 

@@ -67,7 +67,7 @@ export default function DesktopUI({
           lineHeight: '1.6',
         }}
       >
-        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>🎮 DESKTOP MODE</div>
+
 
         {/* Weapon indicator */}
         <div style={{
