@@ -84,7 +84,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const fireDesktopBullet = () => {
     if (isReloading) return;
     if (leftClip <= 0 && rightClip <= 0) {
-      startAutoReload();
+      reloadGuns(); // immediate reload on empty
       return;
     }
 
@@ -196,22 +196,25 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   };
 
   const reloadGuns = () => {
-    setIsReloading(true);
+    if (isReloading) return; // already reloading
     if (reloadTimeout) { clearTimeout(reloadTimeout); setReloadTimeout(null); }
-    setLeftClip(maxClipSize);
-    setRightClip(maxClipSize);
-    setCurrentGun('left');
-    setDesktopAmmo(maxClipSize, maxClipSize, 'left', true);
-    if (onClipChange) onClipChange(maxClipSize, maxClipSize, 'left', true);
+    setIsReloading(true);
+    setDesktopAmmo(0, 0, 'left', true);
+    if (onClipChange) onClipChange(0, 0, 'left', true);
+    // Play reload sound immediately
     try {
       const audioStore = require('../lib/stores/useAudio').useAudio;
       audioStore.getState().playReload();
     } catch {}
+    // After 1.5s (sound duration), refill clips
     setTimeout(() => {
+      setLeftClip(maxClipSize);
+      setRightClip(maxClipSize);
+      setCurrentGun('left');
       setIsReloading(false);
       setDesktopAmmo(maxClipSize, maxClipSize, 'left', false);
       if (onClipChange) onClipChange(maxClipSize, maxClipSize, 'left', false);
-    }, 100);
+    }, 1500);
   };
 
   const checkSwordDamage = () => {
