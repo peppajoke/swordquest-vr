@@ -107,6 +107,8 @@ function getEnemySize(enemyType: string): [number, number, number] {
 
 export default function Enemy({ type, position }: EnemyProps) {
   const meshRef = useRef<THREE.Group>(null);
+  const isDeadRef = useRef(false);         // always-current, no stale-closure risk
+  const [fullyRemoved, setFullyRemoved] = useState(false); // triggers final unmount
   const [enemyState, setEnemyState] = useState<EnemyState>(() => ({
     health: EnemyAIService.getMaxHealth(type),
     maxHealth: EnemyAIService.getMaxHealth(type),
@@ -139,12 +141,14 @@ export default function Enemy({ type, position }: EnemyProps) {
         teleportCooldown: 0
       });
       setIsAttacking(false);
+      isDeadRef.current = false;
+      setFullyRemoved(false);
       console.log(`🔄 ${type} enemy reset!`);
     }
   }, [gameResetKey, type, position]);
 
   function takeDamage(damage: number) {
-    if (enemyState.isDead) return;
+    if (isDeadRef.current) return;
 
     const currentTime = Date.now();
     const enemyDied = EnemyAIService.takeDamage(enemyState, damage, currentTime);
@@ -206,6 +210,7 @@ export default function Enemy({ type, position }: EnemyProps) {
       const points = type === "boss" ? 500 : type === "heavy" ? 100 : 50;
       console.log(`💀 ${type.toUpperCase()} defeated! +${points} points`);
       // Track kill for HUD counter + combo
+      isDeadRef.current = true; // prevent re-entry before React re-renders
       useVRGame.getState().addKill();
       import("../lib/stores/useAudio").then(({ useAudio }) => {
         useAudio.getState().playKill();
@@ -317,9 +322,9 @@ export default function Enemy({ type, position }: EnemyProps) {
           }
         });
 
-        // Remove completely after dissolving
+        // Trigger React unmount when fully dissolved
         if (scale <= 0) {
-          scene.remove(meshRef.current);
+          setFullyRemoved(true);
         }
       }
       return;
@@ -603,7 +608,8 @@ export default function Enemy({ type, position }: EnemyProps) {
     console.log(`💥 ${type} EXPLOSION! ${damage} AOE damage`);
   }
 
-  if (enemyState.isDead) return null;
+  // Only unmount after the death animation fully completes (scale → 0)
+  if (fullyRemoved) return null;
 
   const color = getEnemyColor(type);
 
