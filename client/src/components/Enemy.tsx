@@ -170,6 +170,37 @@ export default function Enemy({ type, position }: EnemyProps) {
       // Mark death start time for animation
       if (meshRef.current) {
         meshRef.current.userData.deathStartTime = currentTime;
+
+        // Spawn drop orbs at enemy world position
+        const worldPos = new THREE.Vector3();
+        meshRef.current.getWorldPosition(worldPos);
+        const orbPos: [number, number, number] = [worldPos.x, worldPos.y, worldPos.z];
+        const { addDropOrb } = useVRGame.getState();
+        const mkId = (suffix: string) => `orb_${Date.now()}_${Math.random().toString(36).slice(2)}_${suffix}`;
+
+        if (type === 'boss') {
+          // Boss always drops both
+          addDropOrb({ id: mkId('hp'), type: 'health', position: [orbPos[0] - 0.4, orbPos[1], orbPos[2]], spawnTime: currentTime });
+          addDropOrb({ id: mkId('xp'), type: 'xp', position: [orbPos[0] + 0.4, orbPos[1], orbPos[2]], spawnTime: currentTime });
+        } else if (type === 'grunt' || type === 'wasp') {
+          // Grunt/wasp: XP only (70% chance)
+          if (Math.random() < 0.7) {
+            addDropOrb({ id: mkId('xp'), type: 'xp', position: orbPos, spawnTime: currentTime });
+          }
+        } else if (type === 'heavy') {
+          // Heavy: health orbs (60% chance)
+          if (Math.random() < 0.6) {
+            addDropOrb({ id: mkId('hp'), type: 'health', position: orbPos, spawnTime: currentTime });
+          }
+        } else {
+          // Others: 30% health, 50% XP, 20% nothing
+          const roll = Math.random();
+          if (roll < 0.3) {
+            addDropOrb({ id: mkId('hp'), type: 'health', position: orbPos, spawnTime: currentTime });
+          } else if (roll < 0.8) {
+            addDropOrb({ id: mkId('xp'), type: 'xp', position: orbPos, spawnTime: currentTime });
+          }
+        }
       }
       // Award points based on enemy type
       const points = type === "boss" ? 500 : type === "heavy" ? 100 : 50;

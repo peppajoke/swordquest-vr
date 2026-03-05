@@ -14,6 +14,7 @@ import { useVRGame } from '../lib/stores/useVRGame';
 import { getStartingStats } from '../lib/weapons';
 import { useAudio } from '../lib/stores/useAudio';
 import WeaponPickup from './WeaponPickup';
+import DropOrb from './DropOrb';
 import { registerTestHarness } from '../lib/testHarness';
 
 interface VRGameProps {
@@ -41,11 +42,12 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
       setPlayerStats(getStartingStats(startWeapon));
     }
   }, []);
-  const { initializeGame, health, maxHealth, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase } = useVRGame();
+  const { initializeGame, health, maxHealth, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase, dropOrbs } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
-    setBoostSound, setGunAmmoSound, setReloadSound 
+    setBoostSound, setGunAmmoSound, setReloadSound,
+    startAmbient, stopAmbient,
   } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
@@ -159,6 +161,17 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
       {/* VRDebugDisplay only in VR — desktop uses DesktopUI HTML overlay instead */}
       {isVRPresenting && <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />}
       
+      {/* Drop Orbs - rendered in world space outside worldGroup */}
+      {dropOrbs.map(orb => (
+        <DropOrb
+          key={orb.id}
+          id={orb.id}
+          type={orb.type}
+          position={orb.position}
+          spawnTime={orb.spawnTime}
+        />
+      ))}
+
       {/* Death is handled by DeathScreen HTML overlay in App.tsx */}
     </>
   );

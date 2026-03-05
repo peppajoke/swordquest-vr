@@ -66,6 +66,60 @@ export const useAudio = create<AudioState>((set, get) => ({
   reloadSound: null,
   currentAccelerationSound: null,
   isMuted: false, // Audio enabled by default
+
+  _ambientCtx: null,
+  _ambientOsc1: null,
+  _ambientOsc2: null,
+  _ambientGain: null,
+  _ambientStarted: false,
+
+  startAmbient: () => {
+    const { _ambientStarted, isMuted } = get();
+    if (_ambientStarted || isMuted) return;
+
+    try {
+      const ctx = new AudioContext();
+
+      // Lowpass filter — keeps it soft and dark
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 400;
+
+      // Master gain — very quiet
+      const gain = ctx.createGain();
+      gain.gain.value = 0.04;
+
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      // Two detuned sines — slight beating = tension
+      const osc1 = ctx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.value = 55;
+      osc1.connect(filter);
+      osc1.start();
+
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = 57.5;
+      osc2.connect(filter);
+      osc2.start();
+
+      set({ _ambientCtx: ctx, _ambientOsc1: osc1, _ambientOsc2: osc2, _ambientGain: gain, _ambientStarted: true });
+    } catch (e) {
+      // Web Audio not available — silently skip
+    }
+  },
+
+  stopAmbient: () => {
+    const { _ambientCtx, _ambientOsc1, _ambientOsc2 } = get();
+    try {
+      _ambientOsc1?.stop();
+      _ambientOsc2?.stop();
+      _ambientCtx?.close();
+    } catch (e) {}
+    set({ _ambientCtx: null, _ambientOsc1: null, _ambientOsc2: null, _ambientGain: null, _ambientStarted: false });
+  },
   
   setBackgroundMusic: (music) => set({ backgroundMusic: music }),
   setHitSound: (sound) => set({ hitSound: sound }),
