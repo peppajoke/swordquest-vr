@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import * as THREE from 'three';
+import type { MeleeWeaponId, RangedWeaponId } from '../weapons';
 
 interface Target {
   id: string;
@@ -31,6 +32,13 @@ interface DropOrb {
   type: 'health' | 'xp';
   position: [number, number, number];
   spawnTime: number;
+}
+
+interface DroppedWeapon {
+  id: string;
+  type: 'melee' | 'ranged';
+  weaponId: MeleeWeaponId | RangedWeaponId;
+  position: [number, number, number];
 }
 
 interface VRGameState {
@@ -114,7 +122,24 @@ interface VRGameState {
   setWeaponLocked: (locked: boolean) => void;
   setPickupPhase: (active: boolean) => void;
 
-  // Weapon loadout + player stats
+  // 4-slot weapon inventory
+  weaponInventory: {
+    melee: [MeleeWeaponId | null, MeleeWeaponId | null];
+    ranged: [RangedWeaponId | null, RangedWeaponId | null];
+  };
+  activeMeleeSlot: 0 | 1;
+  activeRangedSlot: 0 | 1;
+  getActiveMelee: () => MeleeWeaponId | null;
+  getActiveRanged: () => RangedWeaponId | null;
+  pickupWeapon: (type: 'melee' | 'ranged', weaponId: MeleeWeaponId | RangedWeaponId) => boolean;
+  dropWeapon: (type: 'melee' | 'ranged', slot: 0 | 1) => MeleeWeaponId | RangedWeaponId | null;
+  setActiveMeleeSlot: (slot: 0 | 1) => void;
+  setActiveRangedSlot: (slot: 0 | 1) => void;
+  // Dropped weapon pickups (spawned when player drops)
+  droppedWeapons: DroppedWeapon[];
+  addDroppedWeapon: (weapon: DroppedWeapon) => void;
+  removeDroppedWeapon: (id: string) => void;
+  // Legacy compat — kept for upgrade screen / VR path
   activeMeleeWeapon: string;
   activeRangedWeapon: string;
   playerStats: { str: number; agi: number; vit: number };
@@ -162,6 +187,13 @@ export const useVRGame = create<VRGameState>()(
     isBoostActive: false,
     weaponLocked: false,
     pickupPhase: true,
+    weaponInventory: {
+      melee: [null, null] as [MeleeWeaponId | null, MeleeWeaponId | null],
+      ranged: [null, null] as [RangedWeaponId | null, RangedWeaponId | null],
+    },
+    activeMeleeSlot: 0 as 0 | 1,
+    activeRangedSlot: 0 as 0 | 1,
+    droppedWeapons: [] as DroppedWeapon[],
     activeMeleeWeapon: 'longsword',
     activeRangedWeapon: 'pistols',
     playerStats: { str: 0, agi: 0, vit: 0 },
@@ -510,7 +542,7 @@ export const useVRGame = create<VRGameState>()(
       console.log('🎮 Game Started! Welcome to VR Sword Fighter!');
     },
 
-    setActiveWeapon: (weapon: 'sword' | 'gun') => {
+    setActiveWeapon: (weapon: 'sword' | 'gun' | null) => {
       set({ activeWeapon: weapon });
     },
 
@@ -520,6 +552,51 @@ export const useVRGame = create<VRGameState>()(
     setWeaponLocked: (locked: boolean) => { set({ weaponLocked: locked }); },
     setPickupPhase: (active: boolean) => { set({ pickupPhase: active }); },
 
+    getActiveMelee: () => {
+      const { weaponInventory, activeMeleeSlot } = get();
+      return weaponInventory.melee[activeMeleeSlot];
+    },
+    getActiveRanged: () => {
+      const { weaponInventory, activeRangedSlot } = get();
+      return weaponInventory.ranged[activeRangedSlot];
+    },
+    pickupWeapon: (type: 'melee' | 'ranged', weaponId: MeleeWeaponId | RangedWeaponId): boolean => {
+      const { weaponInventory } = get();
+      const slots = weaponInventory[type];
+      const emptyIdx = slots.findIndex(s => s === null);
+      if (emptyIdx === -1) return false; // both slots full
+      const newSlots = [...slots] as [MeleeWeaponId | null, MeleeWeaponId | null] | [RangedWeaponId | null, RangedWeaponId | null];
+      newSlots[emptyIdx] = weaponId as any;
+      set({
+        weaponInventory: {
+          ...weaponInventory,
+          [type]: newSlots,
+        },
+      });
+      return true;
+    },
+    dropWeapon: (type: 'melee' | 'ranged', slot: 0 | 1): MeleeWeaponId | RangedWeaponId | null => {
+      const { weaponInventory } = get();
+      const weaponId = weaponInventory[type][slot];
+      if (weaponId === null) return null;
+      const newSlots = [...weaponInventory[type]] as typeof weaponInventory[typeof type];
+      newSlots[slot] = null;
+      set({
+        weaponInventory: {
+          ...weaponInventory,
+          [type]: newSlots,
+        },
+      });
+      return weaponId;
+    },
+    setActiveMeleeSlot: (slot: 0 | 1) => { set({ activeMeleeSlot: slot }); },
+    setActiveRangedSlot: (slot: 0 | 1) => { set({ activeRangedSlot: slot }); },
+    addDroppedWeapon: (weapon: DroppedWeapon) => {
+      set(state => ({ droppedWeapons: [...state.droppedWeapons, weapon] }));
+    },
+    removeDroppedWeapon: (id: string) => {
+      set(state => ({ droppedWeapons: state.droppedWeapons.filter(w => w.id !== id) }));
+    },
     setActiveMeleeWeapon: (id: string) => { set({ activeMeleeWeapon: id }); },
     setActiveRangedWeapon: (id: string) => { set({ activeRangedWeapon: id }); },
     setPlayerStats: (stats: { str: number; agi: number; vit: number }) => { set({ playerStats: stats }); },

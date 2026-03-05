@@ -34,15 +34,19 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
     if (!isVRPresenting) {
       camera.rotation.x = -0.18;
     }
-    // Dev mode: skip pickup phase, give both weapons
+    // Dev mode: skip pickup phase, give starting weapons in inventory
     if (devMode) {
       setPickupPhase(false);
       setWeaponLocked(false);
       setActiveWeapon(startWeapon);
       setPlayerStats(getStartingStats(startWeapon));
+      // Populate inventory slots for dev mode
+      const store = useVRGame.getState();
+      store.pickupWeapon('melee', 'longsword');
+      store.pickupWeapon('ranged', 'pistols');
     }
   }, []);
-  const { initializeGame, health, maxHealth, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase, dropOrbs } = useVRGame();
+  const { initializeGame, health, maxHealth, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase, dropOrbs, droppedWeapons, removeDroppedWeapon } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
@@ -56,6 +60,11 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   const [rightClip, setRightClip] = useState(12);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
+  // Count of starting pickups taken — when all 4 are picked, end pickupPhase
+  const [startPickupCount, setStartPickupCount] = useState(0);
+  useEffect(() => {
+    if (startPickupCount >= 4) setPickupPhase(false);
+  }, [startPickupCount]);
 
   // Ambient drone — starts on first user interaction (satisfies autoplay policy)
   useEffect(() => {
@@ -143,15 +152,14 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
         <GameObjects />
         <SwordEffects />
 
-        {/* Weapon pickup phase — shown at start until player grabs a weapon */}
+        {/* Starting weapon pickups — 4 choices in a semicircle */}
         {pickupPhase && !isVRPresenting && (
-          <WeaponPickup
-            onPicked={(weapon) => {
-              setActiveWeapon(weapon);
-              setPickupPhase(false);
-              setWeaponLocked(true);
-            }}
-          />
+          <>
+            <WeaponPickup pickupId="start-longsword" weaponType="melee"  weaponId="longsword" position={[-6, 1.4, -15]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-dagger"    weaponType="melee"  weaponId="dagger"    position={[-2, 1.4, -20]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-pistols"   weaponType="ranged" weaponId="pistols"   position={[ 2, 1.4, -20]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-smg"       weaponType="ranged" weaponId="smg"       position={[ 6, 1.4, -15]} onPicked={() => setStartPickupCount(c => c + 1)} />
+          </>
         )}
       </group>
 
@@ -179,6 +187,18 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
       {/* VRDebugDisplay only in VR — desktop uses DesktopUI HTML overlay instead */}
       {isVRPresenting && <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />}
       
+      {/* Dropped weapons — spawned by player pressing G, world-space positions */}
+      {droppedWeapons.map(dw => (
+        <WeaponPickup
+          key={dw.id}
+          pickupId={dw.id}
+          weaponType={dw.type}
+          weaponId={dw.weaponId}
+          position={dw.position}
+          onPicked={(id) => removeDroppedWeapon(id)}
+        />
+      ))}
+
       {/* Drop Orbs - rendered in world space outside worldGroup */}
       {dropOrbs.map(orb => (
         <DropOrb

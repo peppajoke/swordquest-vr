@@ -34,7 +34,9 @@ export default function DesktopWeaponVisual({
   recoilHand = null,
 }: DesktopWeaponVisualProps) {
   const { camera } = useThree();
-  const { activeMeleeWeapon, activeRangedWeapon, playerStats } = useVRGame();
+  const { weaponInventory, activeMeleeSlot, activeRangedSlot, playerStats } = useVRGame();
+  const activeMeleeWeapon = weaponInventory.melee[activeMeleeSlot];
+  const activeRangedWeapon = weaponInventory.ranged[activeRangedSlot];
 
   // Melee swing state
   const meleeGroupRef = useRef<THREE.Group>(null);
@@ -73,7 +75,7 @@ export default function DesktopWeaponVisual({
 
     // ---- MELEE ----
     if (meleeGroupRef.current) {
-      const meleeId = activeMeleeWeapon as MeleeWeaponId;
+      const meleeId = (activeMeleeWeapon ?? 'longsword') as MeleeWeaponId;
       const mCfg = getMeleeWeapon(meleeId) ?? getMeleeWeapon('longsword');
       const swingDuration = computeSwingDuration(mCfg.swingDuration, playerStats.agi);
 
@@ -176,16 +178,16 @@ export default function DesktopWeaponVisual({
 
   if (!isVisible) return null;
 
-  const showMelee = activeWeapon === 'sword';
-  const showGuns = activeWeapon === 'gun';
-  const meleeId = activeMeleeWeapon as MeleeWeaponId;
+  const showMelee = activeWeapon === 'sword' && activeMeleeWeapon !== null;
+  const showGuns = activeWeapon === 'gun' && activeRangedWeapon !== null;
+  const meleeId = (activeMeleeWeapon ?? 'longsword') as MeleeWeaponId;
   const mCfg = (weaponConfig.melee[meleeId] ?? weaponConfig.melee.longsword) as typeof weaponConfig.melee.longsword & {
     axeHead?: boolean; axeHeadWidth?: number; axeHeadHeight?: number; axeHeadDepth?: number;
   };
   const v = mCfg.visual as typeof mCfg.visual & {
     axeHead?: boolean; axeHeadWidth?: number; axeHeadHeight?: number; axeHeadDepth?: number;
   };
-  const rangedId = activeRangedWeapon as RangedWeaponId;
+  const rangedId = (activeRangedWeapon ?? 'pistols') as RangedWeaponId;
   const gCfg = (weaponConfig.ranged[rangedId] ?? weaponConfig.ranged.pistols).visual;
 
   const trailOpacity = isSwingActive.current

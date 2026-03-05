@@ -1,129 +1,149 @@
 /**
- * WeaponPickup — two glowing 3D weapons floating in the room at game start.
- * Walk close to one and it auto-picks up, locking your weapon class for the run.
+ * WeaponPickup — a single floating weapon pickup in 3D space.
+ * Walk close to pick it up (auto-proximity). If inventory is full, glows red briefly.
+ * Renders inside worldGroup (local space) or world space — proximity uses getWorldPosition().
  */
 import { useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
+import type { MeleeWeaponId, RangedWeaponId } from '../lib/weapons';
 
-interface WeaponPickupProps {
-  onPicked: (weapon: 'sword' | 'gun') => void;
+export interface WeaponPickupProps {
+  pickupId: string;
+  weaponType: 'melee' | 'ranged';
+  weaponId: MeleeWeaponId | RangedWeaponId;
+  position: [number, number, number];
+  onPicked?: (id: string) => void;
 }
 
 const PICKUP_RADIUS = 2.0;
 
-export default function WeaponPickup({ onPicked }: WeaponPickupProps) {
-  const { camera } = useThree();
-  const { setActiveWeapon, setPlayerStats } = useVRGame();
-  const [picked, setPicked] = useState(false);
-  const swordRef = useRef<THREE.Group>(null);
-  const gunRef = useRef<THREE.Group>(null);
-  const t = useRef(0);
+// Distinct colors per weapon
+const WEAPON_COLORS: Record<string, string> = {
+  longsword:  '#c0a040',
+  dagger:     '#40c080',
+  shortsword: '#80c040',
+  battleaxe:  '#c06030',
+  greatsword: '#9040c0',
+  warhammer:  '#c04040',
+  pistols:    '#4a90e2',
+  smg:        '#40d0d0',
+  shotgun:    '#e08040',
+  sniper:     '#60a0ff',
+};
 
-  // Positions in LOCAL space of worldGroup (which is at z=10)
-  // World z = local z + 10. Camera at world z=-5, so local z=-25 = world z=-15 (in front)
-  const swordLocalPos = new THREE.Vector3(-5, 1.4, -25);
-  const gunLocalPos   = new THREE.Vector3( 5, 1.4, -25);
-  // World positions for proximity check (camera.position is world space)
-  const swordWorldPos = new THREE.Vector3(-5, 1.4, -25 + 10); // z=-15
-  const gunWorldPos   = new THREE.Vector3( 5, 1.4, -25 + 10); // z=-15
+export default function WeaponPickup({
+  pickupId,
+  weaponType,
+  weaponId,
+  position,
+  onPicked,
+}: WeaponPickupProps) {
+  const { camera } = useThree();
+  const [picked, setPicked] = useState(false);
+  const [showFull, setShowFull] = useState(false);
+  const groupRef = useRef<THREE.Group>(null);
+  const pickedRef = useRef(false);
+  const fullFlashRef = useRef(false);
+  const t = useRef(0);
+  const baseY = position[1];
 
   useFrame((_, delta) => {
-    if (picked) return;
+    if (pickedRef.current) return;
     t.current += delta;
 
-    // Float animation
-    if (swordRef.current) {
-      swordRef.current.position.y = swordLocalPos.y + Math.sin(t.current * 1.4) * 0.12;
-      swordRef.current.rotation.y = t.current * 0.6;
-    }
-    if (gunRef.current) {
-      gunRef.current.position.y = gunLocalPos.y + Math.sin(t.current * 1.4 + Math.PI) * 0.12;
-      gunRef.current.rotation.y = -t.current * 0.6;
+    if (groupRef.current) {
+      groupRef.current.position.y = baseY + Math.sin(t.current * 1.4) * 0.12;
+      groupRef.current.rotation.y = t.current * 0.6;
     }
 
-    // Proximity check — compare world positions (camera is in world space)
-    const camPos = camera.position.clone();
-    if (camPos.distanceTo(swordWorldPos) < PICKUP_RADIUS) {
-      setPicked(true);
-      setActiveWeapon('sword');
-      setPlayerStats({ str: 2, agi: 0, vit: 0 });
-      onPicked('sword');
-    } else if (camPos.distanceTo(gunWorldPos) < PICKUP_RADIUS) {
-      setPicked(true);
-      setActiveWeapon('gun');
-      setPlayerStats({ str: 0, agi: 2, vit: 0 });
-      onPicked('gun');
+    // World-space proximity check
+    if (!groupRef.current) return;
+    const worldPos = new THREE.Vector3();
+    groupRef.current.getWorldPosition(worldPos);
+
+    if (camera.position.distanceTo(worldPos) < PICKUP_RADIUS) {
+      const store = useVRGame.getState();
+      const success = store.pickupWeapon(weaponType, weaponId as MeleeWeaponId & RangedWeaponId);
+
+      if (success) {
+        // Set active weapon mode if not already set
+        if (!store.activeWeapon) {
+          store.setActiveWeapon(weaponType === 'melee' ? 'sword' : 'gun');
+        }
+        pickedRef.current = true;
+        setPicked(true);
+        onPicked?.(pickupId);
+      } else {
+        // Inventory full — brief red flash (debounced)
+        if (!fullFlashRef.current) {
+          fullFlashRef.current = true;
+          setShowFull(true);
+          setTimeout(() => {
+            fullFlashRef.current = false;
+            setShowFull(false);
+          }, 1000);
+        }
+      }
     }
   });
 
   if (picked) return null;
 
-  return (
-    <group>
-      {/* ── Sword ── */}
-      <group ref={swordRef} position={swordLocalPos.toArray() as [number,number,number]}>
-        {/* Glow halo */}
-        <mesh>
-          <sphereGeometry args={[0.55, 16, 16]} />
-          <meshBasicMaterial color="#c0a040" transparent opacity={0.08} />
-        </mesh>
-        {/* Blade */}
-        <mesh position={[0, 0.3, 0]}>
-          <boxGeometry args={[0.035, 0.55, 0.01]} />
-          <meshLambertMaterial color="#c8c8d0" emissive="#c0a040" emissiveIntensity={0.6} />
-        </mesh>
-        {/* Guard */}
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.22, 0.025, 0.045]} />
-          <meshLambertMaterial color="#888888" emissive="#806030" emissiveIntensity={0.4} />
-        </mesh>
-        {/* Handle */}
-        <mesh position={[0, -0.17, 0]}>
-          <cylinderGeometry args={[0.022, 0.028, 0.25, 8]} />
-          <meshLambertMaterial color="#5c3820" />
-        </mesh>
-        {/* Label */}
-        <mesh position={[0, -0.72, 0]}>
-          <boxGeometry args={[0.001, 0.001, 0.001]} />
-          <meshBasicMaterial visible={false} />
-        </mesh>
-      </group>
+  const isMelee = weaponType === 'melee';
+  const glowColor = showFull ? '#ff3333' : (WEAPON_COLORS[weaponId] ?? '#ffffff');
 
-      {/* Sword label — simple sprite plane */}
-      <mesh position={[swordLocalPos.x, swordLocalPos.y - 0.75, swordLocalPos.z]}>
-        <planeGeometry args={[1.4, 0.35]} />
-        <meshBasicMaterial color="#c0a040" transparent opacity={0.0} />
+  return (
+    <group ref={groupRef} position={position}>
+      {/* Glow halo */}
+      <mesh>
+        <sphereGeometry args={[0.55, 16, 16]} />
+        <meshBasicMaterial color={glowColor} transparent opacity={showFull ? 0.18 : 0.08} />
       </mesh>
 
-      {/* ── Gun ── */}
-      <group ref={gunRef} position={gunLocalPos.toArray() as [number,number,number]}>
-        {/* Glow halo */}
-        <mesh>
-          <sphereGeometry args={[0.55, 16, 16]} />
-          <meshBasicMaterial color="#4a90e2" transparent opacity={0.08} />
-        </mesh>
-        {/* Body */}
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[0.08, 0.06, 0.25]} />
-          <meshLambertMaterial color="#333333" emissive="#2244aa" emissiveIntensity={0.5} />
-        </mesh>
-        {/* Barrel */}
-        <mesh position={[0, 0.017, -0.18]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.15, 8]} />
-          <meshLambertMaterial color="#222222" emissive="#1133aa" emissiveIntensity={0.4} />
-        </mesh>
-        {/* Grip */}
-        <mesh position={[0, -0.07, 0.04]} rotation={[0.3, 0, 0]}>
-          <boxGeometry args={[0.055, 0.1, 0.045]} />
-          <meshLambertMaterial color="#444444" />
-        </mesh>
-      </group>
+      {isMelee ? (
+        /* ── Melee visual (sword/dagger shape) ── */
+        <>
+          {/* Blade */}
+          <mesh position={[0, 0.3, 0]}>
+            <boxGeometry args={[0.035, 0.55, 0.01]} />
+            <meshLambertMaterial color="#c8c8d0" emissive={glowColor} emissiveIntensity={0.6} />
+          </mesh>
+          {/* Guard */}
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.22, 0.025, 0.045]} />
+            <meshLambertMaterial color="#888888" emissive="#806030" emissiveIntensity={0.4} />
+          </mesh>
+          {/* Handle */}
+          <mesh position={[0, -0.17, 0]}>
+            <cylinderGeometry args={[0.022, 0.028, 0.25, 8]} />
+            <meshLambertMaterial color="#5c3820" />
+          </mesh>
+        </>
+      ) : (
+        /* ── Ranged visual (gun shape) ── */
+        <>
+          {/* Body */}
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.08, 0.06, 0.25]} />
+            <meshLambertMaterial color="#333333" emissive={glowColor} emissiveIntensity={0.5} />
+          </mesh>
+          {/* Barrel */}
+          <mesh position={[0, 0.017, -0.18]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.018, 0.018, 0.15, 8]} />
+            <meshLambertMaterial color="#222222" emissive={glowColor} emissiveIntensity={0.4} />
+          </mesh>
+          {/* Grip */}
+          <mesh position={[0, -0.07, 0.04]} rotation={[0.3, 0, 0]}>
+            <boxGeometry args={[0.055, 0.1, 0.045]} />
+            <meshLambertMaterial color="#444444" />
+          </mesh>
+        </>
+      )}
 
-      {/* Point lights for atmosphere */}
-      <pointLight position={swordLocalPos.toArray() as [number,number,number]} color="#c0a040" intensity={1.2} distance={4} />
-      <pointLight position={gunLocalPos.toArray() as [number,number,number]} color="#4a90e2" intensity={1.2} distance={4} />
+      {/* Atmosphere point light */}
+      <pointLight position={[0, 0, 0]} color={glowColor} intensity={1.2} distance={4} />
     </group>
   );
 }

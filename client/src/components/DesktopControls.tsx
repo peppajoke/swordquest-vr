@@ -17,7 +17,9 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats, setDesktopFuel, weaponLocked, pickupPhase } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, weaponInventory, activeMeleeSlot, activeRangedSlot, setActiveMeleeSlot, setActiveRangedSlot, playerStats, setDesktopFuel, weaponLocked, pickupPhase, dropWeapon, addDroppedWeapon } = useVRGame();
+  const activeMeleeWeapon = weaponInventory.melee[activeMeleeSlot];
+  const activeRangedWeapon = weaponInventory.ranged[activeRangedSlot];
   const { playGunShoot, playSwordHit } = useAudio();
 
   // Movement state
@@ -56,9 +58,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const swingCooldown = PLAYER_CONFIG.weapons.swingCooldown;
   const lastSwordDamage = useRef(0);
   const swordDamageCooldown = PLAYER_CONFIG.weapons.swordDamageCooldown;
-  // Weapon config — read from store, fallback to defaults
-  const getMeleeCfg = () => getMeleeWeapon(activeMeleeWeapon as MeleeWeaponId) ?? getMeleeWeapon('longsword');
-  const getRangedCfg = () => getRangedWeapon(activeRangedWeapon as RangedWeaponId) ?? getRangedWeapon('pistols');
+  // Weapon config — read from inventory, fallback to defaults
+  const getMeleeCfg = () => getMeleeWeapon((activeMeleeWeapon ?? 'longsword') as MeleeWeaponId) ?? getMeleeWeapon('longsword');
+  const getRangedCfg = () => getRangedWeapon((activeRangedWeapon ?? 'pistols') as RangedWeaponId) ?? getRangedWeapon('pistols');
 
   // Gun shooting state
   const lastShot = useRef(0);
@@ -100,8 +102,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   }, [activeWeapon]);
 
   const switchWeapon = (w: 'sword' | 'gun') => {
-    if (weaponLocked) return; // locked after pickup — can't switch in a run
-    if (pickupPhase) return;  // can't switch before picking up a weapon
+    if (pickupPhase) return;  // can't switch before picking up any weapon
     weaponRef.current = w;
     setWeaponState(w);
     setActiveWeapon(w);
@@ -329,12 +330,40 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
           }
           event.preventDefault();
           break;
-        case 'Digit1':
-          switchWeapon('sword');
+        case 'Digit1': {
+          // Cycle active melee slot
+          const { activeMeleeSlot: ms } = useVRGame.getState();
+          setActiveMeleeSlot(ms === 0 ? 1 : 0);
           break;
-        case 'Digit2':
-          switchWeapon('gun');
+        }
+        case 'Digit2': {
+          // Cycle active ranged slot
+          const { activeRangedSlot: rs } = useVRGame.getState();
+          setActiveRangedSlot(rs === 0 ? 1 : 0);
           break;
+        }
+        case 'KeyG': {
+          // Drop active weapon
+          const state = useVRGame.getState();
+          const type = state.activeWeapon === 'sword' ? 'melee' : 'ranged';
+          if (!state.activeWeapon) break;
+          const slot = type === 'melee' ? state.activeMeleeSlot : state.activeRangedSlot;
+          const droppedId = dropWeapon(type, slot);
+          if (droppedId) {
+            const pos: [number, number, number] = [
+              camera.position.x,
+              camera.position.y - 0.5,
+              camera.position.z - 1,
+            ];
+            addDroppedWeapon({
+              id: `drop_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+              type,
+              weaponId: droppedId,
+              position: pos,
+            });
+          }
+          break;
+        }
         case 'KeyR':
           if (leftClip < maxClipSize || rightClip < maxClipSize) reloadGuns();
           break;
@@ -371,8 +400,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
       if (event.button === 0) {
         // Left click: active weapon action
+        if (currentWeapon === null) return; // no weapon equipped yet
         if (currentWeapon === 'sword') {
-          // Swing sword
+          // Swing sword — only if melee slot has a weapon
+          const { weaponInventory: wi, activeMeleeSlot: ms } = useVRGame.getState();
+          if (wi.melee[ms] === null) return; // empty melee slot
           if (currentTime > lastSwordSwing.current + swingCooldown && !isSwinging) {
             setIsSwinging(true);
             setSwingingHand(currentSwordHand);
@@ -380,7 +412,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
             if (onSwordSwing) onSwordSwing(currentSwordHand);
           }
         } else if (currentWeapon === 'gun') {
-          // Fire gun
+          // Fire gun — only if ranged slot has a weapon
+          const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
+          if (wi.ranged[rs] === null) return; // empty ranged slot
           if (currentTime > lastShot.current + shotCooldown) {
             fireDesktopBullet();
             lastShot.current = currentTime;
