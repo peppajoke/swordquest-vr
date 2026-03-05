@@ -9,7 +9,7 @@ import { VRDebugDisplay } from './VRDebugDisplay';
 import DesktopControls from './DesktopControls';
 import DesktopUI from './DesktopUI';
 import PlayerCollisionDetector from './PlayerCollisionDetector';
-import { Text } from '@react-three/drei';
+// Text import removed — death screen is HTML overlay now
 import { useVRGame } from '../lib/stores/useVRGame';
 import { getStartingStats } from '../lib/weapons';
 import { useAudio } from '../lib/stores/useAudio';
@@ -41,7 +41,7 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
       setPlayerStats(getStartingStats(startWeapon));
     }
   }, []);
-  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase } = useVRGame();
+  const { initializeGame, health, maxHealth, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
@@ -159,46 +159,7 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
       {/* VRDebugDisplay only in VR — desktop uses DesktopUI HTML overlay instead */}
       {isVRPresenting && <VRDebugDisplay fuel={fuel} maxFuel={maxFuel} ammo={ammo} leftClip={leftClip} rightClip={rightClip} jetpackEnabled={jetpackEnabled} />}
       
-      {/* Death Overlay */}
-      {isDead && (
-        <group>
-          {/* Death Screen Background */}
-          <mesh position={[0, 0, -2]}>
-            <planeGeometry args={[10, 6]} />
-            <meshLambertMaterial color="#000000" opacity={0.8} transparent />
-          </mesh>
-          
-          {/* Game Over Text */}
-          <Text
-            position={[0, 1, -1.9]}
-            fontSize={1}
-            color="#ff0000"
-            anchorX="center"
-            anchorY="middle"
-          >
-            GAME OVER
-          </Text>
-          
-          {/* Auto-reboot Message */}
-          <Text
-            position={[0, -0.5, -1.9]}
-            fontSize={0.3}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Rebooting in 3 seconds...
-          </Text>
-        </group>
-      )}
-      
-      {/* Auto-respawn when dead */}
-      {isDead && (
-        <mesh position={[0, 0, 0]} visible={false}>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="transparent" />
-        </mesh>
-      )}
+      {/* Death is handled by DeathScreen HTML overlay in App.tsx */}
     </>
   );
 }

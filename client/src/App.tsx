@@ -5,6 +5,8 @@ import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
 import DesktopUI from "./components/DesktopUI";
 import MainMenu from "./components/MainMenu";
+import DeathScreen from "./components/DeathScreen";
+import { useVRGame } from "./lib/stores/useVRGame";
 import "@fontsource/inter";
 import "./index.css";
 
@@ -24,6 +26,7 @@ type GameMode = 'menu' | 'playing' | 'dev';
 
 function App() {
   const [gameMode, setGameMode] = useState<GameMode>('menu');
+  const isDead = useVRGame((s) => s.isDead);
   const [fuel, setFuel] = useState(100);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
@@ -97,6 +100,9 @@ function App() {
         currentGun={currentGun}
         isReloading={isReloading}
       />
+
+      {/* Death Screen — shown when player dies outside of main menu */}
+      {isDead && gameMode !== 'menu' && <DeathScreen />}
     </div>
   );
 }

@@ -1,152 +1,44 @@
 {
   "spawns": [
-    { "type": "grunt", "position": [-8,  0, -25], "group": "Fodder" },
-    { "type": "grunt", "position": [ 5,  0, -28], "group": "Fodder" },
-    { "type": "grunt", "position": [-18, 0, -30], "group": "Fodder" },
-    { "type": "grunt", "position": [ 14, 0, -26], "group": "Fodder" },
-    { "type": "grunt", "position": [-3,  0, -32], "group": "Fodder" },
-    { "type": "grunt", "position": [ 22, 0, -29], "group": "Fodder" },
-    { "type": "grunt", "position": [-25, 0, -34], "group": "Fodder" },
-    { "type": "grunt", "position": [  8, 0, -27], "group": "Fodder" },
-    { "type": "grunt", "position": [-12, 0, -31], "group": "Fodder" },
-    { "type": "grunt", "position": [ 30, 0, -24], "group": "Fodder" },
-    { "type": "wasp",  "position": [ -6, 4, -26], "group": "Fodder" },
-    { "type": "wasp",  "position": [ 10, 5, -28], "group": "Fodder" },
-    { "type": "wasp",  "position": [-20, 6, -24], "group": "Fodder" },
-    {
-      "type": "grunt",
-      "position": [-60, 0, -20],
-      "group": "Basic Soldiers"
-    },
-    {
-      "type": "grunt",
-      "position": [40, 0, -30],
-      "group": "Basic Soldiers"
-    },
-    {
-      "type": "grunt",
-      "position": [-30, 0, -60],
-      "group": "Basic Soldiers"
-    },
-    {
-      "type": "rifleman",
-      "position": [70, 0, -70],
-      "group": "Medium Range"
-    },
-    {
-      "type": "rifleman",
-      "position": [20, 0, -80],
-      "group": "Medium Range"
-    },
-    {
-      "type": "heavy",
-      "position": [-80, 0, -40],
-      "group": "Heavy Units"
-    },
-    {
-      "type": "heavy",
-      "position": [50, 0, -15],
-      "group": "Heavy Units"
-    },
-    {
-      "type": "assassin",
-      "position": [-40, 0, -85],
-      "group": "Fast Melee"
-    },
-    {
-      "type": "assassin",
-      "position": [80, 0, -25],
-      "group": "Fast Melee"
-    },
-    {
-      "type": "bomber",
-      "position": [-20, 0, -75],
-      "group": "Explosive"
-    },
-    {
-      "type": "bomber",
-      "position": [60, 0, -60],
-      "group": "Explosive"
-    },
-    {
-      "type": "sniper",
-      "position": [-70, 0, -65],
-      "group": "Long Range"
-    },
-    {
-      "type": "sniper",
-      "position": [30, 0, -40],
-      "group": "Long Range"
-    },
-    {
-      "type": "berserker",
-      "position": [-50, 0, -30],
-      "group": "Rage Units"
-    },
-    {
-      "type": "berserker",
-      "position": [10, 0, -90],
-      "group": "Rage Units"
-    },
-    {
-      "type": "shield",
-      "position": [-90, 0, -80],
-      "group": "Defensive"
-    },
-    {
-      "type": "shield",
-      "position": [85, 0, -50],
-      "group": "Defensive"
-    },
-    {
-      "type": "mage",
-      "position": [-15, 0, -45],
-      "group": "Magic Casters"
-    },
-    {
-      "type": "mage",
-      "position": [65, 0, -35],
-      "group": "Magic Casters"
-    },
-    {
-      "type": "boss",
-      "position": [0, 0, -50],
-      "group": "Boss"
-    },
-    {
-      "type": "drone",
-      "position": [-30, 5, -25],
-      "group": "Flying"
-    },
-    {
-      "type": "drone",
-      "position": [45, 6, -55],
-      "group": "Flying"
-    },
-    {
-      "type": "drone",
-      "position": [-75, 4, -75],
-      "group": "Flying"
-    },
-    {
-      "type": "wasp",
-      "position": [25, 7, -35],
-      "group": "Flying"
-    },
-    {
-      "type": "wasp",
-      "position": [-55, 8, -45],
-      "group": "Flying"
-    },
-    {
-      "type": "wasp",
-      "position": [75, 5, -65],
-      "group": "Flying"
-    },
-    {
-      "type": "phoenix",
-      "position": [0, 10, -25],
-      "group": "Flying"
-    }
+    { "type": "grunt", "position": [-8,  0, -25], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [ 5,  0, -28], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [-18, 0, -30], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [ 14, 0, -26], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [-3,  0, -32], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [ 22, 0, -29], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [-25, 0, -34], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [  8, 0, -27], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [-12, 0, -31], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [ 30, 0, -24], "group": "Fodder", "wave": 1 },
+    { "type": "wasp",  "position": [ -6, 4, -26], "group": "Fodder", "wave": 1 },
+    { "type": "wasp",  "position": [ 10, 5, -28], "group": "Fodder", "wave": 1 },
+    { "type": "wasp",  "position": [-20, 6, -24], "group": "Fodder", "wave": 1 },
+    { "type": "grunt", "position": [-60, 0, -20], "group": "Basic Soldiers", "wave": 1 },
+    { "type": "grunt", "position": [ 40, 0, -30], "group": "Basic Soldiers", "wave": 1 },
+    { "type": "grunt", "position": [-30, 0, -60], "group": "Basic Soldiers", "wave": 1 },
+    { "type": "rifleman",  "position": [ 70, 0, -70], "group": "Medium Range",  "wave": 2 },
+    { "type": "rifleman",  "position": [ 20, 0, -80], "group": "Medium Range",  "wave": 2 },
+    { "type": "heavy",     "position": [-80, 0, -40], "group": "Heavy Units",   "wave": 3 },
+    { "type": "heavy",     "position": [ 50, 0, -15], "group": "Heavy Units",   "wave": 3 },
+    { "type": "assassin",  "position": [-40, 0, -85], "group": "Fast Melee",    "wave": 2 },
+    { "type": "assassin",  "position": [ 80, 0, -25], "group": "Fast Melee",    "wave": 2 },
+    { "type": "bomber",    "position": [-20, 0, -75], "group": "Explosive",     "wave": 2 },
+    { "type": "bomber",    "position": [ 60, 0, -60], "group": "Explosive",     "wave": 2 },
+    { "type": "sniper",    "position": [-70, 0, -65], "group": "Long Range",    "wave": 3 },
+    { "type": "sniper",    "position": [ 30, 0, -40], "group": "Long Range",    "wave": 3 },
+    { "type": "berserker", "position": [-50, 0, -30], "group": "Rage Units",    "wave": 2 },
+    { "type": "berserker", "position": [ 10, 0, -90], "group": "Rage Units",    "wave": 2 },
+    { "type": "shield",    "position": [-90, 0, -80], "group": "Defensive",     "wave": 3 },
+    { "type": "shield",    "position": [ 85, 0, -50], "group": "Defensive",     "wave": 3 },
+    { "type": "mage",      "position": [-15, 0, -45], "group": "Magic Casters", "wave": 2 },
+    { "type": "mage",      "position": [ 65, 0, -35], "group": "Magic Casters", "wave": 2 },
+    { "type": "boss",      "position": [  0, 0, -50], "group": "Boss",          "wave": 3 },
+    { "type": "drone",     "position": [-30, 5, -25], "group": "Flying",        "wave": 2 },
+    { "type": "drone",     "position": [ 45, 6, -55], "group": "Flying",        "wave": 2 },
+    { "type": "drone",     "position": [-75, 4, -75], "group": "Flying",        "wave": 2 },
+    { "type": "wasp",      "position": [ 25, 7, -35], "group": "Flying",        "wave": 1 },
+    { "type": "wasp",      "position": [-55, 8, -45], "group": "Flying",        "wave": 1 },
+    { "type": "wasp",      "position": [ 75, 5, -65], "group": "Flying",        "wave": 1 },
+    { "type": "phoenix",   "position": [  0,10, -25], "group": "Flying",        "wave": 2 }
   ]
 }

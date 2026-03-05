@@ -5,57 +5,59 @@ import * as THREE from 'three';
 interface HealthBarProps {
   health: number;
   maxHealth: number;
-  position: [number, number, number];
   enemyType?: string;
 }
 
-export default function HealthBar({ health, maxHealth, position, enemyType }: HealthBarProps) {
+export default function HealthBar({ health, maxHealth }: HealthBarProps) {
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const healthPercentage = Math.max(0, health / maxHealth);
-  
+
   useFrame(() => {
     if (!groupRef.current) return;
-    
-    // Position the health bar above the enemy
-    groupRef.current.position.set(position[0], position[1] + 2.5, position[2]);
-    
-    // Make health bar always face the camera
+    // Billboard: always face the camera
     groupRef.current.lookAt(camera.position);
   });
 
-  // Don't show health bar if enemy is at full health or dead
+  // Don't show if full health or dead
   if (healthPercentage >= 1 || healthPercentage <= 0) {
     return null;
   }
 
   // Color based on health percentage
-  const getHealthColor = (percentage: number) => {
-    if (percentage > 0.6) return '#00FF00'; // Green
-    if (percentage > 0.3) return '#FFFF00'; // Yellow
-    return '#FF0000'; // Red
+  const getHealthColor = (pct: number) => {
+    if (pct > 0.6) return '#22DD22'; // Green
+    if (pct > 0.3) return '#FFCC00'; // Yellow
+    return '#FF2222';                 // Red
   };
 
   const healthColor = getHealthColor(healthPercentage);
+  const BAR_W = 0.9;
+  const BAR_H = 0.1;
+
+  // Fill bar: anchor to left edge, scale inward
+  const fillWidth = BAR_W * healthPercentage;
+  const fillOffsetX = -(BAR_W - fillWidth) / 2;
 
   return (
-    <group ref={groupRef}>
-      {/* Background bar (dark) */}
+    // Local position: 0.8 units above the enemy root (child of enemy group)
+    <group ref={groupRef} position={[0, 0.85, 0]}>
+      {/* White background */}
+      <mesh position={[0, 0, 0]}>
+        <planeGeometry args={[BAR_W + 0.04, BAR_H + 0.04]} />
+        <meshBasicMaterial color="#FFFFFF" transparent opacity={0.85} depthTest={false} />
+      </mesh>
+
+      {/* Dark background track */}
       <mesh position={[0, 0, 0.001]}>
-        <planeGeometry args={[1.0, 0.1]} />
-        <meshBasicMaterial color="#333333" transparent opacity={0.8} />
+        <planeGeometry args={[BAR_W, BAR_H]} />
+        <meshBasicMaterial color="#1A1A1A" transparent opacity={0.9} depthTest={false} />
       </mesh>
-      
-      {/* Health bar (colored) */}
-      <mesh position={[-(1.0 - healthPercentage) / 2, 0, 0.002]} scale={[healthPercentage, 1, 1]}>
-        <planeGeometry args={[1.0, 0.1]} />
-        <meshBasicMaterial color={healthColor} transparent opacity={0.9} />
-      </mesh>
-      
-      {/* Border */}
-      <mesh position={[0, 0, 0.003]}>
-        <ringGeometry args={[0.48, 0.52, 4]} />
-        <meshBasicMaterial color="#FFFFFF" transparent opacity={0.6} />
+
+      {/* Health fill */}
+      <mesh position={[fillOffsetX, 0, 0.002]}>
+        <planeGeometry args={[fillWidth, BAR_H]} />
+        <meshBasicMaterial color={healthColor} transparent opacity={1} depthTest={false} />
       </mesh>
     </group>
   );

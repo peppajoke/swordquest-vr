@@ -72,6 +72,11 @@ interface VRGameState {
   cleanupOldTargets: (playerZ: number) => void;
   addKill: () => void;
   resetRun: () => void;
+
+  // Room / wave state
+  roomCleared: boolean;
+  setRoomCleared: (v: boolean) => void;
+
   setHealth: (health: number) => void;
   takeDamage: (damage: number) => void;
   heal: (amount: number) => void;
@@ -518,5 +523,9 @@ export const useVRGame = create<VRGameState>()(
     resetRun: () => {
       set({ killCount: 0, comboCount: 0, comboTimer: 0 });
     },
+
+    // Room / wave state
+    roomCleared: false,
+    setRoomCleared: (v: boolean) => { set({ roomCleared: v }); },
   }))
 );

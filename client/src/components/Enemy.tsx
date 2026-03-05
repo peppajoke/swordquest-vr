@@ -1,5 +1,6 @@
-import { useRef, useState, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import HealthBar from "./HealthBar";
@@ -7,6 +8,70 @@ import EnemyMesh from "./EnemyMesh";
 import enemyConfig from "../data/enemyConfig.json";
 import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
+
+// ─── Floating Damage Number ────────────────────────────────────────────────
+
+interface DamageNumberEntry {
+  id: number;
+  amount: number;
+  /** local position within enemy group at time of hit */
+  localY: number;
+  startTime: number;
+  isCrit: boolean;
+}
+
+interface DamageNumberProps {
+  entry: DamageNumberEntry;
+  onExpire: (id: number) => void;
+}
+
+function DamageNumber({ entry, onExpire }: DamageNumberProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const textRef = useRef<any>(null);
+  const expiredRef = useRef(false);
+  const { camera } = useThree();
+
+  useFrame(() => {
+    if (expiredRef.current || !groupRef.current) return;
+
+    const elapsed = (Date.now() - entry.startTime) / 1000;
+    if (elapsed >= 0.8) {
+      expiredRef.current = true;
+      onExpire(entry.id);
+      return;
+    }
+
+    const progress = elapsed / 0.8; // 0 → 1
+    // Float upward 0.5 units over lifetime
+    groupRef.current.position.y = entry.localY + progress * 0.5;
+    // Billboard
+    groupRef.current.lookAt(camera.position);
+    // Fade out
+    if (textRef.current) {
+      textRef.current.fillOpacity = 1 - progress;
+    }
+  });
+
+  const color = entry.isCrit ? "#FFD700" : "#FFFFFF";
+
+  return (
+    <group ref={groupRef} position={[0, entry.localY, 0]}>
+      <Text
+        ref={textRef}
+        fontSize={entry.isCrit ? 0.32 : 0.24}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={1}
+        outlineWidth={0.02}
+        outlineColor="#000000"
+        depthOffset={-1}
+      >
+        -{entry.amount}
+      </Text>
+    </group>
+  );
+}
 
 interface EnemyProps {
   type:
@@ -52,8 +117,14 @@ export default function Enemy({ type, position }: EnemyProps) {
     teleportCooldown: 0
   }));
   const [isAttacking, setIsAttacking] = useState(false);
+  const [damageNumbers, setDamageNumbers] = useState<DamageNumberEntry[]>([]);
+  const damageIdRef = useRef(0);
 
   const { addHitEffect, gameResetKey } = useVRGame();
+
+  const expireDamageNumber = useCallback((id: number) => {
+    setDamageNumbers(prev => prev.filter(d => d.id !== id));
+  }, []);
 
   // Reset enemy when game resets
   useEffect(() => {
@@ -77,6 +148,20 @@ export default function Enemy({ type, position }: EnemyProps) {
 
     const currentTime = Date.now();
     const enemyDied = EnemyAIService.takeDamage(enemyState, damage, currentTime);
+
+    // Spawn floating damage number
+    const isCrit = damage > 50;
+    const jitter = (Math.random() - 0.5) * 0.4; // slight x jitter
+    setDamageNumbers(prev => [
+      ...prev,
+      {
+        id: ++damageIdRef.current,
+        amount: Math.round(damage),
+        localY: 1.2 + Math.random() * 0.3 + (jitter * 0.2),
+        startTime: currentTime,
+        isCrit,
+      }
+    ]);
     
     setEnemyState(prev => ({ ...prev })); // Trigger re-render
 
@@ -497,9 +582,13 @@ export default function Enemy({ type, position }: EnemyProps) {
       <HealthBar
         health={enemyState.health}
         maxHealth={enemyState.maxHealth}
-        position={[position[0], position[1], position[2]]}
         enemyType={type}
       />
+
+      {/* Floating Damage Numbers */}
+      {damageNumbers.map(entry => (
+        <DamageNumber key={entry.id} entry={entry} onExpire={expireDamageNumber} />
+      ))}
 
       {/* Special Visual Effects */}
       {type === "shield" && (
