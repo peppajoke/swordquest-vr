@@ -13,6 +13,7 @@ import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { getStartingStats } from '../lib/weapons';
 import { useAudio } from '../lib/stores/useAudio';
+import WeaponPickup from './WeaponPickup';
 
 interface VRGameProps {
   startWeapon?: 'sword' | 'gun';
@@ -23,15 +24,20 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   const { scene, camera } = useThree();
   const isVRPresenting = !!useXR((s) => s.session);
 
-  // Set initial camera tilt + starting weapon + starting stats
+  // Set initial camera tilt; weapon + stats set on pickup (not on mount)
   useEffect(() => {
     if (!isVRPresenting) {
       camera.rotation.x = -0.18;
     }
-    setActiveWeapon(startWeapon);
-    setPlayerStats(getStartingStats(startWeapon));
+    // Dev mode: skip pickup phase, give both weapons
+    if (devMode) {
+      setPickupPhase(false);
+      setWeaponLocked(false);
+      setActiveWeapon(startWeapon);
+      setPlayerStats(getStartingStats(startWeapon));
+    }
   }, []);
-  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn, setActiveWeapon, setPlayerStats } = useVRGame();
+  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
@@ -113,6 +119,16 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
         {/* Game Objects - targets and environment */}
         <GameObjects />
         <SwordEffects />
+
+        {/* Weapon pickup phase — shown at start until player grabs a weapon */}
+        {pickupPhase && !isVRPresenting && (
+          <WeaponPickup
+            onPicked={(weapon) => {
+              setPickupPhase(false);
+              setWeaponLocked(true);
+            }}
+          />
+        )}
       </group>
 
       {/* VR Components - Stay in VR space, don't move with world */}

@@ -78,8 +78,12 @@ interface VRGameState {
   // Desktop mode state
   activeWeapon: 'sword' | 'gun';
   isBoostActive: boolean;
+  weaponLocked: boolean; // true after pickup — can't switch weapon class
+  pickupPhase: boolean;  // true until player picks up a starting weapon
   setActiveWeapon: (weapon: 'sword' | 'gun') => void;
   setBoostActive: (active: boolean) => void;
+  setWeaponLocked: (locked: boolean) => void;
+  setPickupPhase: (active: boolean) => void;
 
   // Weapon loadout + player stats
   activeMeleeWeapon: string;
@@ -123,6 +127,8 @@ export const useVRGame = create<VRGameState>()(
     gameResetKey: 0,
     activeWeapon: 'sword' as 'sword' | 'gun',
     isBoostActive: false,
+    weaponLocked: false,
+    pickupPhase: true,
     activeMeleeWeapon: 'longsword',
     activeRangedWeapon: 'pistols',
     playerStats: { str: 0, agi: 0, vit: 0 },
@@ -469,6 +475,8 @@ export const useVRGame = create<VRGameState>()(
     setBoostActive: (active: boolean) => {
       set({ isBoostActive: active });
     },
+    setWeaponLocked: (locked: boolean) => { set({ weaponLocked: locked }); },
+    setPickupPhase: (active: boolean) => { set({ pickupPhase: active }); },
 
     setActiveMeleeWeapon: (id: string) => { set({ activeMeleeWeapon: id }); },
     setActiveRangedWeapon: (id: string) => { set({ activeRangedWeapon: id }); },

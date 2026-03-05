@@ -17,7 +17,7 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats, setDesktopFuel } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats, setDesktopFuel, weaponLocked } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
 
   // Movement state
@@ -90,6 +90,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const shiftLastTap = useRef(0);
 
   const switchWeapon = (w: 'sword' | 'gun') => {
+    if (weaponLocked) return; // locked after pickup — can't switch in a run
     weaponRef.current = w;
     setWeaponState(w);
     setActiveWeapon(w);

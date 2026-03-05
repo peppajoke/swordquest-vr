@@ -24,7 +24,6 @@ type GameMode = 'menu' | 'playing' | 'dev';
 
 function App() {
   const [gameMode, setGameMode] = useState<GameMode>('menu');
-  const [startWeapon, setStartWeapon] = useState<'sword' | 'gun'>('sword');
   const [fuel, setFuel] = useState(100);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
@@ -54,7 +53,7 @@ function App() {
       {/* Main Menu */}
       {gameMode === 'menu' && (
         <MainMenu
-          onStart={(weapon) => { setStartWeapon(weapon); setGameMode('playing'); }}
+          onStart={() => setGameMode('playing')}
           onDevMode={() => setGameMode('dev')}
         />
       )}
@@ -86,7 +85,7 @@ function App() {
       >
         <XR store={store}>
           <Suspense fallback={null}>
-            <VRGame startWeapon={startWeapon} devMode={gameMode === 'dev'} />
+            <VRGame startWeapon="sword" devMode={gameMode === 'dev'} />
           </Suspense>
         </XR>
       </Canvas>
