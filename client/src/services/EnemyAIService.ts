@@ -160,6 +160,45 @@ export class EnemyAIService {
         );
         break;
 
+      case 'grunt': {
+        if (distance > attackRange) {
+          result.shouldMove = true;
+          const baseSpeed = this.getMovementSpeed(enemyType);
+
+          // Use position as seed for stable-ish per-enemy randomness
+          const seed = state.position.x * 13.7 + state.position.z * 7.3;
+          const t = currentTime * 0.001;
+
+          // Phase cycles: approach → circle-strafe → rush (each ~2–4s)
+          const phaseCycle = Math.floor((t + seed) / 3) % 3;
+
+          let moveDir = playerPosition.clone().sub(state.position).normalize();
+          let speed = baseSpeed;
+
+          if (phaseCycle === 0) {
+            // Zigzag approach: weave left/right while closing in
+            const lateral = new THREE.Vector3(-moveDir.z, 0, moveDir.x);
+            const weave = Math.sin(t * 3.5 + seed) * 0.7;
+            moveDir.add(lateral.multiplyScalar(weave)).normalize();
+
+          } else if (phaseCycle === 1 && distance < 12) {
+            // Circle-strafe at medium range
+            const perpDir = new THREE.Vector3(-moveDir.z, 0, moveDir.x);
+            const clockwise = Math.sin(seed) > 0 ? 1 : -1; // stable per-enemy direction
+            moveDir = perpDir.clone().multiplyScalar(clockwise);
+            // Still drift slightly inward
+            moveDir.add(playerPosition.clone().sub(state.position).normalize().multiplyScalar(0.3)).normalize();
+
+          } else {
+            // Rush: charge at 2× speed briefly, then resume normal
+            speed = baseSpeed * 2.0;
+          }
+
+          result.newPosition = state.position.clone().add(moveDir.multiplyScalar(speed * deltaTime));
+        }
+        break;
+      }
+
       default:
         // Ground enemies move toward player if not in attack range
         if (distance > attackRange) {
