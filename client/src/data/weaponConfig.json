@@ -1,0 +1,171 @@
+{
+  "melee": {
+    "dagger": {
+      "name": "Dagger",
+      "baseDamage": 12,
+      "swingDuration": 0.14,
+      "arcSpan": 1.8,
+      "hitRadius": 0.9,
+      "armLength": 0.55,
+      "weight": "light",
+      "visual": {
+        "bladeLength": 0.18, "bladeWidth": 0.025, "bladeDepth": 0.008,
+        "handleLength": 0.14, "handleRadius": 0.022,
+        "guardWidth": 0.09, "guardHeight": 0.02, "guardDepth": 0.04,
+        "bladeColor": "#d4af37", "handleColor": "#3a2010", "guardColor": "#7a7a7a",
+        "emissive": "#604010", "emissiveIntensity": 0.25,
+        "hammerHead": false
+      }
+    },
+    "shortsword": {
+      "name": "Shortsword",
+      "baseDamage": 20,
+      "swingDuration": 0.22,
+      "arcSpan": 2.3,
+      "hitRadius": 1.3,
+      "armLength": 0.65,
+      "weight": "light",
+      "visual": {
+        "bladeLength": 0.35, "bladeWidth": 0.03, "bladeDepth": 0.01,
+        "handleLength": 0.2, "handleRadius": 0.025,
+        "guardWidth": 0.16, "guardHeight": 0.025, "guardDepth": 0.045,
+        "bladeColor": "#c8c8d0", "handleColor": "#5c3820", "guardColor": "#888888",
+        "emissive": "#404050", "emissiveIntensity": 0.3,
+        "hammerHead": false
+      }
+    },
+    "longsword": {
+      "name": "Longsword",
+      "baseDamage": 35,
+      "swingDuration": 0.28,
+      "arcSpan": 2.65,
+      "hitRadius": 1.8,
+      "armLength": 0.7,
+      "weight": "medium",
+      "visual": {
+        "bladeLength": 0.55, "bladeWidth": 0.035, "bladeDepth": 0.01,
+        "handleLength": 0.25, "handleRadius": 0.03,
+        "guardWidth": 0.22, "guardHeight": 0.03, "guardDepth": 0.05,
+        "bladeColor": "#b8b8d0", "handleColor": "#654321", "guardColor": "#888888",
+        "emissive": "#404060", "emissiveIntensity": 0.3,
+        "hammerHead": false
+      }
+    },
+    "battleaxe": {
+      "name": "Battle Axe",
+      "baseDamage": 55,
+      "swingDuration": 0.4,
+      "arcSpan": 2.9,
+      "hitRadius": 2.0,
+      "armLength": 0.8,
+      "weight": "heavy",
+      "visual": {
+        "bladeLength": 0.0, "bladeWidth": 0.0, "bladeDepth": 0.0,
+        "handleLength": 0.55, "handleRadius": 0.035,
+        "guardWidth": 0.0, "guardHeight": 0.0, "guardDepth": 0.0,
+        "bladeColor": "#999999", "handleColor": "#3a2010", "guardColor": "#777777",
+        "emissive": "#401010", "emissiveIntensity": 0.2,
+        "hammerHead": false,
+        "axeHead": true,
+        "axeHeadWidth": 0.35, "axeHeadHeight": 0.28, "axeHeadDepth": 0.06
+      }
+    },
+    "greatsword": {
+      "name": "Greatsword",
+      "baseDamage": 75,
+      "swingDuration": 0.5,
+      "arcSpan": 3.0,
+      "hitRadius": 2.6,
+      "armLength": 0.9,
+      "weight": "heavy",
+      "visual": {
+        "bladeLength": 0.85, "bladeWidth": 0.05, "bladeDepth": 0.012,
+        "handleLength": 0.38, "handleRadius": 0.035,
+        "guardWidth": 0.32, "guardHeight": 0.035, "guardDepth": 0.06,
+        "bladeColor": "#9090a8", "handleColor": "#3a2010", "guardColor": "#707080",
+        "emissive": "#303050", "emissiveIntensity": 0.25,
+        "hammerHead": false
+      }
+    },
+    "warhammer": {
+      "name": "Warhammer",
+      "baseDamage": 100,
+      "swingDuration": 0.65,
+      "arcSpan": 2.8,
+      "hitRadius": 1.6,
+      "armLength": 0.88,
+      "weight": "heavy",
+      "visual": {
+        "bladeLength": 0.0, "bladeWidth": 0.0, "bladeDepth": 0.0,
+        "handleLength": 0.6, "handleRadius": 0.04,
+        "guardWidth": 0.0, "guardHeight": 0.0, "guardDepth": 0.0,
+        "bladeColor": "#666666", "handleColor": "#2a1808", "guardColor": "#555555",
+        "emissive": "#200808", "emissiveIntensity": 0.2,
+        "hammerHead": true,
+        "hammerHeadWidth": 0.22, "hammerHeadHeight": 0.2, "hammerHeadDepth": 0.18
+      }
+    }
+  },
+  "ranged": {
+    "pistols": {
+      "name": "Dual Pistols",
+      "baseDamage": 25,
+      "clipSize": 12,
+      "baseReloadTime": 1500,
+      "fireRate": 300,
+      "spread": 0.02,
+      "weight": "light",
+      "visual": {
+        "bodyLength": 0.25, "bodyHeight": 0.06, "bodyWidth": 0.08,
+        "barrelLength": 0.15, "barrelRadius": 0.02,
+        "gripLength": 0.1, "gripWidth": 0.055, "gripDepth": 0.045,
+        "color": "#333333", "gripColor": "#444444", "barrelColor": "#222222"
+      }
+    },
+    "smg": {
+      "name": "SMG",
+      "baseDamage": 15,
+      "clipSize": 30,
+      "baseReloadTime": 1200,
+      "fireRate": 100,
+      "spread": 0.05,
+      "weight": "medium",
+      "visual": {
+        "bodyLength": 0.32, "bodyHeight": 0.07, "bodyWidth": 0.07,
+        "barrelLength": 0.18, "barrelRadius": 0.018,
+        "gripLength": 0.12, "gripWidth": 0.05, "gripDepth": 0.04,
+        "color": "#2a2a2a", "gripColor": "#1a1a1a", "barrelColor": "#111111"
+      }
+    },
+    "shotgun": {
+      "name": "Shotgun",
+      "baseDamage": 60,
+      "clipSize": 6,
+      "baseReloadTime": 2500,
+      "fireRate": 800,
+      "spread": 0.15,
+      "weight": "heavy",
+      "visual": {
+        "bodyLength": 0.42, "bodyHeight": 0.08, "bodyWidth": 0.1,
+        "barrelLength": 0.28, "barrelRadius": 0.03,
+        "gripLength": 0.12, "gripWidth": 0.065, "gripDepth": 0.05,
+        "color": "#4a3020", "gripColor": "#3a2010", "barrelColor": "#222222"
+      }
+    },
+    "sniper": {
+      "name": "Sniper Rifle",
+      "baseDamage": 80,
+      "clipSize": 5,
+      "baseReloadTime": 3000,
+      "fireRate": 1500,
+      "spread": 0.002,
+      "weight": "heavy",
+      "visual": {
+        "bodyLength": 0.55, "bodyHeight": 0.065, "bodyWidth": 0.07,
+        "barrelLength": 0.42, "barrelRadius": 0.016,
+        "gripLength": 0.11, "gripWidth": 0.055, "gripDepth": 0.04,
+        "color": "#1a2030", "gripColor": "#0a1020", "barrelColor": "#111111"
+      }
+    }
+  }
+}

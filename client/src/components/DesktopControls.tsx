@@ -4,8 +4,9 @@ import { useXR } from '@react-three/xr';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
-import DesktopSwordVisual from './DesktopSwordVisual';
+import DesktopWeaponVisual from './DesktopWeaponVisual';
 import { PLAYER_CONFIG, COMBAT_CONFIG } from '../config/gameConfig';
+import { getMeleeWeapon, getRangedWeapon, computeMeleeDamage, computeReloadTime, type MeleeWeaponId, type RangedWeaponId } from '../lib/weapons';
 
 interface DesktopControlsProps {
   onShoot?: (hand: 'left' | 'right') => void;
@@ -16,7 +17,7 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
 
   // Movement state
@@ -55,13 +56,17 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const swingCooldown = PLAYER_CONFIG.weapons.swingCooldown;
   const lastSwordDamage = useRef(0);
   const swordDamageCooldown = PLAYER_CONFIG.weapons.swordDamageCooldown;
+  // Weapon config — read from store, fallback to defaults
+  const getMeleeCfg = () => getMeleeWeapon(activeMeleeWeapon as MeleeWeaponId) ?? getMeleeWeapon('longsword');
+  const getRangedCfg = () => getRangedWeapon(activeRangedWeapon as RangedWeaponId) ?? getRangedWeapon('pistols');
 
   // Gun shooting state
   const lastShot = useRef(0);
   const shotCooldown = PLAYER_CONFIG.weapons.shotCooldown;
   const [leftClip, setLeftClip] = useState(12);
   const [rightClip, setRightClip] = useState(12);
-  const maxClipSize = 12;
+  // Derive clip size from active ranged weapon config
+  const maxClipSize = getRangedCfg().clipSize;
   const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left');
   const [isReloading, setIsReloading] = useState(false);
   const [reloadTimeout, setReloadTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -210,7 +215,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       const audioStore = require('../lib/stores/useAudio').useAudio;
       audioStore.getState().playReload();
     } catch {}
-    // After 1.5s (sound duration), refill clips
+    // Reload time from weapon config, scaled by AGI
+    const reloadMs = computeReloadTime(getRangedCfg().baseReloadTime, playerStats.agi);
     setTimeout(() => {
       setLeftClip(maxClipSize);
       setRightClip(maxClipSize);
@@ -218,7 +224,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       setIsReloading(false);
       setDesktopAmmo(maxClipSize, maxClipSize, 'left', false);
       if (onClipChange) onClipChange(maxClipSize, maxClipSize, 'left', false);
-    }, 1500);
+    }, reloadMs);
   };
 
   const checkSwordDamage = () => {
@@ -235,8 +241,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         child.getWorldPosition(enemyPos);
         if (cameraPos.distanceTo(enemyPos) > MAX_SWORD_DISTANCE) return;
         const distance = swingPos.distanceTo(enemyPos);
-        if (distance < 1.8) {
-          if (child.userData.takeDamage) child.userData.takeDamage(25);
+        if (distance < getMeleeCfg().hitRadius) {
+          const dmg = computeMeleeDamage(getMeleeCfg().baseDamage, playerStats.str);
+          if (child.userData.takeDamage) child.userData.takeDamage(dmg);
           addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
           hitAnyEnemy = true;
         }
@@ -457,7 +464,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
   return (
     <>
-      <DesktopSwordVisual
+      <DesktopWeaponVisual
         isSwinging={isSwinging}
         hand={swingingHand}
         activeWeapon={weaponState}

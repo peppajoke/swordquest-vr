@@ -81,6 +81,14 @@ interface VRGameState {
   setActiveWeapon: (weapon: 'sword' | 'gun') => void;
   setBoostActive: (active: boolean) => void;
 
+  // Weapon loadout + player stats
+  activeMeleeWeapon: string;
+  activeRangedWeapon: string;
+  playerStats: { str: number; agi: number; vit: number };
+  setActiveMeleeWeapon: (id: string) => void;
+  setActiveRangedWeapon: (id: string) => void;
+  setPlayerStats: (stats: { str: number; agi: number; vit: number }) => void;
+
   // Desktop ammo HUD state (shared so DesktopUI can read without prop drilling)
   desktopLeftClip: number;
   desktopRightClip: number;
@@ -112,6 +120,9 @@ export const useVRGame = create<VRGameState>()(
     gameResetKey: 0,
     activeWeapon: 'sword' as 'sword' | 'gun',
     isBoostActive: false,
+    activeMeleeWeapon: 'longsword',
+    activeRangedWeapon: 'pistols',
+    playerStats: { str: 0, agi: 0, vit: 0 },
     desktopLeftClip: 12,
     desktopRightClip: 12,
     desktopCurrentGun: 'left' as 'left' | 'right',
@@ -454,6 +465,10 @@ export const useVRGame = create<VRGameState>()(
     setBoostActive: (active: boolean) => {
       set({ isBoostActive: active });
     },
+
+    setActiveMeleeWeapon: (id: string) => { set({ activeMeleeWeapon: id }); },
+    setActiveRangedWeapon: (id: string) => { set({ activeRangedWeapon: id }); },
+    setPlayerStats: (stats: { str: number; agi: number; vit: number }) => { set({ playerStats: stats }); },
 
     setDesktopAmmo: (left: number, right: number, gun: 'left' | 'right', reloading: boolean) => {
       set({ desktopLeftClip: left, desktopRightClip: right, desktopCurrentGun: gun, desktopIsReloading: reloading });

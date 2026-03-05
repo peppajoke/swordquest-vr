@@ -11,6 +11,7 @@ import DesktopUI from './DesktopUI';
 import PlayerCollisionDetector from './PlayerCollisionDetector';
 import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
+import { getStartingStats } from '../lib/weapons';
 import { useAudio } from '../lib/stores/useAudio';
 
 interface VRGameProps {
@@ -22,14 +23,15 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   const { scene, camera } = useThree();
   const isVRPresenting = !!useXR((s) => s.session);
 
-  // Set initial camera tilt + starting weapon
+  // Set initial camera tilt + starting weapon + starting stats
   useEffect(() => {
     if (!isVRPresenting) {
       camera.rotation.x = -0.18;
     }
     setActiveWeapon(startWeapon);
+    setPlayerStats(getStartingStats(startWeapon));
   }, []);
-  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn, setActiveWeapon } = useVRGame();
+  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn, setActiveWeapon, setPlayerStats } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
