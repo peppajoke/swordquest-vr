@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { VRButton, XR, createXRStore } from "@react-three/xr";
 import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
@@ -27,6 +27,15 @@ function App() {
   const [rightClip, setRightClip] = useState(12);
   const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left');
   const [isReloading, setIsReloading] = useState(false);
+  const [isVRPresenting, setIsVRPresenting] = useState(false);
+
+  useEffect(() => {
+    // Subscribe to XR store session changes to detect VR mode
+    const unsubscribe = store.subscribe((state) => {
+      setIsVRPresenting(!!state.session);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div
@@ -55,18 +64,22 @@ function App() {
         <h1 style={{ margin: "0 0 10px 0", fontSize: "24px" }}>
           VR Sword Fighting
         </h1>
-        <p style={{ margin: "0 0 15px 0", fontSize: "14px" }}>
-          Squeeze controllers to spawn swords!
-        </p>
+        {/* Only show VR-specific hint when in VR mode */}
+        {isVRPresenting && (
+          <p style={{ margin: "0 0 15px 0", fontSize: "14px" }}>
+            Squeeze controllers to spawn swords!
+          </p>
+        )}
         <VRButton store={store} />
       </div>
 
       {/* Controls Instructions */}
       <ControlsInstructions />
 
-      {/* Main Canvas */}
+      {/* Main Canvas - fills the full viewport */}
       <Canvas
         shadows
+        style={{ display: 'block', width: '100%', height: '100%' }}
         camera={{
           position: [0, 1.6, 3],
           fov: 75,

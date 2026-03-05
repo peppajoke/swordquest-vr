@@ -55,15 +55,13 @@ export default function VRGame() {
         setGunAmmoSound(gunAmmoSound);
         setReloadSound(reloadSound);
         
-        console.log('🔊 Audio system initialized!');
       } catch (error) {
-        console.error('❌ Failed to load audio:', error);
+        console.error('Failed to load audio:', error);
       }
     };
 
     loadAudio();
     initializeGame();
-    console.log('🎮 VRGame fully loaded and ready!');
   }, [initializeGame, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound, setReloadSound]);
 
   // Game is now fully loaded when this component renders
@@ -106,11 +104,10 @@ export default function VRGame() {
       {/* Desktop Controls - WASD + Mouse alternative to VR */}
       <DesktopControls 
         onShoot={(hand) => {
-          console.log(`🔫 Desktop ${hand} gun fired!`);
+          // desktop gun fired
         }}
         onSwordSwing={(hand) => {
           setCurrentSwordHand(hand === 'left' ? 'right' : 'left');
-          console.log(`⚔️ Desktop ${hand} sword swing!`);
         }}
         onJetpackToggle={setJetpackEnabled}
         onClipChange={(leftClipVal, rightClipVal, currentGunVal, isReloadingVal) => {

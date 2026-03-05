@@ -17,6 +17,7 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
   const swingDuration = 0.15; // Much faster duration - 0.15 seconds
   const isSwingActive = useRef(false);
   const currentSwingType = useRef<number>(0);
+  const swingCounter = useRef(0); // Used to cycle through swing types deterministically
   
   // Define 20 different swing types with deterministic patterns
   const getSwingPattern = (swingType: number, progress: number, hand: 'left' | 'right') => {
@@ -150,9 +151,9 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
           z: ease * 2.8 * handMultiplier,
           scale: 1 + ease * 0.5
         };
-      case 19: // Wild swing
+      case 19: // Wild swing - deterministic using sine-based pseudo-random pattern
         return {
-          x: ease * 2.4 * Math.random(),
+          x: ease * 2.4 * (0.5 + 0.5 * Math.sin(progress * 7.3 + 1.2)),
           y: ease * 2.6 * handMultiplier,
           z: ease * 1.9 * handMultiplier,
           scale: 1 + ease * 0.35
@@ -187,11 +188,11 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
     groupRef.current.position.copy(swordPos);
 
     if (isSwinging && !isSwingActive.current) {
-      // Start a new swing animation with random swing type
+      // Start a new swing animation, cycling through types deterministically
       isSwingActive.current = true;
       swingTime.current = 0;
-      currentSwingType.current = Math.floor(Math.random() * 20); // 0-19 swing types
-      console.log(`🎲 SWING TYPE: ${currentSwingType.current} (${hand} hand)`);
+      currentSwingType.current = swingCounter.current % 20; // 0-19 swing types, cycling
+      swingCounter.current += 1;
     }
     
     if (isSwingActive.current) {

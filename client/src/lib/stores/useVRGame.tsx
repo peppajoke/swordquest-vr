@@ -110,6 +110,10 @@ export const useVRGame = create<VRGameState>()(
     initializeGame: () => {
       set({
         score: 0,
+        health: 100,
+        maxHealth: 100,
+        isDead: false,
+        gameOver: false,
         targets: createInitialTargets(),
         pillars: createInitialPillars(),
         hitEffects: [],

@@ -74,13 +74,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
   const fireDesktopBullet = () => {
     // Don't fire if reloading
     if (isReloading) {
-      console.log('🚫 Currently reloading!');
       return;
     }
     
     // Check if both clips are empty
     if (leftClip <= 0 && rightClip <= 0) {
-      console.log('🚫 Both clips empty! Auto-reloading...');
       startAutoReload();
       return;
     }
@@ -213,7 +211,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
         if (hitObject.userData.takeDamage) {
           hitObject.userData.takeDamage(gunDamage);
         }
-        console.log(`🎯 Desktop shot hit ${hitObject.userData.enemyType}! ${gunDamage} damage`);
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         hitSomething = true;
         break;
@@ -222,7 +219,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       // Hit pillar or other objects
       if (hitObject.userData.isPillar && !hitObject.userData.destroyed) {
         hitObject.userData.destroyed = true;
-        console.log('🎯 Desktop shot destroyed pillar!');
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         hitSomething = true;
         break;
@@ -230,7 +226,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       
       // Hit any other object (terrain, walls, etc.)
       if (hitObject.userData.isEnvironment || (hitObject as any).material) {
-        console.log('🎯 Desktop shot hit environment!');
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         hitSomething = true;
         break;
@@ -238,7 +233,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     }
     
     const currentClipAmmo = gun === 'left' ? leftClip : rightClip;
-    console.log(`🔫 Desktop ${gun} gun fired! Clip: ${currentClipAmmo - 1}/${maxClipSize}${hitSomething ? ' - HIT!' : ''}`);
     
     // Only start auto-reload if BOTH clips are empty
     const newLeftClip = gun === 'left' ? currentClipAmmo - 1 : leftClip;
@@ -277,7 +271,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
     setRightClip(maxClipSize);
     setCurrentGun('left'); // Reset to left gun
     
-    console.log(`🔄 Both guns reloaded! Left: ${maxClipSize}/${maxClipSize}, Right: ${maxClipSize}/${maxClipSize}`);
+
     
     // Play reload sound
     try {
@@ -331,7 +325,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           if (child.userData.takeDamage) {
             child.userData.takeDamage(swordDamage);
           }
-          console.log(`⚔️ Desktop ${currentSwordHand} sword hit ${child.userData.enemyType}! ${swordDamage} damage`);
+
           addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
           hitAnyEnemy = true;
         }
@@ -367,7 +361,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
             if (onJetpackToggle) {
               onJetpackToggle(newJetpackState);
             }
-            console.log(`🚀 Jetpack ${newJetpackState ? 'ENABLED' : 'DISABLED'}`);
           }
           break;
         case 'Space':
@@ -376,7 +369,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
             // Jump when grounded and not flying
             verticalVelocity.current = jumpVelocity;
             isGrounded.current = false;
-            console.log('🦘 Jump!');
           }
           event.preventDefault();
           break;
@@ -433,7 +425,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
           setIsSwinging(true);
           setSwingingHand(currentSwordHand);
           lastSwordSwing.current = currentTime;
-          console.log('⚔️ Desktop sword swing started!');
           
           // Trigger sword swing callback
           if (onSwordSwing) {
@@ -531,7 +522,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
         if (onJetpackToggle) {
           onJetpackToggle(false);
         }
-        console.log('⚡ Jetpack fuel depleted!');
       }
       
       // Jetpack movement: spacebar for upward thrust
@@ -548,10 +538,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
       // Apply vertical movement from jetpack
       camera.position.y += verticalVelocity.current * deltaTime;
       
-      // Log airborne status
-      if (!isGrounded.current) {
-        console.log(`⚡ AIRBORNE! Fuel: ${fuel.toFixed(1)}/100`);
-      }
+
     } else {
       // Ground movement only
       direction.current.y = 0; // No vertical movement without jetpack
@@ -594,7 +581,6 @@ export default function DesktopControls({ onShoot, onSwordSwing, onJetpackToggle
         hand={swingingHand}
         onSwingComplete={() => {
           setIsSwinging(false);
-          console.log('⚔️ Desktop sword swing completed!');
         }}
         isVisible={!isVRPresented}
       />
