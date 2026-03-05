@@ -12,7 +12,7 @@ export const GAME_CONFIG = {
       mediumThreshold: 60, // Below 60% shows orange
     },
     movement: {
-      maxSpeed: 9.6,
+      maxSpeed: 15.0,
       accelerationRate: 12.0,
       turnRate: 0.3,
       jetpackSpeed: 8,
