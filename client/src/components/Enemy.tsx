@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import HealthBar from "./HealthBar";
+import EnemyMesh from "./EnemyMesh";
 import enemyConfig from "../data/enemyConfig.json";
 import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
@@ -483,20 +484,12 @@ export default function Enemy({ type, position }: EnemyProps) {
 
   if (enemyState.isDead) return null;
 
-  const size = getEnemySize(type);
   const color = getEnemyColor(type);
 
   return (
     <group ref={meshRef} position={position}>
-      {/* Main Body */}
-      <mesh position={[0, size[1] / 2, 0]}>
-        <boxGeometry args={size} />
-        <meshLambertMaterial
-          color={isAttacking ? "#FF0000" : color}
-          transparent={true}
-          opacity={enemyState.rageMode ? 0.9 : 1.0}
-        />
-      </mesh>
+      {/* Procedural enemy geometry */}
+      <EnemyMesh type={type} color={color} isAttacking={isAttacking} rageMode={enemyState.rageMode} />
 
       {/* Health Bar Component */}
       <HealthBar
@@ -508,14 +501,14 @@ export default function Enemy({ type, position }: EnemyProps) {
 
       {/* Special Visual Effects */}
       {type === "shield" && (
-        <mesh position={[0.8, size[1] / 2, 0]} rotation={[0, 0, 0]}>
+        <mesh position={[0.8, 0.5, 0]} rotation={[0, 0, 0]}>
           <boxGeometry args={[0.1, 1.5, 0.8]} />
           <meshLambertMaterial color="#4682B4" />
         </mesh>
       )}
 
       {type === "mage" && (
-        <mesh position={[0, size[1] + 0.8, 0]}>
+        <mesh position={[0, 1.6, 0]}>
           <sphereGeometry args={[0.2]} />
           <meshLambertMaterial
             color="#9400D3"
@@ -526,7 +519,7 @@ export default function Enemy({ type, position }: EnemyProps) {
       )}
 
       {enemyState.rageMode && (
-        <mesh position={[0, size[1] + 1, 0]}>
+        <mesh position={[0, 1.4, 0]}>
           <sphereGeometry args={[0.3]} />
           <meshLambertMaterial
             color="#FF0000"
