@@ -415,9 +415,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
   useFrame((_, deltaTime) => {
     // Apply mouse look
-    euler.current.setFromQuaternion(camera.quaternion);
-    euler.current.y = mouseMovement.current.x;
-    euler.current.x = mouseMovement.current.y;
+    euler.current.set(mouseMovement.current.y, mouseMovement.current.x, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler.current);
 
     // Movement direction from keys
