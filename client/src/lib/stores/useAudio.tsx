@@ -14,6 +14,15 @@ interface AudioState {
   reloadSound: HTMLAudioElement | null;
   currentAccelerationSound: HTMLAudioElement | null;
   isMuted: boolean;
+
+  // Ambient drone (Web Audio API — procedural, no file needed)
+  _ambientCtx: AudioContext | null;
+  _ambientOsc1: OscillatorNode | null;
+  _ambientOsc2: OscillatorNode | null;
+  _ambientGain: GainNode | null;
+  _ambientStarted: boolean;
+  startAmbient: () => void;
+  stopAmbient: () => void;
   
   // Setter functions
   setBackgroundMusic: (music: HTMLAudioElement) => void;

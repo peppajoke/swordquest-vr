@@ -154,6 +154,8 @@ export const useVRGame = create<VRGameState>()(
     inDeathRoom: false,
     gameStarted: true,
     gameResetKey: 0,
+    xp: 0,
+    dropOrbs: [],
     killCount: 0,
     runStartTime: Date.now(),
     activeWeapon: 'sword' as 'sword' | 'gun',
@@ -540,6 +542,18 @@ export const useVRGame = create<VRGameState>()(
 
     resetRun: () => {
       set({ killCount: 0, comboCount: 0, comboTimer: 0 });
+    },
+
+    addDropOrb: (orb: DropOrb) => {
+      set(state => ({ dropOrbs: [...state.dropOrbs, orb] }));
+    },
+
+    removeDropOrb: (id: string) => {
+      set(state => ({ dropOrbs: state.dropOrbs.filter(o => o.id !== id) }));
+    },
+
+    addXP: (amount: number) => {
+      set(state => ({ xp: state.xp + amount }));
     },
 
     // Room / wave state
