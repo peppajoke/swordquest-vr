@@ -76,6 +76,11 @@ export default function UpgradeScreen() {
   const [choices] = useState<Upgrade[]>(() => pickRandom(UPGRADE_POOL, 3));
   const [visible, setVisible] = useState(false);
 
+  // Release pointer lock so cursor is free for clicking upgrade cards
+  useEffect(() => {
+    document.exitPointerLock();
+  }, []);
+
   useEffect(() => {
     // Fade in
     const t = setTimeout(() => setVisible(true), 10);

@@ -5,6 +5,11 @@ export default function DeathScreen() {
   const { killCount, runStartTime, respawn } = useVRGame();
   const [timeSurvived, setTimeSurvived] = useState(0);
 
+  // Release pointer lock so cursor is free for the Try Again button
+  useEffect(() => {
+    document.exitPointerLock();
+  }, []);
+
   useEffect(() => {
     // Capture time survived at moment of death (component mount)
     const seconds = Math.floor((Date.now() - runStartTime) / 1000);

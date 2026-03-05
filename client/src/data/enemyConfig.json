@@ -4,7 +4,11 @@
       "name": "Grunt Soldier",
       "health": 1,
       "color": "#8B4513",
-      "size": [0.8, 1.5, 0.8],
+      "size": [
+        0.8,
+        1.5,
+        0.8
+      ],
       "attackDamage": 15,
       "attackCooldown": 2800,
       "attackRange": 2.0,
@@ -16,7 +20,11 @@
       "name": "Rifleman",
       "health": 2,
       "color": "#4B8B3B",
-      "size": [0.7, 1.6, 0.7],
+      "size": [
+        0.7,
+        1.6,
+        0.7
+      ],
       "attackDamage": 20,
       "attackCooldown": 3500,
       "attackRange": 15.0,
@@ -28,7 +36,11 @@
       "name": "Heavy Gunner",
       "health": 4,
       "color": "#2F4F4F",
-      "size": [1.2, 1.8, 1.2],
+      "size": [
+        1.2,
+        1.8,
+        1.2
+      ],
       "attackDamage": 35,
       "attackCooldown": 4200,
       "attackRange": 20.0,
@@ -40,7 +52,11 @@
       "name": "Assassin",
       "health": 3,
       "color": "#1C1C1C",
-      "size": [0.6, 1.4, 0.6],
+      "size": [
+        0.6,
+        1.4,
+        0.6
+      ],
       "attackDamage": 25,
       "attackCooldown": 2500,
       "attackRange": 1.8,
@@ -53,7 +69,11 @@
       "name": "Bomber",
       "health": 3,
       "color": "#FF4500",
-      "size": [0.9, 1.3, 0.9],
+      "size": [
+        0.9,
+        1.3,
+        0.9
+      ],
       "attackDamage": 50,
       "attackCooldown": 5600,
       "attackRange": 8.0,
@@ -66,7 +86,11 @@
       "name": "Sniper",
       "health": 5,
       "color": "#483D8B",
-      "size": [0.7, 1.7, 0.7],
+      "size": [
+        0.7,
+        1.7,
+        0.7
+      ],
       "attackDamage": 40,
       "attackCooldown": 4900,
       "attackRange": 30.0,
@@ -78,7 +102,11 @@
       "name": "Berserker",
       "health": 4,
       "color": "#8B0000",
-      "size": [1.0, 1.6, 1.0],
+      "size": [
+        1.0,
+        1.6,
+        1.0
+      ],
       "attackDamage": 30,
       "attackCooldown": 2100,
       "attackRange": 2.2,
@@ -92,7 +120,11 @@
       "name": "Shield Guard",
       "health": 20,
       "color": "#4682B4",
-      "size": [1.1, 1.9, 1.1],
+      "size": [
+        1.1,
+        1.9,
+        1.1
+      ],
       "attackDamage": 12,
       "attackCooldown": 3100,
       "attackRange": 2.5,
@@ -105,7 +137,11 @@
       "name": "Mage",
       "health": 7,
       "color": "#9400D3",
-      "size": [0.8, 1.6, 0.8],
+      "size": [
+        0.8,
+        1.6,
+        0.8
+      ],
       "attackDamage": 28,
       "attackCooldown": 3900,
       "attackRange": 18.0,
@@ -117,7 +153,11 @@
       "name": "Boss",
       "health": 50,
       "color": "#000000",
-      "size": [3.0, 4.0, 3.0],
+      "size": [
+        3.0,
+        4.0,
+        3.0
+      ],
       "attackDamage": 60,
       "attackCooldown": 2800,
       "attackRange": 25.0,
@@ -130,11 +170,15 @@
       "name": "Drone",
       "health": 1,
       "color": "#C0C0C0",
-      "size": [0.6, 0.4, 1.2],
+      "size": [
+        0.6,
+        0.4,
+        1.2
+      ],
       "attackDamage": 18,
       "attackCooldown": 2800,
       "attackRange": 12.0,
-      "speed": 1.5,
+      "speed": 0.7,
       "category": "flying",
       "description": "Aerial Threats"
     },
@@ -142,11 +186,15 @@
       "name": "Wasp",
       "health": 1,
       "color": "#FFD700",
-      "size": [0.4, 0.3, 0.8],
+      "size": [
+        0.4,
+        0.3,
+        0.8
+      ],
       "attackDamage": 12,
       "attackCooldown": 2100,
       "attackRange": 8.0,
-      "speed": 2.0,
+      "speed": 0.9,
       "category": "flying",
       "description": "Small, agile"
     },
@@ -154,11 +202,15 @@
       "name": "Phoenix",
       "health": 4,
       "color": "#FF6347",
-      "size": [2.0, 1.5, 3.0],
+      "size": [
+        2.0,
+        1.5,
+        3.0
+      ],
       "attackDamage": 45,
       "attackCooldown": 2800,
       "attackRange": 20.0,
-      "speed": 1.3,
+      "speed": 0.6,
       "category": "flying",
       "specialAbility": "explosion",
       "description": "Large wingspan"

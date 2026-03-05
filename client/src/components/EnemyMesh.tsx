@@ -15,32 +15,32 @@ function GruntMesh({ color }: { color: string }) {
   return (
     <group>
       {/* Head with emissive glow */}
-      <mesh position={[0, 0.95, 0]}>
+      <mesh castShadow position={[0, 0.95, 0]}>
         <sphereGeometry args={[0.25, 10, 10]} />
         <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.35} />
       </mesh>
       {/* Torso */}
-      <mesh position={[0, 0.55, 0]}>
+      <mesh castShadow position={[0, 0.55, 0]}>
         <boxGeometry args={[0.3, 0.5, 0.2]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Left arm */}
-      <mesh position={[-0.23, 0.52, 0]}>
+      <mesh castShadow position={[-0.23, 0.52, 0]}>
         <boxGeometry args={[0.08, 0.38, 0.08]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Right arm */}
-      <mesh position={[0.23, 0.52, 0]}>
+      <mesh castShadow position={[0.23, 0.52, 0]}>
         <boxGeometry args={[0.08, 0.38, 0.08]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Left leg */}
-      <mesh position={[-0.1, 0.16, 0]}>
+      <mesh castShadow position={[-0.1, 0.16, 0]}>
         <boxGeometry args={[0.08, 0.35, 0.08]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Right leg */}
-      <mesh position={[0.1, 0.16, 0]}>
+      <mesh castShadow position={[0.1, 0.16, 0]}>
         <boxGeometry args={[0.08, 0.35, 0.08]} />
         <meshLambertMaterial color={color} />
       </mesh>
@@ -54,27 +54,27 @@ function WaspMesh({ color }: { color: string }) {
   return (
     <group>
       {/* Body — cone, tip pointing down */}
-      <mesh position={[0, 0.45, 0]} rotation={[Math.PI, 0, 0]}>
+      <mesh castShadow position={[0, 0.45, 0]} rotation={[Math.PI, 0, 0]}>
         <coneGeometry args={[0.15, 0.6, 8]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Stinger tip */}
-      <mesh position={[0, 0.1, 0]} rotation={[Math.PI, 0, 0]}>
+      <mesh castShadow position={[0, 0.1, 0]} rotation={[Math.PI, 0, 0]}>
         <coneGeometry args={[0.04, 0.18, 6]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Left wing */}
-      <mesh position={[-0.32, 0.6, 0]} rotation={[0, 0, 0.5]}>
+      <mesh castShadow position={[-0.32, 0.6, 0]} rotation={[0, 0, 0.5]}>
         <boxGeometry args={[0.4, 0.04, 0.18]} />
         <meshLambertMaterial color="#eeddaa" transparent opacity={0.55} />
       </mesh>
       {/* Right wing */}
-      <mesh position={[0.32, 0.6, 0]} rotation={[0, 0, -0.5]}>
+      <mesh castShadow position={[0.32, 0.6, 0]} rotation={[0, 0, -0.5]}>
         <boxGeometry args={[0.4, 0.04, 0.18]} />
         <meshLambertMaterial color="#eeddaa" transparent opacity={0.55} />
       </mesh>
       {/* Head sphere */}
-      <mesh position={[0, 0.82, 0]}>
+      <mesh castShadow position={[0, 0.82, 0]}>
         <sphereGeometry args={[0.13, 8, 8]} />
         <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.2} />
       </mesh>
@@ -108,14 +108,14 @@ function DroneMesh({ color }: { color: string }) {
       </mesh>
       {/* Arms */}
       {arms.map((arm, i) => (
-        <mesh key={`arm-${i}`} position={arm.pos} rotation={arm.rot}>
+        <mesh castShadow key={`arm-${i}`} position={arm.pos} rotation={arm.rot}>
           <cylinderGeometry args={[0.04, 0.04, 0.7, 6]} />
           <meshLambertMaterial color={color} />
         </mesh>
       ))}
       {/* Propeller discs */}
       {discOffsets.map((dpos, i) => (
-        <mesh key={`disc-${i}`} position={dpos} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh castShadow key={`disc-${i}`} position={dpos} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.12, 0.12, 0.04, 8]} />
           <meshLambertMaterial color="#88bbee" emissive="#4488cc" emissiveIntensity={0.5} />
         </mesh>
@@ -130,27 +130,27 @@ function PhoenixMesh({ color }: { color: string }) {
   return (
     <group>
       {/* Body */}
-      <mesh position={[0, 0.6, 0]}>
+      <mesh castShadow position={[0, 0.6, 0]}>
         <octahedronGeometry args={[0.4]} />
         <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.8} />
       </mesh>
       {/* Left wing */}
-      <mesh position={[-0.65, 0.65, 0.1]} rotation={[0.2, 0.1, 0.6]}>
+      <mesh castShadow position={[-0.65, 0.65, 0.1]} rotation={[0.2, 0.1, 0.6]}>
         <boxGeometry args={[0.7, 0.06, 0.35]} />
         <meshLambertMaterial color="#ff8822" emissive="#ff4400" emissiveIntensity={0.6} />
       </mesh>
       {/* Right wing */}
-      <mesh position={[0.65, 0.65, 0.1]} rotation={[0.2, -0.1, -0.6]}>
+      <mesh castShadow position={[0.65, 0.65, 0.1]} rotation={[0.2, -0.1, -0.6]}>
         <boxGeometry args={[0.7, 0.06, 0.35]} />
         <meshLambertMaterial color="#ff8822" emissive="#ff4400" emissiveIntensity={0.6} />
       </mesh>
       {/* Tail feathers */}
-      <mesh position={[0, 0.4, 0.3]} rotation={[0.5, 0, 0]}>
+      <mesh castShadow position={[0, 0.4, 0.3]} rotation={[0.5, 0, 0]}>
         <boxGeometry args={[0.25, 0.05, 0.4]} />
         <meshLambertMaterial color="#ffaa00" emissive="#ff6600" emissiveIntensity={0.5} />
       </mesh>
       {/* Head crest */}
-      <mesh position={[0, 0.95, -0.1]} rotation={[-0.3, 0, 0]}>
+      <mesh castShadow position={[0, 0.95, -0.1]} rotation={[-0.3, 0, 0]}>
         <coneGeometry args={[0.08, 0.22, 5]} />
         <meshLambertMaterial color="#ffcc00" emissive="#ff8800" emissiveIntensity={0.7} />
       </mesh>
@@ -165,39 +165,39 @@ function BerserkerMesh({ color }: { color: string }) {
     // Forward lean via group rotation
     <group rotation={[0.18, 0, 0]}>
       {/* Wide torso */}
-      <mesh position={[0, 0.5, 0]}>
+      <mesh castShadow position={[0, 0.5, 0]}>
         <boxGeometry args={[0.6, 0.6, 0.35]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Head */}
-      <mesh position={[0, 0.9, 0]}>
+      <mesh castShadow position={[0, 0.9, 0]}>
         <boxGeometry args={[0.3, 0.28, 0.28]} />
         <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.15} />
       </mesh>
       {/* Left shoulder spike */}
-      <mesh position={[-0.45, 0.72, 0]} rotation={[0, 0, 0.6]}>
+      <mesh castShadow position={[-0.45, 0.72, 0]} rotation={[0, 0, 0.6]}>
         <boxGeometry args={[0.22, 0.12, 0.18]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      <mesh position={[-0.58, 0.82, 0]} rotation={[0, 0, 1.1]}>
+      <mesh castShadow position={[-0.58, 0.82, 0]} rotation={[0, 0, 1.1]}>
         <coneGeometry args={[0.07, 0.28, 4]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Right shoulder spike */}
-      <mesh position={[0.45, 0.72, 0]} rotation={[0, 0, -0.6]}>
+      <mesh castShadow position={[0.45, 0.72, 0]} rotation={[0, 0, -0.6]}>
         <boxGeometry args={[0.22, 0.12, 0.18]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      <mesh position={[0.58, 0.82, 0]} rotation={[0, 0, -1.1]}>
+      <mesh castShadow position={[0.58, 0.82, 0]} rotation={[0, 0, -1.1]}>
         <coneGeometry args={[0.07, 0.28, 4]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Legs */}
-      <mesh position={[-0.15, 0.16, 0]}>
+      <mesh castShadow position={[-0.15, 0.16, 0]}>
         <boxGeometry args={[0.18, 0.35, 0.18]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      <mesh position={[0.15, 0.16, 0]}>
+      <mesh castShadow position={[0.15, 0.16, 0]}>
         <boxGeometry args={[0.18, 0.35, 0.18]} />
         <meshLambertMaterial color={color} />
       </mesh>
@@ -211,36 +211,36 @@ function HeavyMesh({ color }: { color: string }) {
   return (
     <group>
       {/* Main body slab */}
-      <mesh position={[0, 0.5, 0]}>
+      <mesh castShadow position={[0, 0.5, 0]}>
         <boxGeometry args={[0.8, 0.8, 0.5]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Helmet */}
-      <mesh position={[0, 1.0, 0]}>
+      <mesh castShadow position={[0, 1.0, 0]}>
         <boxGeometry args={[0.65, 0.38, 0.48]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Visor slit */}
-      <mesh position={[0, 1.02, 0.26]}>
+      <mesh castShadow position={[0, 1.02, 0.26]}>
         <boxGeometry args={[0.42, 0.08, 0.04]} />
         <meshLambertMaterial color="#004488" emissive="#0066cc" emissiveIntensity={0.9} />
       </mesh>
       {/* Left shoulder slab */}
-      <mesh position={[-0.58, 0.78, 0]}>
+      <mesh castShadow position={[-0.58, 0.78, 0]}>
         <boxGeometry args={[0.24, 0.22, 0.46]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Right shoulder slab */}
-      <mesh position={[0.58, 0.78, 0]}>
+      <mesh castShadow position={[0.58, 0.78, 0]}>
         <boxGeometry args={[0.24, 0.22, 0.46]} />
         <meshLambertMaterial color={color} />
       </mesh>
       {/* Legs */}
-      <mesh position={[-0.2, 0.08, 0]}>
+      <mesh castShadow position={[-0.2, 0.08, 0]}>
         <boxGeometry args={[0.28, 0.2, 0.38]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      <mesh position={[0.2, 0.08, 0]}>
+      <mesh castShadow position={[0.2, 0.08, 0]}>
         <boxGeometry args={[0.28, 0.2, 0.38]} />
         <meshLambertMaterial color={color} />
       </mesh>
@@ -264,19 +264,19 @@ function BossMesh({ color }: { color: string }) {
   return (
     <group>
       {/* Core */}
-      <mesh position={[0, 0.85, 0]}>
+      <mesh castShadow position={[0, 0.85, 0]}>
         <octahedronGeometry args={[0.6]} />
         <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.9} />
       </mesh>
       {/* Inner ring glow */}
-      <mesh position={[0, 0.85, 0]}>
+      <mesh castShadow position={[0, 0.85, 0]}>
         <torusGeometry args={[0.7, 0.04, 6, 24]} />
         <meshLambertMaterial color="#aa44ff" emissive="#6600cc" emissiveIntensity={1.0} transparent opacity={0.8} />
       </mesh>
       {/* Orbiting shards */}
       <group ref={shardsRef} position={[0, 0.85, 0]}>
         {shardAngles.map((angle, i) => (
-          <mesh
+          <mesh castShadow
             key={`shard-${i}`}
             position={[Math.cos(angle) * 1.05, (i - 1) * 0.22, Math.sin(angle) * 1.05]}
             rotation={[0.3, angle, 0.5]}
@@ -313,7 +313,7 @@ export default function EnemyMesh({ type, color, isAttacking = false }: EnemyMes
     default:
       // Fallback for any unhandled types (rifleman, assassin, etc.) — simple box
       return (
-        <mesh position={[0, 0.4, 0]}>
+        <mesh castShadow position={[0, 0.4, 0]}>
           <boxGeometry args={[0.4, 0.8, 0.4]} />
           <meshLambertMaterial color={displayColor} />
         </mesh>
