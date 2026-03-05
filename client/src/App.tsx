@@ -4,6 +4,7 @@ import { VRButton, XR, createXRStore } from "@react-three/xr";
 import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
 import DesktopUI from "./components/DesktopUI";
+import MainMenu from "./components/MainMenu";
 import "@fontsource/inter";
 import "./index.css";
 
@@ -19,7 +20,11 @@ const sessionInit = {
   optionalFeatures: ["local-floor", "bounded-floor", "layers"], // omit 'hand-tracking'
 };
 
+type GameMode = 'menu' | 'playing' | 'dev';
+
 function App() {
+  const [gameMode, setGameMode] = useState<GameMode>('menu');
+  const [startWeapon, setStartWeapon] = useState<'sword' | 'gun'>('sword');
   const [fuel, setFuel] = useState(100);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
@@ -46,13 +51,23 @@ function App() {
         overflow: "hidden",
       }}
     >
-      {/* VR Entry Button — minimal, top right */}
-      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 1000 }}>
-        <VRButton store={store} />
-      </div>
+      {/* Main Menu */}
+      {gameMode === 'menu' && (
+        <MainMenu
+          onStart={(weapon) => { setStartWeapon(weapon); setGameMode('playing'); }}
+          onDevMode={() => setGameMode('dev')}
+        />
+      )}
+
+      {/* VR Entry Button — only shown in-game */}
+      {gameMode !== 'menu' && (
+        <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 1000 }}>
+          <VRButton store={store} />
+        </div>
+      )}
 
       {/* Controls Instructions */}
-      <ControlsInstructions />
+      {gameMode !== 'menu' && <ControlsInstructions />}
 
       {/* Main Canvas - fills the full viewport */}
       <Canvas
@@ -71,7 +86,7 @@ function App() {
       >
         <XR store={store}>
           <Suspense fallback={null}>
-            <VRGame />
+            <VRGame startWeapon={startWeapon} devMode={gameMode === 'dev'} />
           </Suspense>
         </XR>
       </Canvas>

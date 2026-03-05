@@ -13,17 +13,23 @@ import { Text } from '@react-three/drei';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 
-export default function VRGame() {
+interface VRGameProps {
+  startWeapon?: 'sword' | 'gun';
+  devMode?: boolean;
+}
+
+export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGameProps) {
   const { scene, camera } = useThree();
   const isVRPresenting = !!useXR((s) => s.session);
 
-  // Set initial camera tilt to look slightly down toward enemies
+  // Set initial camera tilt + starting weapon
   useEffect(() => {
     if (!isVRPresenting) {
-      camera.rotation.x = -0.18; // ~10° down — eyes on the action
+      camera.rotation.x = -0.18;
     }
+    setActiveWeapon(startWeapon);
   }, []);
-  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn } = useVRGame();
+  const { initializeGame, health, maxHealth, isDead, inDeathRoom, respawn, setActiveWeapon } = useVRGame();
   const { 
     setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
     setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
