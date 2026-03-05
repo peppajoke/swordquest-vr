@@ -75,8 +75,10 @@ export default function DesktopSwordVisual({
         swingTime.current += deltaTime;
         const progress = Math.min(swingTime.current / swingDuration, 1);
 
-        // Smooth ease in/out
-        const smoothProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
+        // Velocity spike: cubic ease-in-out — blade is slow at start/end, snaps 3x fast through center
+        const smoothProgress = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
         // Alternate direction each swing: even = right-to-left, odd = left-to-right
         const dir = swingCount.current % 2 === 0 ? 1 : -1;

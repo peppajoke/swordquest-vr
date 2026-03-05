@@ -1,5 +1,18 @@
 {
   "spawns": [
+    { "type": "grunt", "position": [-8,  0, -12], "group": "Fodder" },
+    { "type": "grunt", "position": [ 5,  0, -14], "group": "Fodder" },
+    { "type": "grunt", "position": [-18, 0, -16], "group": "Fodder" },
+    { "type": "grunt", "position": [ 14, 0, -13], "group": "Fodder" },
+    { "type": "grunt", "position": [-3,  0, -20], "group": "Fodder" },
+    { "type": "grunt", "position": [ 22, 0, -18], "group": "Fodder" },
+    { "type": "grunt", "position": [-25, 0, -22], "group": "Fodder" },
+    { "type": "grunt", "position": [  8, 0, -25], "group": "Fodder" },
+    { "type": "grunt", "position": [-12, 0, -28], "group": "Fodder" },
+    { "type": "grunt", "position": [ 30, 0, -15], "group": "Fodder" },
+    { "type": "wasp",  "position": [ -6, 4, -16], "group": "Fodder" },
+    { "type": "wasp",  "position": [ 10, 5, -18], "group": "Fodder" },
+    { "type": "wasp",  "position": [-20, 6, -14], "group": "Fodder" },
     {
       "type": "grunt",
       "position": [-60, 0, -20],

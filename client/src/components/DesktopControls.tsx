@@ -72,7 +72,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   // Boost state refs (for use inside useFrame without stale closure)
   const boostActiveRef = useRef(false);
   const normalSpeed = PLAYER_CONFIG.movement.jetpackSpeed;
-  const boostSpeed = 28;
+  // Car-style boost: persistent velocity that accelerates/decelerates with inertia
+  const boostVelocity = useRef(new THREE.Vector3());
+  const boostMaxSpeed = 48;
+  const boostAccel = 90;  // units/s² while Shift held
+  const boostDecel = 70;  // units/s² drag when released
 
   const switchWeapon = (w: 'sword' | 'gun') => {
     weaponRef.current = w;
@@ -397,20 +401,40 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       isGrounded.current = false;
     }
 
-    // Boost: fly forward at high speed while Shift held
+    // Car-style boost: accelerates into look direction, decelerates with drag on release
     if (boostActiveRef.current) {
       const forwardDir = new THREE.Vector3(0, 0, -1);
       forwardDir.applyQuaternion(camera.quaternion);
       forwardDir.normalize();
-      velocity.current.set(
-        forwardDir.x * boostSpeed,
-        forwardDir.y * boostSpeed,
-        forwardDir.z * boostSpeed,
+      // Steer with A/D while boosting — lateral influence
+      const lateralDir = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+      const steerX = (keys.current.d ? 1 : 0) - (keys.current.a ? 1 : 0);
+      const targetDir = forwardDir.clone().add(lateralDir.clone().multiplyScalar(steerX * 0.4)).normalize();
+      // Accelerate boost velocity toward look direction
+      boostVelocity.current.addScaledVector(
+        targetDir.clone().sub(boostVelocity.current.clone().normalize().multiplyScalar(
+          Math.min(boostVelocity.current.length() / boostMaxSpeed, 1)
+        )),
+        boostAccel * deltaTime
       );
+      // Clamp to max speed
+      if (boostVelocity.current.length() > boostMaxSpeed) {
+        boostVelocity.current.setLength(boostMaxSpeed);
+      }
+      velocity.current.copy(boostVelocity.current);
     } else {
-      velocity.current.x = direction.current.x * normalSpeed;
-      velocity.current.z = direction.current.z * normalSpeed;
-      velocity.current.y = 0;
+      // Decelerate boost velocity (inertia carry-over)
+      if (boostVelocity.current.length() > 0.5) {
+        const drag = boostDecel * deltaTime;
+        const len = boostVelocity.current.length();
+        boostVelocity.current.setLength(Math.max(0, len - drag));
+        velocity.current.copy(boostVelocity.current);
+      } else {
+        boostVelocity.current.set(0, 0, 0);
+        velocity.current.x = direction.current.x * normalSpeed;
+        velocity.current.z = direction.current.z * normalSpeed;
+        velocity.current.y = 0;
+      }
     }
 
     camera.position.add(velocity.current.clone().multiplyScalar(deltaTime));
