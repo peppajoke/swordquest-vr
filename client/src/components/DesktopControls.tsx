@@ -89,6 +89,14 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const shiftTapCount = useRef(0);
   const shiftLastTap = useRef(0);
 
+  // Sync local weaponState when the store's activeWeapon changes externally (e.g., after pickup)
+  useEffect(() => {
+    if (activeWeapon !== null && activeWeapon !== weaponRef.current) {
+      weaponRef.current = activeWeapon;
+      setWeaponState(activeWeapon);
+    }
+  }, [activeWeapon]);
+
   const switchWeapon = (w: 'sword' | 'gun') => {
     if (weaponLocked) return; // locked after pickup — can't switch in a run
     if (pickupPhase) return;  // can't switch before picking up a weapon
