@@ -29,6 +29,14 @@ export default function DesktopSwordVisual({
   const swingProgress = useRef(0);
   const swingCount = useRef(0); // increments each swing; even = left sweep, odd = right sweep
 
+  // Recovery: after swing ends, lerp sword back to idle over this duration
+  const recoverTime = useRef(0);
+  const recoverDuration = 0.18;
+  const isRecovering = useRef(false);
+  // Store the position/quat at swing-end so we can lerp from it
+  const recoveryStartPos = useRef(new THREE.Vector3());
+  const recoveryStartQuat = useRef(new THREE.Quaternion());
+
   // Gun refs
   const leftGunRef = useRef<THREE.Group>(null);
   const rightGunRef = useRef<THREE.Group>(null);
@@ -107,21 +115,39 @@ export default function DesktopSwordVisual({
         swordGroupRef.current.quaternion.multiply(slashQuat);
 
         if (progress >= 1) {
+          // Capture where the sword is RIGHT NOW before transitioning to idle
+          recoveryStartPos.current.copy(swordGroupRef.current.position);
+          recoveryStartQuat.current.copy(swordGroupRef.current.quaternion);
           isSwingActive.current = false;
+          isRecovering.current = true;
+          recoverTime.current = 0;
           swingTime.current = 0;
           onSwingComplete();
         }
       } else {
-        // Idle: sword rests at hip-right (or hip-left), pointing forward
+        // Compute idle target position/rotation
         const idleX = hand === 'left' ? -0.45 : 0.45;
-        const swordPos = cameraPos.clone()
+        const idlePos = cameraPos.clone()
           .add(cameraDir.clone().multiplyScalar(0.9))
           .add(rightDir.clone().multiplyScalar(idleX))
           .add(upDir.clone().multiplyScalar(-0.35));
-        swordGroupRef.current.position.copy(swordPos);
-        swordGroupRef.current.quaternion.copy(camera.quaternion);
+        const idleQuat = camera.quaternion.clone();
         const idleRot = new THREE.Euler(-Math.PI / 10, hand === 'left' ? Math.PI / 8 : -Math.PI / 8, 0, 'YXZ');
-        swordGroupRef.current.quaternion.multiply(new THREE.Quaternion().setFromEuler(idleRot));
+        idleQuat.multiply(new THREE.Quaternion().setFromEuler(idleRot));
+
+        if (isRecovering.current) {
+          // Lerp from swing-end back to idle
+          recoverTime.current += deltaTime;
+          const t = Math.min(recoverTime.current / recoverDuration, 1);
+          const smooth = 0.5 - 0.5 * Math.cos(t * Math.PI); // ease in/out
+          swordGroupRef.current.position.lerpVectors(recoveryStartPos.current, idlePos, smooth);
+          swordGroupRef.current.quaternion.slerpQuaternions(recoveryStartQuat.current, idleQuat, smooth);
+          if (t >= 1) isRecovering.current = false;
+        } else {
+          // Full idle
+          swordGroupRef.current.position.copy(idlePos);
+          swordGroupRef.current.quaternion.copy(idleQuat);
+        }
         swingProgress.current = 0;
       }
     }
