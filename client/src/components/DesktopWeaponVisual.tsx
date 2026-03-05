@@ -17,7 +17,7 @@ import weaponConfig from '../data/weaponConfig.json';
 interface DesktopWeaponVisualProps {
   isSwinging: boolean;
   hand: 'left' | 'right';
-  activeWeapon: 'sword' | 'gun';
+  activeWeapon: 'sword' | 'gun' | null;
   onSwingComplete: () => void;
   isVisible?: boolean;
   recoilSignal?: number;

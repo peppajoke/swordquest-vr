@@ -17,7 +17,7 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats, setDesktopFuel, weaponLocked } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats, setDesktopFuel, weaponLocked, pickupPhase } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
 
   // Movement state
@@ -45,8 +45,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
 
   // Weapon state (local + synced to store)
-  const [weaponState, setWeaponState] = useState<'sword' | 'gun'>('sword');
-  const weaponRef = useRef<'sword' | 'gun'>('sword');
+  const [weaponState, setWeaponState] = useState<'sword' | 'gun' | null>(null);
+  const weaponRef = useRef<'sword' | 'gun' | null>(null);
 
   // Sword swinging state
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
@@ -91,6 +91,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
   const switchWeapon = (w: 'sword' | 'gun') => {
     if (weaponLocked) return; // locked after pickup — can't switch in a run
+    if (pickupPhase) return;  // can't switch before picking up a weapon
     weaponRef.current = w;
     setWeaponState(w);
     setActiveWeapon(w);

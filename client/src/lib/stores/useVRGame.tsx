@@ -105,11 +105,11 @@ interface VRGameState {
   startGame: () => void;
 
   // Desktop mode state
-  activeWeapon: 'sword' | 'gun';
+  activeWeapon: 'sword' | 'gun' | null;
   isBoostActive: boolean;
   weaponLocked: boolean; // true after pickup — can't switch weapon class
   pickupPhase: boolean;  // true until player picks up a starting weapon
-  setActiveWeapon: (weapon: 'sword' | 'gun') => void;
+  setActiveWeapon: (weapon: 'sword' | 'gun' | null) => void;
   setBoostActive: (active: boolean) => void;
   setWeaponLocked: (locked: boolean) => void;
   setPickupPhase: (active: boolean) => void;
@@ -158,7 +158,7 @@ export const useVRGame = create<VRGameState>()(
     dropOrbs: [],
     killCount: 0,
     runStartTime: Date.now(),
-    activeWeapon: 'sword' as 'sword' | 'gun',
+    activeWeapon: null as 'sword' | 'gun' | null,
     isBoostActive: false,
     weaponLocked: false,
     pickupPhase: true,

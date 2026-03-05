@@ -147,6 +147,7 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
         {pickupPhase && !isVRPresenting && (
           <WeaponPickup
             onPicked={(weapon) => {
+              setActiveWeapon(weapon);
               setPickupPhase(false);
               setWeaponLocked(true);
             }}

@@ -207,6 +207,9 @@ export default function Enemy({ type, position }: EnemyProps) {
       console.log(`💀 ${type.toUpperCase()} defeated! +${points} points`);
       // Track kill for HUD counter + combo
       useVRGame.getState().addKill();
+      import("../lib/stores/useAudio").then(({ useAudio }) => {
+        useAudio.getState().playKill();
+      });
     }
 
     // Handle berserker rage mode

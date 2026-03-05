@@ -49,6 +49,7 @@ interface AudioState {
   playBoost: () => void;
   playGunAmmo: () => void;
   playReload: () => void;
+  playKill: () => void;
   stopAcceleration: () => void;
 }
 
@@ -272,6 +273,17 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
   },
   
+  playKill: () => {
+    const { successSound, isMuted } = get();
+    if (successSound && !isMuted) {
+      const soundClone = successSound.cloneNode() as HTMLAudioElement;
+      soundClone.volume = 0.9;
+      soundClone.playbackRate = 1.2; // Slightly higher pitch = satisfying kill confirm
+      soundClone.currentTime = 0;
+      soundClone.play().catch(() => {});
+    }
+  },
+
   stopAcceleration: () => {
     const { currentAccelerationSound } = get();
     if (currentAccelerationSound) {
