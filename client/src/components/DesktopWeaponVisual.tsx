@@ -21,6 +21,7 @@ interface DesktopWeaponVisualProps {
   onSwingComplete: () => void;
   isVisible?: boolean;
   recoilSignal?: number;
+  recoilHand?: 'left' | 'right' | null;
 }
 
 export default function DesktopWeaponVisual({
@@ -30,6 +31,7 @@ export default function DesktopWeaponVisual({
   onSwingComplete,
   isVisible = true,
   recoilSignal = 0,
+  recoilHand = null,
 }: DesktopWeaponVisualProps) {
   const { camera } = useThree();
   const { activeMeleeWeapon, activeRangedWeapon, playerStats } = useVRGame();
@@ -53,9 +55,13 @@ export default function DesktopWeaponVisual({
 
   // Recoil
   const recoilRef = useRef(0);
+  const recoilHandRef = useRef<'left' | 'right' | null>(null);
   useEffect(() => {
     if (recoilSignal > 0) recoilRef.current = 1;
   }, [recoilSignal]);
+  useEffect(() => {
+    recoilHandRef.current = recoilHand ?? null;
+  }, [recoilHand]);
 
   useFrame((_, deltaTime) => {
     const cameraPos = camera.position.clone();
@@ -150,7 +156,8 @@ export default function DesktopWeaponVisual({
     // ---- GUNS ----
     const updateGun = (ref: React.RefObject<THREE.Group | null>, side: 'left' | 'right') => {
       if (!ref.current) return;
-      const recoilPush = activeWeapon === 'gun' ? recoilRef.current * 0.08 : 0;
+      const isThisGunRecoiling = recoilHandRef.current === side;
+      const recoilPush = (activeWeapon === 'gun' && isThisGunRecoiling) ? recoilRef.current * 0.08 : 0;
       const sideOffset = side === 'left' ? -0.3 : 0.3;
       ref.current.position.copy(
         cameraPos.clone()

@@ -71,8 +71,10 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const [isReloading, setIsReloading] = useState(false);
   const [reloadTimeout, setReloadTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Recoil signal — increments each shot, passed to DesktopSwordVisual
+  // Recoil signal — increments each shot, passed to DesktopWeaponVisual
   const [shotCount, setShotCount] = useState(0);
+  // Which gun last fired — for per-gun recoil
+  const [lastFiredGun, setLastFiredGun] = useState<'left' | 'right' | null>(null);
 
   // Jetpack state — mirrors VR physics exactly
   const boostActiveRef = useRef(false);
@@ -137,8 +139,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     // Notify parent if wired
     if (onClipChange) onClipChange(newLeft, newRight, gun, false);
 
-    // Recoil signal
+    // Recoil signal — track which gun fired for per-gun recoil
     setShotCount(c => c + 1);
+    setLastFiredGun(gun);
     if (onShoot) onShoot(gun);
 
     // --- Compute barrel origin ---
@@ -578,6 +581,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         onSwingComplete={() => setIsSwinging(false)}
         isVisible={!isVRPresented}
         recoilSignal={shotCount}
+        recoilHand={lastFiredGun}
       />
     </>
   );
