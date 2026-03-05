@@ -177,13 +177,16 @@ export default function DesktopSwordVisual({ isSwinging, hand, onSwingComplete, 
     cameraDir.applyQuaternion(camera.quaternion);
 
     // Position sword in front of camera
-    const swordPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(1.0));
+    const swordPos = cameraPos.clone().add(cameraDir.clone().multiplyScalar(0.6));
     
-    // Offset to left or right based on hand
+    // Offset to lower right (like holding a sword at hip level)
     const rightDir = new THREE.Vector3(1, 0, 0);
     rightDir.applyQuaternion(camera.quaternion);
-    const handOffset = hand === 'left' ? -0.3 : 0.3;
+    const upDir = new THREE.Vector3(0, 1, 0);
+    upDir.applyQuaternion(camera.quaternion);
+    const handOffset = hand === 'left' ? -0.35 : 0.35;
     swordPos.add(rightDir.clone().multiplyScalar(handOffset));
+    swordPos.add(upDir.clone().multiplyScalar(-0.35)); // Drop it down to hand level
     
     groupRef.current.position.copy(swordPos);
 
