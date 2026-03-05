@@ -80,6 +80,13 @@ interface VRGameState {
   isBoostActive: boolean;
   setActiveWeapon: (weapon: 'sword' | 'gun') => void;
   setBoostActive: (active: boolean) => void;
+
+  // Desktop ammo HUD state (shared so DesktopUI can read without prop drilling)
+  desktopLeftClip: number;
+  desktopRightClip: number;
+  desktopCurrentGun: 'left' | 'right';
+  desktopIsReloading: boolean;
+  setDesktopAmmo: (left: number, right: number, gun: 'left' | 'right', reloading: boolean) => void;
 }
 
 const createInitialTargets = (): Target[] => [];
@@ -105,6 +112,10 @@ export const useVRGame = create<VRGameState>()(
     gameResetKey: 0,
     activeWeapon: 'sword' as 'sword' | 'gun',
     isBoostActive: false,
+    desktopLeftClip: 12,
+    desktopRightClip: 12,
+    desktopCurrentGun: 'left' as 'left' | 'right',
+    desktopIsReloading: false,
     
     // Endless runner state
     gameSpeed: 0.02, // Initial forward movement speed
@@ -442,6 +453,10 @@ export const useVRGame = create<VRGameState>()(
 
     setBoostActive: (active: boolean) => {
       set({ isBoostActive: active });
+    },
+
+    setDesktopAmmo: (left: number, right: number, gun: 'left' | 'right', reloading: boolean) => {
+      set({ desktopLeftClip: left, desktopRightClip: right, desktopCurrentGun: gun, desktopIsReloading: reloading });
     },
   }))
 );

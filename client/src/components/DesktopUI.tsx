@@ -15,7 +15,13 @@ export default function DesktopUI({
   isReloading = false,
 }: DesktopUIProps) {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const { activeWeapon, isBoostActive } = useVRGame();
+  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading } = useVRGame();
+
+  // Always use store values — DesktopControls keeps them live via setDesktopAmmo
+  const leftClipDisplay = desktopLeftClip;
+  const rightClipDisplay = desktopRightClip;
+  const currentGunDisplay = desktopCurrentGun;
+  const isReloadingDisplay = desktopIsReloading;
 
   useEffect(() => {
     const handlePointerLockChange = () => {
@@ -86,16 +92,16 @@ export default function DesktopUI({
           <>
             <div>
               🔫 L:{' '}
-              <span style={{ color: leftClip > 4 ? 'white' : leftClip > 0 ? 'orange' : 'red' }}>
-                {leftClip}/12
+              <span style={{ color: leftClipDisplay > 4 ? 'white' : leftClipDisplay > 0 ? 'orange' : 'red' }}>
+                {leftClipDisplay}/12
               </span>
               {' '}R:{' '}
-              <span style={{ color: rightClip > 4 ? 'white' : rightClip > 0 ? 'orange' : 'red' }}>
-                {rightClip}/12
+              <span style={{ color: rightClipDisplay > 4 ? 'white' : rightClipDisplay > 0 ? 'orange' : 'red' }}>
+                {rightClipDisplay}/12
               </span>
-              {' '}[{currentGun.toUpperCase()}]
+              {' '}[{currentGunDisplay.toUpperCase()}]
             </div>
-            {isReloading && <div style={{ color: 'yellow' }}>🔄 Reloading...</div>}
+            {isReloadingDisplay && <div style={{ color: 'yellow' }}>🔄 Reloading...</div>}
           </>
         )}
 
@@ -107,7 +113,7 @@ export default function DesktopUI({
           Shift(hold) Boost · 1 Sword · 2 Gun · Scroll Switch
         </div>
         <div style={{ fontSize: '12px', color: '#aaaaaa' }}>
-          {activeWeapon === 'sword' ? 'Right Click: Swing' : 'Left Click: Shoot'} · R Reload
+          Left Click: {activeWeapon === 'sword' ? 'Swing' : 'Shoot'} · R Reload
         </div>
 
         {!isPointerLocked && (
