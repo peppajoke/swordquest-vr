@@ -26,6 +26,13 @@ interface SwordCollider {
   mesh: THREE.Group;
 }
 
+interface DropOrb {
+  id: string;
+  type: 'health' | 'xp';
+  position: [number, number, number];
+  spawnTime: number;
+}
+
 interface VRGameState {
   score: number;
   targets: Target[];
@@ -42,6 +49,8 @@ interface VRGameState {
   inDeathRoom: boolean;
   gameStarted: boolean;
   gameResetKey: number;
+  xp: number;
+  dropOrbs: DropOrb[];
   killCount: number;
   comboCount: number;
   comboTimer: number;
@@ -73,9 +82,18 @@ interface VRGameState {
   addKill: () => void;
   resetRun: () => void;
 
+  // Drop orb management
+  addDropOrb: (orb: DropOrb) => void;
+  removeDropOrb: (id: string) => void;
+  addXP: (amount: number) => void;
+
   // Room / wave state
   roomCleared: boolean;
   setRoomCleared: (v: boolean) => void;
+
+  // Upgrade screen
+  showUpgradeScreen: boolean;
+  setShowUpgradeScreen: (v: boolean) => void;
 
   setHealth: (health: number) => void;
   takeDamage: (damage: number) => void;
@@ -526,6 +544,18 @@ export const useVRGame = create<VRGameState>()(
 
     // Room / wave state
     roomCleared: false,
-    setRoomCleared: (v: boolean) => { set({ roomCleared: v }); },
+    setRoomCleared: (v: boolean) => {
+      set({ roomCleared: v });
+      if (v) {
+        // Show upgrade screen after a 2-second delay
+        setTimeout(() => {
+          set({ showUpgradeScreen: true });
+        }, 2000);
+      }
+    },
+
+    // Upgrade screen
+    showUpgradeScreen: false,
+    setShowUpgradeScreen: (v: boolean) => { set({ showUpgradeScreen: v }); },
   }))
 );

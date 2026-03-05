@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useVRGame } from '../lib/stores/useVRGame';
 
 interface DesktopUIProps {
@@ -16,7 +16,12 @@ export default function DesktopUI({
 }: DesktopUIProps) {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [comboPulse, setComboPulse] = useState(false);
-  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon } = useVRGame();
+  const [showRoomCleared, setShowRoomCleared] = useState(false);
+  const [waveFlash, setWaveFlash] = useState<string | null>(null);
+  const roomClearedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waveFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon, roomCleared } = useVRGame();
 
   // Always use store values — DesktopControls keeps them live via setDesktopAmmo
   const leftClipDisplay = desktopLeftClip;
@@ -41,8 +46,80 @@ export default function DesktopUI({
     }
   }, [comboCount]);
 
+  // Room cleared flash
+  useEffect(() => {
+    if (roomCleared) {
+      setShowRoomCleared(true);
+      if (roomClearedTimer.current) clearTimeout(roomClearedTimer.current);
+      roomClearedTimer.current = setTimeout(() => setShowRoomCleared(false), 3000);
+    }
+  }, [roomCleared]);
+
+  // Wave advance flash (fired via CustomEvent from GameObjects)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const wave = (e as CustomEvent).detail?.wave;
+      if (wave) {
+        setWaveFlash(`WAVE ${wave}`);
+        if (waveFlashTimer.current) clearTimeout(waveFlashTimer.current);
+        waveFlashTimer.current = setTimeout(() => setWaveFlash(null), 3000);
+      }
+    };
+    window.addEventListener('waveAdvance', handler);
+    return () => window.removeEventListener('waveAdvance', handler);
+  }, []);
+
   return (
     <>
+      {/* ROOM CLEARED overlay */}
+      {showRoomCleared && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '38%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 2000,
+            pointerEvents: 'none',
+            color: '#00ff88',
+            fontSize: '72px',
+            fontFamily: 'monospace',
+            fontWeight: 'bold',
+            textShadow: '0 0 30px #00ff88, 0 0 60px #00cc66, 3px 3px 8px rgba(0,0,0,0.9)',
+            letterSpacing: '6px',
+            animation: 'none',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          ROOM CLEARED
+        </div>
+      )}
+
+      {/* WAVE flash overlay */}
+      {waveFlash && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 2000,
+            pointerEvents: 'none',
+            color: '#ffcc00',
+            fontSize: '60px',
+            fontFamily: 'monospace',
+            fontWeight: 'bold',
+            textShadow: '0 0 25px #ffcc00, 0 0 50px #ff8800, 3px 3px 8px rgba(0,0,0,0.9)',
+            letterSpacing: '8px',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          ⚡ {waveFlash} ⚡
+        </div>
+      )}
+
       {/* Crosshair */}
       <div
         style={{
