@@ -185,9 +185,18 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     playGunShoot();
 
     for (const intersect of intersects) {
-      const hitObject = intersect.object;
+      // Walk up hierarchy — raycaster hits child geometry, but userData lives on the parent group
+      let hitObject: THREE.Object3D | null = intersect.object;
+      while (hitObject && !hitObject.userData.isEnemy && !hitObject.userData.isPillar) {
+        hitObject = hitObject.parent;
+      }
+      if (!hitObject) {
+        addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
+        break;
+      }
       if (hitObject.userData.isEnemy && !hitObject.userData.isDead) {
-        if (hitObject.userData.takeDamage) hitObject.userData.takeDamage(4);
+        const rangedDmg = getRangedCfg().baseDamage ?? 25;
+        if (hitObject.userData.takeDamage) hitObject.userData.takeDamage(rangedDmg);
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         break;
       }
@@ -196,10 +205,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         break;
       }
-      if (hitObject.userData.isEnvironment || (hitObject as any).material) {
-        addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
-        break;
-      }
+      addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
+      break;
     }
 
     if (newLeft <= 0 && newRight <= 0) startAutoReload();
@@ -247,6 +254,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       if (child.userData.isEnemy && !child.userData.isDead) {
         const enemyPos = new THREE.Vector3();
         child.getWorldPosition(enemyPos);
+        enemyPos.y += 0.75; // offset to body center (group origin is at feet)
         if (cameraPos.distanceTo(enemyPos) > MAX_SWORD_DISTANCE) return;
         if (swingPos.distanceTo(enemyPos) < getMeleeCfg().hitRadius) {
           const dmg = computeMeleeDamage(getMeleeCfg().baseDamage, playerStats.str);
