@@ -15,7 +15,7 @@ export default function DesktopUI({
   isReloading = false,
 }: DesktopUIProps) {
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading } = useVRGame();
+  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel } = useVRGame();
 
   // Always use store values — DesktopControls keeps them live via setDesktopAmmo
   const leftClipDisplay = desktopLeftClip;
@@ -84,7 +84,7 @@ export default function DesktopUI({
           color: isBoostActive ? '#ff4444' : '#88ff88',
           marginBottom: '4px',
         }}>
-          🚀 BOOST: {isBoostActive ? 'ACTIVE' : 'READY'}
+          🚀 FUEL: <span style={{ color: desktopFuel > 20 ? '#00ff88' : '#ff4444' }}>{desktopFuel}%</span>{isBoostActive ? ' ▲' : ''}
         </div>
 
         {/* Ammo (only relevant in gun mode) */}

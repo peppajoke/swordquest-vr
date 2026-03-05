@@ -17,7 +17,7 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, activeMeleeWeapon, activeRangedWeapon, playerStats, setDesktopFuel } = useVRGame();
   const { playGunShoot, playSwordHit } = useAudio();
 
   // Movement state
@@ -74,14 +74,20 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   // Recoil signal — increments each shot, passed to DesktopSwordVisual
   const [shotCount, setShotCount] = useState(0);
 
-  // Boost state refs (for use inside useFrame without stale closure)
+  // Jetpack state — mirrors VR physics exactly
   const boostActiveRef = useRef(false);
   const normalSpeed = PLAYER_CONFIG.movement.jetpackSpeed;
-  // Car-style boost: persistent velocity that accelerates/decelerates with inertia
-  const boostVelocity = useRef(new THREE.Vector3());
-  const boostMaxSpeed = 48;
-  const boostAccel = 90;  // units/s² while Shift held
-  const boostDecel = 70;  // units/s² drag when released
+  const jetpackVelocity = useRef(new THREE.Vector3());
+  const jetpackAcceleration = useRef(new THREE.Vector3());
+  const jetpackFuel = useRef<number>(PLAYER_CONFIG.jetpack.maxFuel);
+  const jetpackBurstMultiplier = useRef(1.0);
+  const jetpackBurstDecayEnd = useRef(0);
+  const lastStoppedBoosting = useRef(0);
+  const wasBoostingPrev = useRef(false);
+  const isJetpackAccelerating = useRef(false);
+  // Double-tap Shift = burst boost (equivalent of VR squeeze-timing)
+  const shiftTapCount = useRef(0);
+  const shiftLastTap = useRef(0);
 
   const switchWeapon = (w: 'sword' | 'gun') => {
     weaponRef.current = w;
@@ -236,20 +242,47 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     let hitAnyEnemy = false;
     scene.traverse((child) => {
+      // Hit enemies
       if (child.userData.isEnemy && !child.userData.isDead) {
         const enemyPos = new THREE.Vector3();
         child.getWorldPosition(enemyPos);
         if (cameraPos.distanceTo(enemyPos) > MAX_SWORD_DISTANCE) return;
-        const distance = swingPos.distanceTo(enemyPos);
-        if (distance < getMeleeCfg().hitRadius) {
+        if (swingPos.distanceTo(enemyPos) < getMeleeCfg().hitRadius) {
           const dmg = computeMeleeDamage(getMeleeCfg().baseDamage, playerStats.str);
           if (child.userData.takeDamage) child.userData.takeDamage(dmg);
           addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
           hitAnyEnemy = true;
         }
       }
+      // Hit turrets — same as VR sword collision
+      if (child.userData.isTurret && child.userData.health > 0) {
+        const turretPos = new THREE.Vector3();
+        child.getWorldPosition(turretPos);
+        if (cameraPos.distanceTo(turretPos) > MAX_SWORD_DISTANCE) return;
+        if (swingPos.distanceTo(turretPos) < COMBAT_CONFIG.collision.turretHitDistance) {
+          child.userData.health -= computeMeleeDamage(getMeleeCfg().baseDamage, playerStats.str);
+          addHitEffect([turretPos.x, turretPos.y + 1, turretPos.z]);
+          hitAnyEnemy = true;
+        }
+      }
     });
     if (hitAnyEnemy) playSwordHit();
+  };
+
+  // Turret bullet player-damage — runs every frame (desktop equivalent of VR bullet detection)
+  const checkTurretBullets = (cameraPos: THREE.Vector3) => {
+    scene.traverse((child) => {
+      if (child.userData.isTurretBullet && child.userData.active) {
+        const bulletPos = new THREE.Vector3();
+        child.getWorldPosition(bulletPos);
+        if (bulletPos.distanceTo(cameraPos) < 0.8) {
+          const { takeDamage } = useVRGame.getState();
+          takeDamage(child.userData.damage ?? 15);
+          child.userData.active = false;
+          child.visible = false;
+        }
+      }
+    });
   };
 
   useEffect(() => {
@@ -408,36 +441,88 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       isGrounded.current = false;
     }
 
-    // Car-style boost: accelerates into look direction, decelerates with drag on release
-    if (boostActiveRef.current) {
-      const forwardDir = new THREE.Vector3(0, 0, -1);
-      forwardDir.applyQuaternion(camera.quaternion);
-      forwardDir.normalize();
-      // Steer with A/D while boosting — lateral influence
-      const lateralDir = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
-      const steerX = (keys.current.d ? 1 : 0) - (keys.current.a ? 1 : 0);
-      const targetDir = forwardDir.clone().add(lateralDir.clone().multiplyScalar(steerX * 0.4)).normalize();
-      // Accelerate boost velocity toward look direction
-      boostVelocity.current.addScaledVector(
-        targetDir.clone().sub(boostVelocity.current.clone().normalize().multiplyScalar(
-          Math.min(boostVelocity.current.length() / boostMaxSpeed, 1)
-        )),
-        boostAccel * deltaTime
-      );
-      // Clamp to max speed
-      if (boostVelocity.current.length() > boostMaxSpeed) {
-        boostVelocity.current.setLength(boostMaxSpeed);
+    // ── Jetpack physics: mirrors VR mode exactly ──────────────────────────
+    const currentTime = Date.now();
+    const canJetpack = boostActiveRef.current && jetpackFuel.current > 0;
+
+    // Burst timing: double-tap Shift within 400–600ms window = burst boost
+    if (canJetpack && !wasBoostingPrev.current) {
+      const pauseDuration = currentTime - lastStoppedBoosting.current;
+      if (lastStoppedBoosting.current > 0 && pauseDuration >= 400 && pauseDuration <= 600) {
+        const timingAccuracy = 1 - Math.abs(pauseDuration - 500) / 100;
+        const boostStrength = 1.5 + 1.5 * timingAccuracy; // 1.5–3.0×
+        jetpackBurstMultiplier.current = boostStrength;
+        jetpackBurstDecayEnd.current = currentTime + 3000;
+        import('../lib/stores/useAudio').then(({ useAudio }) => useAudio.getState().playBoost?.());
       }
-      velocity.current.copy(boostVelocity.current);
-    } else {
-      // Decelerate boost velocity (inertia carry-over)
-      if (boostVelocity.current.length() > 0.5) {
-        const drag = boostDecel * deltaTime;
-        const len = boostVelocity.current.length();
-        boostVelocity.current.setLength(Math.max(0, len - drag));
-        velocity.current.copy(boostVelocity.current);
+    } else if (!canJetpack && wasBoostingPrev.current) {
+      lastStoppedBoosting.current = currentTime;
+    }
+    wasBoostingPrev.current = canJetpack;
+
+    // Burst decay (same √ curve as VR)
+    if (jetpackBurstDecayEnd.current > 0) {
+      if (currentTime > jetpackBurstDecayEnd.current) {
+        jetpackBurstMultiplier.current = 1.0;
+        jetpackBurstDecayEnd.current = 0;
       } else {
-        boostVelocity.current.set(0, 0, 0);
+        const remaining = (jetpackBurstDecayEnd.current - currentTime) / 3000;
+        const orig = jetpackBurstMultiplier.current;
+        jetpackBurstMultiplier.current = 1.0 + (orig - 1.0) * Math.sqrt(remaining);
+      }
+    }
+
+    // Fuel drain / recharge (same rates as VR)
+    if (canJetpack) {
+      isJetpackAccelerating.current = true;
+      const grounded = camera.position.y <= 1.8;
+      const drainRate = grounded ? PLAYER_CONFIG.jetpack.fuelDrainRate : PLAYER_CONFIG.jetpack.fuelDrainRate * 4;
+      jetpackFuel.current = Math.max(0, jetpackFuel.current - drainRate * deltaTime);
+    } else {
+      if (isJetpackAccelerating.current && !canJetpack) isJetpackAccelerating.current = false;
+      const maxFuel: number = PLAYER_CONFIG.jetpack.maxFuel;
+      jetpackFuel.current = Math.min(
+        maxFuel,
+        jetpackFuel.current + PLAYER_CONFIG.jetpack.fuelRechargeRate * deltaTime
+      );
+    }
+
+    if (canJetpack) {
+      // Acceleration physics: lerp toward look direction (A/D steers)
+      const lookDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+      const lateralDir = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+      const steer = (keys.current.d ? 1 : 0) - (keys.current.a ? 1 : 0);
+      const targetDir = lookDir.clone().add(lateralDir.clone().multiplyScalar(steer * 0.4)).normalize();
+
+      const fuelMul = Math.max(0.3, jetpackFuel.current / PLAYER_CONFIG.jetpack.maxFuel);
+      const desiredSpeed = PLAYER_CONFIG.movement.maxSpeed * fuelMul * jetpackBurstMultiplier.current;
+      const targetVel = targetDir.clone().multiplyScalar(desiredSpeed);
+
+      jetpackAcceleration.current.lerp(targetVel, PLAYER_CONFIG.movement.turnRate);
+      jetpackVelocity.current.add(
+        jetpackAcceleration.current.clone().multiplyScalar(deltaTime * PLAYER_CONFIG.movement.accelerationRate)
+      );
+      if (jetpackVelocity.current.length() > desiredSpeed) {
+        jetpackVelocity.current.setLength(desiredSpeed);
+      }
+      velocity.current.copy(jetpackVelocity.current);
+    } else {
+      // Velocity decay (same exponential as VR)
+      const spd = jetpackVelocity.current.length();
+      const threshold = 1.0;
+      if (spd > threshold) {
+        jetpackVelocity.current.multiplyScalar(Math.pow(0.98, deltaTime * 60));
+      } else if (spd > 0.05) {
+        const expFactor = Math.pow(spd / threshold, 2);
+        jetpackVelocity.current.multiplyScalar(Math.pow(0.1 + 0.9 * expFactor, deltaTime * 60));
+      } else {
+        jetpackVelocity.current.set(0, 0, 0);
+      }
+      jetpackAcceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
+
+      if (jetpackVelocity.current.length() > 0.1) {
+        velocity.current.copy(jetpackVelocity.current);
+      } else {
         velocity.current.x = direction.current.x * normalSpeed;
         velocity.current.z = direction.current.z * normalSpeed;
         velocity.current.y = 0;
@@ -454,12 +539,18 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Sword damage while swinging
     if (isSwinging) {
-      const currentTime = Date.now();
-      if (currentTime > lastSwordDamage.current + swordDamageCooldown) {
+      const currentTime2 = Date.now();
+      if (currentTime2 > lastSwordDamage.current + swordDamageCooldown) {
         checkSwordDamage();
-        lastSwordDamage.current = currentTime;
+        lastSwordDamage.current = currentTime2;
       }
     }
+
+    // Turret bullet hit detection (desktop — VR handles its own in VRControllers)
+    if (!isVRPresented) checkTurretBullets(camera.position.clone());
+
+    // Report fuel to store for HUD
+    if (!isVRPresented) setDesktopFuel(Math.round(jetpackFuel.current));
   });
 
   return (

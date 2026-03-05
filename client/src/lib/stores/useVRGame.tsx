@@ -88,6 +88,9 @@ interface VRGameState {
   setActiveMeleeWeapon: (id: string) => void;
   setActiveRangedWeapon: (id: string) => void;
   setPlayerStats: (stats: { str: number; agi: number; vit: number }) => void;
+  // Desktop fuel (mirrored from DesktopControls for HUD)
+  desktopFuel: number;
+  setDesktopFuel: (fuel: number) => void;
 
   // Desktop ammo HUD state (shared so DesktopUI can read without prop drilling)
   desktopLeftClip: number;
@@ -123,6 +126,7 @@ export const useVRGame = create<VRGameState>()(
     activeMeleeWeapon: 'longsword',
     activeRangedWeapon: 'pistols',
     playerStats: { str: 0, agi: 0, vit: 0 },
+    desktopFuel: 100,
     desktopLeftClip: 12,
     desktopRightClip: 12,
     desktopCurrentGun: 'left' as 'left' | 'right',
@@ -469,6 +473,7 @@ export const useVRGame = create<VRGameState>()(
     setActiveMeleeWeapon: (id: string) => { set({ activeMeleeWeapon: id }); },
     setActiveRangedWeapon: (id: string) => { set({ activeRangedWeapon: id }); },
     setPlayerStats: (stats: { str: number; agi: number; vit: number }) => { set({ playerStats: stats }); },
+    setDesktopFuel: (fuel: number) => { set({ desktopFuel: fuel }); },
 
     setDesktopAmmo: (left: number, right: number, gun: 'left' | 'right', reloading: boolean) => {
       set({ desktopLeftClip: left, desktopRightClip: right, desktopCurrentGun: gun, desktopIsReloading: reloading });
