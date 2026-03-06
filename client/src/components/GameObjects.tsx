@@ -79,12 +79,12 @@ export default function GameObjects() {
           MAIN CORRIDOR — z=-6 to z=-45, x=[-4,4]
           ════════════════════════════════════ */}
       {/* Left wall: x=-4, z=-6 to z=-45 (length 39, center z=-25.5) */}
-      <mesh position={[-4, 2.5, -25.5]} receiveShadow>
+      <mesh position={[-4, 2.5, -25.5]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 39]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* Right wall: x=+4 */}
-      <mesh position={[4, 2.5, -25.5]} receiveShadow>
+      <mesh position={[4, 2.5, -25.5]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 39]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
@@ -98,27 +98,28 @@ export default function GameObjects() {
           CROSS-HALL — z=-40 to z=-52, x=-40 to x=+40
           ════════════════════════════════════ */}
       {/* North wall left portion: z=-40, x=-40 to x=-6 (width 34, center x=-23) */}
-      <mesh position={[-23, 2.5, -40]} receiveShadow>
+      <mesh position={[-23, 2.5, -40]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[34, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* North wall right portion: z=-40, x=+6 to x=+40 (width 34, center x=+23) */}
-      <mesh position={[23, 2.5, -40]} receiveShadow>
+      <mesh position={[23, 2.5, -40]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[34, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
-      {/* South wall: z=-52, x=-40 to x=+40 (solid, width 80) */}
+      {/* South wall: z=-52, x=-40 to x=+40 (solid, width 80) — NOT tagged isWall;
+          intentionally passthrough to keep back section accessible */}
       <mesh position={[0, 2.5, -52]} receiveShadow>
         <boxGeometry args={[80, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* Left end wall: x=-40, z=-40 to z=-52 (depth 12, center z=-46) */}
-      <mesh position={[-40, 2.5, -46]} receiveShadow>
+      <mesh position={[-40, 2.5, -46]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 12]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* Right end wall: x=+40 */}
-      <mesh position={[40, 2.5, -46]} receiveShadow>
+      <mesh position={[40, 2.5, -46]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 12]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
@@ -132,27 +133,27 @@ export default function GameObjects() {
           LEFT GUARD ROOM — x=-55 to x=-35, z=-25 to z=-55
           ════════════════════════════════════ */}
       {/* North wall: z=-25, x=-55 to x=-35 (width 20, center x=-45) */}
-      <mesh position={[-45, 2.5, -25]} receiveShadow>
+      <mesh position={[-45, 2.5, -25]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[20, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* South wall: z=-55 */}
-      <mesh position={[-45, 2.5, -55]} receiveShadow>
+      <mesh position={[-45, 2.5, -55]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[20, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* West wall: x=-55, z=-25 to z=-55 (depth 30, center z=-40) */}
-      <mesh position={[-55, 2.5, -40]} receiveShadow>
+      <mesh position={[-55, 2.5, -40]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 30]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* East wall upper segment: x=-35, z=-25 to z=-37 (length 12, center z=-31) */}
-      <mesh position={[-35, 2.5, -31]} receiveShadow>
+      <mesh position={[-35, 2.5, -31]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 12]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* East wall lower segment: x=-35, z=-43 to z=-55 (length 12, center z=-49) */}
-      <mesh position={[-35, 2.5, -49]} receiveShadow>
+      <mesh position={[-35, 2.5, -49]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 12]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
@@ -171,27 +172,27 @@ export default function GameObjects() {
           RIGHT GUARD ROOM — x=+35 to x=+55, z=-25 to z=-55
           ════════════════════════════════════ */}
       {/* North wall: z=-25, x=35 to x=55 (width 20, center x=45) */}
-      <mesh position={[45, 2.5, -25]} receiveShadow>
+      <mesh position={[45, 2.5, -25]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[20, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* South wall: z=-55 */}
-      <mesh position={[45, 2.5, -55]} receiveShadow>
+      <mesh position={[45, 2.5, -55]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[20, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* East wall: x=55, z=-25 to z=-55 (depth 30, center z=-40) */}
-      <mesh position={[55, 2.5, -40]} receiveShadow>
+      <mesh position={[55, 2.5, -40]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 30]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* West wall upper segment: x=35, z=-25 to z=-37 (length 12, center z=-31) */}
-      <mesh position={[35, 2.5, -31]} receiveShadow>
+      <mesh position={[35, 2.5, -31]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 12]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* West wall lower segment: x=35, z=-43 to z=-55 (length 12, center z=-49) */}
-      <mesh position={[35, 2.5, -49]} receiveShadow>
+      <mesh position={[35, 2.5, -49]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 12]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
@@ -210,17 +211,17 @@ export default function GameObjects() {
           BACK SECTION — x=-25 to x=+25, z=-52 to z=-80
           ════════════════════════════════════ */}
       {/* Left wall: x=-25, z=-52 to z=-80 (depth 28, center z=-66) */}
-      <mesh position={[-25, 2.5, -66]} receiveShadow>
+      <mesh position={[-25, 2.5, -66]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 28]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* Right wall: x=+25 */}
-      <mesh position={[25, 2.5, -66]} receiveShadow>
+      <mesh position={[25, 2.5, -66]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[0.3, 5, 28]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
       {/* Back wall: z=-80, x=-25 to x=+25 (width 50) */}
-      <mesh position={[0, 2.5, -80]} receiveShadow>
+      <mesh position={[0, 2.5, -80]} receiveShadow userData={{ isWall: true }}>
         <boxGeometry args={[50, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 import DesktopWeaponVisual from './DesktopWeaponVisual';
-import { resolveWallCollision } from '../lib/levelCollision';
+import { resolveWallCollision, buildWallsFromScene, type WallAABB } from '../lib/levelCollision';
 import { PLAYER_CONFIG, COMBAT_CONFIG } from '../config/gameConfig';
 import { getMeleeWeapon, getRangedWeapon, computeMeleeDamage, computeReloadTime, type MeleeWeaponId, type RangedWeaponId } from '../lib/weapons';
 
@@ -18,10 +18,14 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, weaponInventory, activeMeleeSlot, activeRangedSlot, setActiveMeleeSlot, setActiveRangedSlot, playerStats, setDesktopFuel, weaponLocked, pickupPhase, dropWeapon, addDroppedWeapon, registerHit } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, weaponInventory, activeMeleeSlot, activeRangedSlot, setActiveMeleeSlot, setActiveRangedSlot, playerStats, setDesktopFuel, weaponLocked, pickupPhase, dropWeapon, addDroppedWeapon, registerHit, gameResetKey } = useVRGame();
   const activeMeleeWeapon = weaponInventory.melee[activeMeleeSlot];
   const activeRangedWeapon = weaponInventory.ranged[activeRangedSlot];
   const { playGunShoot, playSwordHit, playSwordSwing, playFootstep, playJetpackBoost, playPlayerDamage } = useAudio();
+
+  // Scene-derived wall collision (rebuilt from userData.isWall meshes each zone load)
+  const wallsRef = useRef<WallAABB[]>([]);
+  const wallsBuilt = useRef(false);
 
   // Footstep tracking
   const lastStepPos = useRef(new THREE.Vector3());
@@ -113,6 +117,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       setWeaponState(activeWeapon);
     }
   }, [activeWeapon]);
+
+  // Rebuild scene-derived walls on zone transitions / game reset
+  useEffect(() => {
+    wallsBuilt.current = false;
+  }, [gameResetKey]);
 
   const switchWeapon = (w: 'sword' | 'gun') => {
     if (pickupPhase) return;  // can't switch before picking up any weapon
@@ -542,7 +551,16 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     };
   }, [currentSwordHand, isSwinging, leftClip, rightClip, onSwordSwing]);
 
-  useFrame((_, deltaTime) => {
+  useFrame((state, deltaTime) => {
+    // Build scene-derived wall AABBs on first frame (or after zone reset)
+    if (!wallsBuilt.current) {
+      const built = buildWallsFromScene(state.scene);
+      if (built.length > 0) {
+        wallsRef.current = built;
+        wallsBuilt.current = true;
+      }
+    }
+
     // Apply mouse look
     euler.current.set(mouseMovement.current.y, mouseMovement.current.x, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler.current);
@@ -700,8 +718,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       distanceSinceStep.current = 0;
     }
 
-    // Wall collision — push player out of any wall AABB
-    const playerResolved = resolveWallCollision(camera.position.x, camera.position.z, 0.45);
+    // Wall collision — push player out of any wall AABB (scene-derived, falls back to static)
+    const playerResolved = resolveWallCollision(camera.position.x, camera.position.z, 0.45, wallsRef.current.length > 0 ? wallsRef.current : undefined);
     camera.position.x = playerResolved.x;
     camera.position.z = playerResolved.z;
 

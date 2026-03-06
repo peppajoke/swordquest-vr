@@ -1,11 +1,18 @@
 /**
  * levelCollision.ts
- * Axis-aligned wall AABBs derived from GameObjects.tsx geometry.
+ * Wall collision system for SwordQuestVR.
+ * Supports both static fallback AABBs and dynamic scene-derived AABBs.
  * All coordinates are in WORLD space (X, Z — Y ignored for horizontal collision).
  * Format: [xMin, zMin, xMax, zMax]
  */
+import * as THREE from 'three';
+
 export type WallAABB = [number, number, number, number];
 
+/**
+ * Static fallback AABBs — used only if buildWallsFromScene hasn't been called yet
+ * (e.g., VRControllers.tsx calling resolveWallCollision without passing walls).
+ */
 export const WALLS: WallAABB[] = [
   // ── CELL: walls removed — open starting area ────────────────────
 
@@ -47,16 +54,44 @@ export const WALLS: WallAABB[] = [
 ];
 
 /**
+ * Build a WallAABB list from all scene objects tagged with userData.isWall = true.
+ * Traverses the scene, computes each tagged object's world-space bounding box,
+ * and returns the XZ extents as WallAABB entries.
+ *
+ * Call once after the scene is fully populated (e.g., on the first useFrame tick).
+ * Re-call when the scene geometry changes (e.g., zone transitions).
+ */
+export function buildWallsFromScene(scene: THREE.Scene): WallAABB[] {
+  const walls: WallAABB[] = [];
+  const box = new THREE.Box3();
+
+  scene.traverse((obj) => {
+    if (obj.userData.isWall === true) {
+      box.setFromObject(obj);
+      if (!box.isEmpty()) {
+        walls.push([box.min.x, box.min.z, box.max.x, box.max.z]);
+      }
+    }
+  });
+
+  return walls;
+}
+
+/**
  * Resolve a circular entity (x, z, radius) against all wall AABBs.
  * Returns the corrected (x, z) pushed out of any overlapping walls.
  * Call once per frame after computing the desired new position.
+ *
+ * @param walls  Optional wall list — pass wallsRef.current from the caller.
+ *               Falls back to the static WALLS array (used by VR path).
  */
 export function resolveWallCollision(
   x: number,
   z: number,
   radius: number,
+  walls: WallAABB[] = WALLS,
 ): { x: number; z: number } {
-  for (const [xMin, zMin, xMax, zMax] of WALLS) {
+  for (const [xMin, zMin, xMax, zMax] of walls) {
     // Closest point on AABB to circle center
     const cx = Math.max(xMin, Math.min(xMax, x));
     const cz = Math.max(zMin, Math.min(zMax, z));

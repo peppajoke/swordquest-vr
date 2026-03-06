@@ -9,7 +9,7 @@ import ShatterEffect from "./ShatterEffect";
 import enemyConfig from "../data/enemyConfig.json";
 import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
-import { resolveWallCollision } from "../lib/levelCollision";
+import { resolveWallCollision, buildWallsFromScene, type WallAABB } from "../lib/levelCollision";
 
 // ─── Floating Damage Number ────────────────────────────────────────────────
 
@@ -110,10 +110,14 @@ function getEnemySize(enemyType: string): [number, number, number] {
 }
 
 export default function Enemy({ type, position, maxHealth: maxHealthOverride }: EnemyProps) {
+  const { scene } = useThree();
   const meshRef = useRef<THREE.Group>(null);
   const isDeadRef = useRef(false);         // always-current, no stale-closure risk
   // Stable ID for peer-separation registry (based on spawn position — unique per spawn)
   const enemyIdRef = useRef(`${type}_${position[0]}_${position[1]}_${position[2]}`);
+  // Scene-derived wall collision (shared across all enemy instances via closure-free ref pattern)
+  const wallsRef = useRef<WallAABB[]>([]);
+  const wallsBuilt = useRef(false);
   const [fullyRemoved, setFullyRemoved] = useState(false); // triggers final unmount
   const resolvedMaxHealth = maxHealthOverride ?? EnemyAIService.getMaxHealth(type);
   const [enemyState, setEnemyState] = useState<EnemyState>(() => ({
@@ -170,6 +174,8 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
       setIsAttacking(false);
       isDeadRef.current = false;
       setFullyRemoved(false);
+      // Trigger wall rebuild on next frame (zone may have changed geometry)
+      wallsBuilt.current = false;
       console.log(`🔄 ${type} enemy reset!`);
     }
   }, [gameResetKey, type, position]);
@@ -282,6 +288,15 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
 
   useFrame((state) => {
     if (!meshRef.current) return;
+
+    // Build scene-derived wall AABBs on first frame (or after zone reset)
+    if (!wallsBuilt.current) {
+      const built = buildWallsFromScene(state.scene);
+      if (built.length > 0) {
+        wallsRef.current = built;
+        wallsBuilt.current = true;
+      }
+    }
 
     const currentTime = Date.now();
     const { camera, scene } = state;
@@ -417,7 +432,7 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
     if (aiResult.shouldMove && aiResult.newPosition && meshRef.current) {
       // AI computes position in world space; resolve wall collision before converting to local
       const worldPos = aiResult.newPosition.clone();
-      const enemyResolved = resolveWallCollision(worldPos.x, worldPos.z, 0.38);
+      const enemyResolved = resolveWallCollision(worldPos.x, worldPos.z, 0.38, wallsRef.current.length > 0 ? wallsRef.current : undefined);
       worldPos.x = enemyResolved.x;
       worldPos.z = enemyResolved.z;
 
