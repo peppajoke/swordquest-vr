@@ -147,7 +147,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Camera pitch kick upward on firing (feels like real recoil)
     const recoilPitch = 0.045;
-    mouseMovement.current.y = Math.max(-Math.PI / 2, mouseMovement.current.y - recoilPitch);
+    mouseMovement.current.y = Math.min(Math.PI / 2, mouseMovement.current.y + recoilPitch);
 
     // --- Compute barrel origin ---
     const cameraPos = camera.position.clone();
