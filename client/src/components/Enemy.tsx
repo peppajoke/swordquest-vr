@@ -384,6 +384,7 @@ export default function Enemy({ type, position }: EnemyProps) {
       // AI computes position in world space; convert to local before applying
       const localPos = aiResult.newPosition.clone();
       if (meshRef.current.parent) meshRef.current.parent.worldToLocal(localPos);
+      localPos.y = 0; // gravity: ground enemies always stay at y=0
       meshRef.current.position.copy(localPos);
     }
     
