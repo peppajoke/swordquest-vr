@@ -39,6 +39,7 @@ function App() {
   const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left');
   const [isReloading, setIsReloading] = useState(false);
   const [isVRPresenting, setIsVRPresenting] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(false);
 
   useEffect(() => {
     // Subscribe to XR store session changes to detect VR mode
@@ -47,6 +48,26 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Force landscape orientation on mobile
+  useEffect(() => {
+    if (!isMobile) return;
+    // Attempt API lock (supported on Android Chrome, ignored elsewhere)
+    try {
+      (screen.orientation as any).lock('landscape').catch(() => {});
+    } catch {}
+
+    const checkOrientation = () => {
+      setIsPortrait(window.innerWidth < window.innerHeight);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, [isMobile]);
 
   return (
     <div
@@ -110,6 +131,27 @@ function App() {
 
       {/* Mobile touch controls */}
       {isMobile && gameMode !== 'menu' && <MobileControls />}
+
+      {/* Portrait mode warning — blocks gameplay until rotated */}
+      {isMobile && isPortrait && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          background: 'rgba(0,0,0,0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#fff',
+          fontFamily: 'sans-serif',
+          gap: 16,
+        }}>
+          <div style={{ fontSize: 64 }}>↻</div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>Rotate your device</div>
+          <div style={{ fontSize: 14, opacity: 0.6 }}>This game requires landscape mode</div>
+        </div>
+      )}
 
       {/* Death Screen removed — death now triggers instant respawn at prison start */}
     </div>

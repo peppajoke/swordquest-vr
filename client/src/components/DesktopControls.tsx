@@ -632,7 +632,15 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       }
     }
 
-    // Inject mobile look deltas into mouseMovement
+    // Inject mobile look — right joystick (rate-based: speed ∝ deflection × deltaTime)
+    if (mobileInput.active && (mobileInput.lookX !== 0 || mobileInput.lookY !== 0)) {
+      const LOOK_SPEED_H = 2.5; // rad/s at full horizontal deflection
+      const LOOK_SPEED_V = 1.8; // rad/s at full vertical deflection
+      mouseMovement.current.x -= mobileInput.lookX * LOOK_SPEED_H * deltaTime;
+      mouseMovement.current.y -= mobileInput.lookY * LOOK_SPEED_V * deltaTime;
+      mouseMovement.current.y = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, mouseMovement.current.y));
+    }
+    // Legacy: one-shot swipe deltas (kept for compat, no longer written by MobileControls)
     if (mobileInput.active && (mobileInput.lookDX !== 0 || mobileInput.lookDY !== 0)) {
       mouseMovement.current.x -= mobileInput.lookDX;
       mouseMovement.current.y -= mobileInput.lookDY;

@@ -6,7 +6,10 @@ export const mobileInput = {
   // Movement joystick: -1..1
   moveX: 0,
   moveY: 0,
-  // Look deltas injected each frame
+  // Look joystick: continuous rate -1..1 (new right-joystick model)
+  lookX: 0,
+  lookY: 0,
+  // Look deltas injected each frame (legacy swipe model — kept for compat)
   lookDX: 0,
   lookDY: 0,
   // Buttons
