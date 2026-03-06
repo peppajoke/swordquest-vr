@@ -5,9 +5,10 @@ import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
 import DesktopUI from "./components/DesktopUI";
 import MainMenu from "./components/MainMenu";
-
+import MobileControls from "./components/MobileControls";
 import UpgradeScreen from "./components/UpgradeScreen";
 import { useVRGame } from "./lib/stores/useVRGame";
+import { isTouchDevice } from "./lib/mobileInput";
 import "@fontsource/inter";
 import "./index.css";
 
@@ -29,6 +30,7 @@ function App() {
   const [gameMode, setGameMode] = useState<GameMode>('menu');
   const isDead = useVRGame((s) => s.isDead);
   const showUpgradeScreen = useVRGame((s) => s.showUpgradeScreen);
+  const [isMobile] = useState(() => isTouchDevice());
   const [fuel, setFuel] = useState(100);
   const [jetpackEnabled, setJetpackEnabled] = useState(false);
   const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
@@ -105,6 +107,9 @@ function App() {
 
       {/* Upgrade Screen — shown after room clear */}
       {showUpgradeScreen && gameMode !== 'menu' && <UpgradeScreen />}
+
+      {/* Mobile touch controls */}
+      {isMobile && gameMode !== 'menu' && <MobileControls />}
 
       {/* Death Screen removed — death now triggers instant respawn at prison start */}
     </div>

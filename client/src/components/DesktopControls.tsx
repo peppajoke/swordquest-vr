@@ -8,6 +8,7 @@ import DesktopWeaponVisual from './DesktopWeaponVisual';
 import { resolveWallCollision, buildWallsFromScene, type WallAABB } from '../lib/levelCollision';
 import { PLAYER_CONFIG, COMBAT_CONFIG } from '../config/gameConfig';
 import { getMeleeWeapon, getRangedWeapon, computeMeleeDamage, computeReloadTime, type MeleeWeaponId, type RangedWeaponId } from '../lib/weapons';
+import { mobileInput } from '../lib/mobileInput';
 
 interface DesktopControlsProps {
   onShoot?: (hand: 'left' | 'right') => void;
@@ -631,16 +632,57 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       }
     }
 
+    // Inject mobile look deltas into mouseMovement
+    if (mobileInput.active && (mobileInput.lookDX !== 0 || mobileInput.lookDY !== 0)) {
+      mouseMovement.current.x -= mobileInput.lookDX;
+      mouseMovement.current.y -= mobileInput.lookDY;
+      mouseMovement.current.y = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, mouseMovement.current.y));
+      mobileInput.lookDX = 0;
+      mobileInput.lookDY = 0;
+    }
+
+    // Inject mobile fire
+    if (mobileInput.active && mobileInput.fire && weaponRef.current === 'gun') {
+      const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
+      if (wi.ranged[rs]) {
+        const now = Date.now();
+        if (now > lastShot.current + (getRangedCfg().fireRate ?? shotCooldown)) {
+          fireDesktopBullet();
+          lastShot.current = now;
+        }
+      }
+    }
+
+    // Inject mobile jump/boost
+    if (mobileInput.active) {
+      if (mobileInput.jumpJustPressed) {
+        if (isGrounded.current) verticalVelocity.current = jumpVelocity;
+        mobileInput.jumpJustPressed = false;
+      }
+      if (mobileInput.boost && !boostActiveRef.current) {
+        boostActiveRef.current = true;
+        setBoostActive(true);
+      } else if (!mobileInput.boost && boostActiveRef.current) {
+        boostActiveRef.current = false;
+        setBoostActive(false);
+      }
+    }
+
     // Apply mouse look
     euler.current.set(mouseMovement.current.y, mouseMovement.current.x, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler.current);
 
-    // Movement direction from keys
+    // Movement direction from keys or mobile joystick
     direction.current.set(0, 0, 0);
-    if (keys.current.w) direction.current.z -= 1;
-    if (keys.current.s) direction.current.z += 1;
-    if (keys.current.a) direction.current.x -= 1;
-    if (keys.current.d) direction.current.x += 1;
+    if (mobileInput.active) {
+      if (Math.abs(mobileInput.moveY) > 0.1) direction.current.z += mobileInput.moveY;
+      if (Math.abs(mobileInput.moveX) > 0.1) direction.current.x += mobileInput.moveX;
+    } else {
+      if (keys.current.w) direction.current.z -= 1;
+      if (keys.current.s) direction.current.z += 1;
+      if (keys.current.a) direction.current.x -= 1;
+      if (keys.current.d) direction.current.x += 1;
+    }
     direction.current.normalize();
     direction.current.applyQuaternion(camera.quaternion);
     direction.current.y = 0; // Keep horizontal
