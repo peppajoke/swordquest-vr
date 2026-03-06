@@ -231,6 +231,11 @@ export default function Enemy({ type, position }: EnemyProps) {
       import("../lib/stores/useAudio").then(({ useAudio }) => {
         useAudio.getState().playKill();
       });
+
+      // Guaranteed cleanup: if the frame-based dissolve check fails for any reason,
+      // force-unmount after total animation time + buffer (redPhase + fadePhase + dissolve + margin)
+      const TOTAL_DEATH_MS = ANIMATION_CONFIG.deathSequence.dissolveStart + 1200;
+      setTimeout(() => setFullyRemoved(true), TOTAL_DEATH_MS);
     }
 
     // Handle berserker rage mode
@@ -293,8 +298,12 @@ export default function Enemy({ type, position }: EnemyProps) {
 
     // Death animation sequence using central config
     if (enemyState.isDead) {
-      const deathTime =
-        currentTime - (meshRef.current.userData.deathStartTime || currentTime);
+      // Prefer userData timestamp (most accurate), fall back to enemyState.deathStartTime
+      // Never fall back to currentTime — that would make deathTime always 0
+      const startTs = meshRef.current.userData.deathStartTime
+        || enemyState.deathStartTime
+        || (meshRef.current.userData.deathStartTime = currentTime); // set if missing
+      const deathTime = currentTime - startTs;
 
       if (deathTime < ANIMATION_CONFIG.deathSequence.redPhase) {
         // Phase 1: Turn bright red
@@ -620,6 +629,8 @@ export default function Enemy({ type, position }: EnemyProps) {
 
       if (explosionMaterial.opacity <= 0) {
         scene.remove(explosionMesh);
+        explosionGeometry.dispose();
+        explosionMaterial.dispose();
       } else {
         requestAnimationFrame(animateExplosion);
       }
