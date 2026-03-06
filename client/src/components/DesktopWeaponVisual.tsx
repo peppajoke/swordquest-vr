@@ -310,6 +310,11 @@ export default function DesktopWeaponVisual({
             <cylinderGeometry args={[v.handleRadius * 0.85, v.handleRadius, v.handleLength]} />
             <meshLambertMaterial color={v.handleColor} />
           </mesh>
+          {/* Pommel gem — glowing cube at butt of handle */}
+          <mesh position={[0, -(v.bladeLength + v.handleLength + v.guardHeight * 0.5 + v.handleRadius), 0]}>
+            <boxGeometry args={[v.handleRadius * 1.8, v.handleRadius * 1.8, v.handleRadius * 1.8]} />
+            <meshLambertMaterial color={v.bladeColor} emissive={v.emissive} emissiveIntensity={v.emissiveIntensity * 1.5} />
+          </mesh>
 
           {/* Guard — only if width defined */}
           {v.guardWidth > 0 && (
@@ -319,13 +324,48 @@ export default function DesktopWeaponVisual({
             </mesh>
           )}
 
-          {/* Blade — only for sword-type weapons */}
-          {v.bladeLength > 0 && (
+          {/* Blade — tapered (3 segments) or flat */}
+          {v.bladeLength > 0 && !(v as any).tapered && (
             <mesh position={[0, 0, 0]}>
               <boxGeometry args={[v.bladeWidth, v.bladeLength, v.bladeDepth]} />
               <meshLambertMaterial color={v.bladeColor} emissive={v.emissive} emissiveIntensity={v.emissiveIntensity} />
             </mesh>
           )}
+          {v.bladeLength > 0 && (v as any).tapered && (() => {
+            const L = v.bladeLength;
+            const W = v.bladeWidth;
+            const D = v.bladeDepth;
+            const s1H = L * 0.55; const s2H = L * 0.30; const s3H = L * 0.15;
+            const base = -L / 2;
+            const s1Y = base + s1H / 2;
+            const s2Y = base + s1H + s2H / 2;
+            const s3Y = base + s1H + s2H + s3H / 2;
+            const ei = v.emissiveIntensity;
+            return (
+              <>
+                {/* Base — full width */}
+                <mesh position={[0, s1Y, 0]}>
+                  <boxGeometry args={[W, s1H, D]} />
+                  <meshLambertMaterial color={v.bladeColor} emissive={v.emissive} emissiveIntensity={ei} />
+                </mesh>
+                {/* Mid — 52% width */}
+                <mesh position={[0, s2Y, 0]}>
+                  <boxGeometry args={[W * 0.52, s2H, D * 0.8]} />
+                  <meshLambertMaterial color={v.bladeColor} emissive={v.emissive} emissiveIntensity={ei * 1.1} />
+                </mesh>
+                {/* Tip — 16% width, very thin */}
+                <mesh position={[0, s3Y, 0]}>
+                  <boxGeometry args={[W * 0.16, s3H, D * 0.5]} />
+                  <meshLambertMaterial color={v.bladeColor} emissive={v.emissive} emissiveIntensity={ei * 1.4} />
+                </mesh>
+                {/* Fuller — dark ridge running down center */}
+                <mesh position={[0, s1Y - s1H * 0.1, 0]}>
+                  <boxGeometry args={[W * 0.12, s1H * 0.7, D * 1.1]} />
+                  <meshLambertMaterial color="#111122" emissive={v.emissive} emissiveIntensity={ei * 0.5} />
+                </mesh>
+              </>
+            );
+          })()}
 
           {/* Hammer head */}
           {(v as any).hammerHead && (
