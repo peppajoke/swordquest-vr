@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useVRGame } from '../lib/stores/useVRGame';
+import { getRangedWeapon } from '../lib/weapons';
+import type { RangedWeaponId } from '../lib/weapons';
 
 function ReticlePulse() {
   const hitSignal = useVRGame(s => s.hitSignal);
@@ -56,6 +58,10 @@ export default function DesktopUI({
   // Always use store values — DesktopControls keeps them live via setDesktopAmmo
   const leftClipDisplay = desktopLeftClip;
   const rightClipDisplay = desktopRightClip;
+  const activeRangedWeaponId = weaponInventory.ranged[activeRangedSlot];
+  const maxClipSize = activeRangedWeaponId
+    ? (getRangedWeapon(activeRangedWeaponId as RangedWeaponId)?.clipSize ?? 12)
+    : 12;
   const currentGunDisplay = desktopCurrentGun;
   const isReloadingDisplay = desktopIsReloading;
 
@@ -321,11 +327,11 @@ export default function DesktopUI({
             <div>
               🔫 L:{' '}
               <span style={{ color: leftClipDisplay > 4 ? 'white' : leftClipDisplay > 0 ? 'orange' : 'red' }}>
-                {leftClipDisplay}/12
+                {leftClipDisplay}/{maxClipSize}
               </span>
               {' '}R:{' '}
               <span style={{ color: rightClipDisplay > 4 ? 'white' : rightClipDisplay > 0 ? 'orange' : 'red' }}>
-                {rightClipDisplay}/12
+                {rightClipDisplay}/{maxClipSize}
               </span>
               {' '}[{currentGunDisplay.toUpperCase()}]
             </div>

@@ -118,6 +118,29 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     }
   }, [activeWeapon]);
 
+  // Per-weapon ammo: save/restore clips when active ranged weapon changes
+  const savedAmmoBySlot = useRef<Record<string, [number, number]>>({});
+  const prevRangedWeapon = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevRangedWeapon.current;
+    const next = activeRangedWeapon ?? null;
+    if (prev === next) return;
+    // Save current ammo for the previous weapon
+    if (prev) savedAmmoBySlot.current[prev] = [leftClip, rightClip];
+    // Restore or initialize ammo for the new weapon
+    if (next) {
+      const cfg = getRangedWeapon(next as RangedWeaponId);
+      const cap = cfg?.clipSize ?? 12;
+      const saved = savedAmmoBySlot.current[next];
+      const newLeft = saved ? saved[0] : cap;
+      const newRight = saved ? saved[1] : cap;
+      setLeftClip(newLeft);
+      setRightClip(newRight);
+      setDesktopAmmo(newLeft, newRight, 'left', false);
+    }
+    prevRangedWeapon.current = next;
+  }, [activeRangedWeapon]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Rebuild scene-derived walls on zone transitions / game reset
   useEffect(() => {
     wallsBuilt.current = false;
@@ -226,6 +249,35 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
     const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
     playGunShoot(wi.ranged[rs] ?? 'pistols');
+
+    // Shotgun: fire extra pellets in a spread cone (damage per pellet)
+    const activeCfg = getRangedCfg();
+    if ((activeCfg as any).pellets && (activeCfg as any).pellets > 1) {
+      const pelletCount: number = (activeCfg as any).pellets;
+      const pelletSpread: number = activeCfg.spread ?? 0.15;
+      for (let p = 0; p < pelletCount - 1; p++) {
+        const pelletDir = cameraDir.clone();
+        pelletDir.x += (Math.random() - 0.5) * pelletSpread * 2;
+        pelletDir.y += (Math.random() - 0.5) * pelletSpread * 2;
+        pelletDir.normalize();
+        const pelletRaycaster = new THREE.Raycaster(rayOrigin.clone(), pelletDir);
+        const pelletHits = worldGroup
+          ? pelletRaycaster.intersectObjects(worldGroup.children, true)
+          : pelletRaycaster.intersectObjects(scene.children, true);
+        for (const ph of pelletHits) {
+          let obj: THREE.Object3D | null = ph.object;
+          while (obj && !obj.userData.isEnemy && !obj.userData.isWall) obj = obj.parent;
+          if (!obj) continue;
+          if (obj.userData.isEnemy && !obj.userData.isDead) {
+            const dmg = getRangedCfg().baseDamage ?? 25;
+            if (obj.userData.takeDamage) obj.userData.takeDamage(dmg);
+            addHitEffect([ph.point.x, ph.point.y, ph.point.z]);
+            registerHit();
+          }
+          break;
+        }
+      }
+    }
 
     // Piercing bullets — damage ALL enemies along the ray, stop only at solid walls
     const hitEnemies = new Set<THREE.Object3D>(); // avoid double-hitting same enemy
@@ -472,7 +524,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
           // Fire gun — only if ranged slot has a weapon
           const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
           if (wi.ranged[rs] === null) return; // empty ranged slot
-          if (currentTime > lastShot.current + shotCooldown) {
+          if (currentTime > lastShot.current + (getRangedCfg().fireRate ?? shotCooldown)) {
             fireDesktopBullet();
             lastShot.current = currentTime;
           }

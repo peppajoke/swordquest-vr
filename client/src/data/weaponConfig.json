@@ -214,7 +214,8 @@
     },
     "shotgun": {
       "name": "Shotgun",
-      "baseDamage": 90,
+      "baseDamage": 25,
+      "pellets": 6,
       "clipSize": 6,
       "baseReloadTime": 3500,
       "fireRate": 1100,
