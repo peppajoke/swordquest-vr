@@ -171,22 +171,25 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     const upDir = new THREE.Vector3(0, 1, 0);
     upDir.applyQuaternion(camera.quaternion);
 
-    // Barrel tip: offset by gun position (left or right side) + forward
-    const lateralOffset = gun === 'right' ? 0.35 : -0.35;
-    const shootPos = cameraPos.clone()
-      .add(cameraDir.clone().multiplyScalar(0.9))   // 0.6 + 0.3 forward to barrel tip
-      .add(rightDir.clone().multiplyScalar(lateralOffset))
-      .add(upDir.clone().multiplyScalar(-0.35));
-
-    const raycaster = new THREE.Raycaster(shootPos, cameraDir);
+    // Raycast from dead-center camera (= crosshair) — bullets always hit where you aim
+    const rayOrigin = cameraPos.clone().add(cameraDir.clone().multiplyScalar(0.1));
+    const raycaster = new THREE.Raycaster(rayOrigin, cameraDir);
     let intersects: THREE.Intersection[] = [];
     const worldGroup = scene.getObjectByName('worldGroup') as THREE.Group;
     if (worldGroup) intersects = raycaster.intersectObjects(worldGroup.children, true);
     if (intersects.length === 0) intersects = raycaster.intersectObjects(scene.children, true);
 
     const maxDistance = 100;
-    const actualEndPos = shootPos.clone().add(cameraDir.clone().multiplyScalar(maxDistance));
-    if (intersects.length > 0) actualEndPos.copy(intersects[0].point);
+    const hitPoint = rayOrigin.clone().add(cameraDir.clone().multiplyScalar(maxDistance));
+    if (intersects.length > 0) hitPoint.copy(intersects[0].point);
+
+    // Visual beam starts from barrel (cosmetic offset) but ends at crosshair hit point
+    const lateralOffset = gun === 'right' ? 0.25 : -0.25;
+    const shootPos = cameraPos.clone()
+      .add(cameraDir.clone().multiplyScalar(0.6))
+      .add(rightDir.clone().multiplyScalar(lateralOffset))
+      .add(upDir.clone().multiplyScalar(-0.28));
+    const actualEndPos = hitPoint;
 
     const beamLength = shootPos.distanceTo(actualEndPos);
     const beamGeometry = new THREE.CylinderGeometry(0.005, 0.005, beamLength, 8);
