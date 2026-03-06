@@ -124,12 +124,22 @@ export default function GameObjects() {
         <meshLambertMaterial color="#484848" />
       </mesh>
 
-      {/* Overhead fluorescent lights */}
+      {/* Overhead fluorescent lights — mesh + actual point light */}
       {([-14, -35, -60, -85] as number[]).map((z, i) => (
-        <mesh key={`light-${i}`} position={[0, 4.7, z]} receiveShadow>
-          <boxGeometry args={[1.2, 0.1, 0.3]} />
-          <meshLambertMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} />
-        </mesh>
+        <group key={`light-${i}`} position={[0, 4.7, z]}>
+          <mesh receiveShadow>
+            <boxGeometry args={[1.2, 0.1, 0.3]} />
+            <meshLambertMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.2} />
+          </mesh>
+          {/* Actual light source — shines downward into the room */}
+          <pointLight
+            color="#e8eeff"
+            intensity={18}
+            distance={28}
+            decay={2}
+            position={[0, -0.2, 0]}
+          />
+        </group>
       ))}
 
       {/* Back wall */}
