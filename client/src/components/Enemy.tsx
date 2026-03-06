@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import HealthBar from "./HealthBar";
 import EnemyMesh from "./EnemyMesh";
+import ShatterEffect from "./ShatterEffect";
 import enemyConfig from "../data/enemyConfig.json";
 import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
@@ -123,6 +124,8 @@ export default function Enemy({ type, position }: EnemyProps) {
   const [isAttacking, setIsAttacking] = useState(false);
   const [damageNumbers, setDamageNumbers] = useState<DamageNumberEntry[]>([]);
   const damageIdRef = useRef(0);
+  const [showShatter, setShowShatter] = useState(false);
+  const [shatterOrigin, setShatterOrigin] = useState<[number, number, number]>([0, 0, 0]);
 
   const { addHitEffect, gameResetKey } = useVRGame();
 
@@ -186,6 +189,11 @@ export default function Enemy({ type, position }: EnemyProps) {
         // Spawn drop orbs at enemy world position
         const worldPos = new THREE.Vector3();
         meshRef.current.getWorldPosition(worldPos);
+
+        // Trigger shatter effect immediately at death (fires during red phase)
+        setShatterOrigin([worldPos.x, worldPos.y, worldPos.z]);
+        setShowShatter(true);
+
         const orbPos: [number, number, number] = [worldPos.x, worldPos.y, worldPos.z];
         const { addDropOrb } = useVRGame.getState();
         const mkId = (suffix: string) => `orb_${Date.now()}_${Math.random().toString(36).slice(2)}_${suffix}`;
@@ -620,59 +628,71 @@ export default function Enemy({ type, position }: EnemyProps) {
     console.log(`💥 ${type} EXPLOSION! ${damage} AOE damage`);
   }
 
-  // Only unmount after the death animation fully completes (scale → 0)
-  if (fullyRemoved) return null;
-
   const color = getEnemyColor(type);
 
+  // Only unmount after the death animation fully completes (scale → 0)
+  // Keep rendering if shatter is still active even after full dissolve (timing: shatter=800ms, dissolve=2500ms — shatter wins)
+  if (fullyRemoved) return null;
+
   return (
-    <group ref={meshRef} position={position}>
-      {/* Procedural enemy geometry */}
-      <EnemyMesh type={type} color={color} isAttacking={isAttacking} rageMode={enemyState.rageMode} />
+    <>
+      <group ref={meshRef} position={position}>
+        {/* Procedural enemy geometry */}
+        <EnemyMesh type={type} color={color} isAttacking={isAttacking} rageMode={enemyState.rageMode} />
 
-      {/* Health Bar Component */}
-      <HealthBar
-        health={enemyState.health}
-        maxHealth={enemyState.maxHealth}
-        enemyType={type}
-      />
+        {/* Health Bar Component */}
+        <HealthBar
+          health={enemyState.health}
+          maxHealth={enemyState.maxHealth}
+          enemyType={type}
+        />
 
-      {/* Floating Damage Numbers */}
-      {damageNumbers.map(entry => (
-        <DamageNumber key={entry.id} entry={entry} onExpire={expireDamageNumber} />
-      ))}
+        {/* Floating Damage Numbers */}
+        {damageNumbers.map(entry => (
+          <DamageNumber key={entry.id} entry={entry} onExpire={expireDamageNumber} />
+        ))}
 
-      {/* Special Visual Effects */}
-      {type === "shield" && (
-        <mesh position={[0.8, 0.5, 0]} rotation={[0, 0, 0]}>
-          <boxGeometry args={[0.1, 1.5, 0.8]} />
-          <meshLambertMaterial color="#4682B4" />
-        </mesh>
+        {/* Special Visual Effects */}
+        {type === "shield" && (
+          <mesh position={[0.8, 0.5, 0]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[0.1, 1.5, 0.8]} />
+            <meshLambertMaterial color="#4682B4" />
+          </mesh>
+        )}
+
+        {type === "mage" && (
+          <mesh position={[0, 1.6, 0]}>
+            <sphereGeometry args={[0.2]} />
+            <meshLambertMaterial
+              color="#9400D3"
+              emissive="#4B0082"
+              emissiveIntensity={0.5}
+            />
+          </mesh>
+        )}
+
+        {enemyState.rageMode && (
+          <mesh position={[0, 1.4, 0]}>
+            <sphereGeometry args={[0.3]} />
+            <meshLambertMaterial
+              color="#FF0000"
+              emissive="#8B0000"
+              emissiveIntensity={1.0}
+              transparent={true}
+              opacity={0.6}
+            />
+          </mesh>
+        )}
+      </group>
+
+      {/* Shatter effect — rendered OUTSIDE the enemy group so it survives scale-down */}
+      {showShatter && (
+        <ShatterEffect
+          origin={shatterOrigin}
+          color={color}
+          onComplete={() => setShowShatter(false)}
+        />
       )}
-
-      {type === "mage" && (
-        <mesh position={[0, 1.6, 0]}>
-          <sphereGeometry args={[0.2]} />
-          <meshLambertMaterial
-            color="#9400D3"
-            emissive="#4B0082"
-            emissiveIntensity={0.5}
-          />
-        </mesh>
-      )}
-
-      {enemyState.rageMode && (
-        <mesh position={[0, 1.4, 0]}>
-          <sphereGeometry args={[0.3]} />
-          <meshLambertMaterial
-            color="#FF0000"
-            emissive="#8B0000"
-            emissiveIntensity={1.0}
-            transparent={true}
-            opacity={0.6}
-          />
-        </mesh>
-      )}
-    </group>
+    </>
   );
 }
