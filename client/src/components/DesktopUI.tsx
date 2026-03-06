@@ -99,9 +99,9 @@ export default function DesktopUI({
   const leftClipDisplay = desktopLeftClip;
   const rightClipDisplay = desktopRightClip;
   const activeRangedWeaponId = weaponInventory.ranged[activeRangedSlot];
-  const maxClipSize = activeRangedWeaponId
-    ? (getRangedWeapon(activeRangedWeaponId as RangedWeaponId)?.clipSize ?? 12)
-    : 12;
+  const rangedCfg = activeRangedWeaponId ? getRangedWeapon(activeRangedWeaponId as RangedWeaponId) : null;
+  const maxClipSize = rangedCfg?.clipSize ?? 12;
+  const isDualWeapon = (rangedCfg as any)?.dual === true;
   const currentGunDisplay = desktopCurrentGun;
   const isReloadingDisplay = desktopIsReloading;
 
@@ -365,15 +365,25 @@ export default function DesktopUI({
         {activeWeapon === 'gun' && (
           <>
             <div>
-              🔫 L:{' '}
-              <span style={{ color: leftClipDisplay > 4 ? 'white' : leftClipDisplay > 0 ? 'orange' : 'red' }}>
-                {leftClipDisplay}/{maxClipSize}
-              </span>
-              {' '}R:{' '}
-              <span style={{ color: rightClipDisplay > 4 ? 'white' : rightClipDisplay > 0 ? 'orange' : 'red' }}>
-                {rightClipDisplay}/{maxClipSize}
-              </span>
-              {' '}[{currentGunDisplay.toUpperCase()}]
+              {isDualWeapon ? (
+                <>
+                  🔫 L:{' '}
+                  <span style={{ color: leftClipDisplay > 4 ? 'white' : leftClipDisplay > 0 ? 'orange' : 'red' }}>
+                    {leftClipDisplay}/{maxClipSize}
+                  </span>
+                  {' '}R:{' '}
+                  <span style={{ color: rightClipDisplay > 4 ? 'white' : rightClipDisplay > 0 ? 'orange' : 'red' }}>
+                    {rightClipDisplay}/{maxClipSize}
+                  </span>
+                </>
+              ) : (
+                <>
+                  🔫{' '}
+                  <span style={{ color: leftClipDisplay > Math.floor(maxClipSize * 0.25) ? 'white' : leftClipDisplay > 0 ? 'orange' : 'red' }}>
+                    {leftClipDisplay}/{maxClipSize}
+                  </span>
+                </>
+              )}
             </div>
             {isReloadingDisplay && <div style={{ color: 'yellow' }}>🔄 Reloading...</div>}
           </>

@@ -186,7 +186,8 @@
         "gripColor": "#444444",
         "barrelColor": "#222222"
       },
-      "autoFire": false
+      "autoFire": false,
+      "dual": true
     },
     "smg": {
       "name": "SMG",
@@ -234,7 +235,8 @@
         "gripColor": "#3a2010",
         "barrelColor": "#222222"
       },
-      "autoFire": false
+      "autoFire": false,
+      "piercing": false
     },
     "sniper": {
       "name": "Sniper Rifle",

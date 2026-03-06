@@ -76,8 +76,13 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const shotCooldown = PLAYER_CONFIG.weapons.shotCooldown;
   const [leftClip, setLeftClip] = useState(12);
   const [rightClip, setRightClip] = useState(12);
+  // Refs that always hold current clip values (avoids stale closure in effects)
+  const leftClipRef = useRef(12);
+  const rightClipRef = useRef(12);
   // Derive clip size from active ranged weapon config
   const maxClipSize = getRangedCfg().clipSize;
+  // Is the active ranged weapon dual-wielded (shows L/R separately)?
+  const isDualWeapon = (id: string | null) => id === 'pistols';
   const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left');
   const [isReloading, setIsReloading] = useState(false);
   const [reloadTimeout, setReloadTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -125,17 +130,18 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     const prev = prevRangedWeapon.current;
     const next = activeRangedWeapon ?? null;
     if (prev === next) return;
-    // Save current ammo for the previous weapon
-    if (prev) savedAmmoBySlot.current[prev] = [leftClip, rightClip];
+    // Save current ammo for the previous weapon (use refs to avoid stale closure)
+    if (prev) savedAmmoBySlot.current[prev] = [leftClipRef.current, rightClipRef.current];
     // Restore or initialize ammo for the new weapon
     if (next) {
       const cfg = getRangedWeapon(next as RangedWeaponId);
       const cap = cfg?.clipSize ?? 12;
       const saved = savedAmmoBySlot.current[next];
+      const dual = isDualWeapon(next);
       const newLeft = saved ? saved[0] : cap;
-      const newRight = saved ? saved[1] : cap;
-      setLeftClip(newLeft);
-      setRightClip(newRight);
+      const newRight = dual ? (saved ? saved[1] : cap) : 0; // single weapons don't use rightClip
+      setLeftClip(newLeft);  leftClipRef.current = newLeft;
+      setRightClip(newRight); rightClipRef.current = newRight;
       setDesktopAmmo(newLeft, newRight, 'left', false);
     }
     prevRangedWeapon.current = next;
@@ -156,17 +162,24 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   // Gun firing — compute new values first to avoid stale closures
   const fireDesktopBullet = () => {
     if (isReloading) return;
-    if (leftClip <= 0 && rightClip <= 0) {
-      reloadGuns(); // immediate reload on empty
-      return;
+    const dual = isDualWeapon(activeRangedWeapon);
+    if (dual) {
+      if (leftClip <= 0 && rightClip <= 0) { reloadGuns(); return; }
+    } else {
+      if (leftClip <= 0) { reloadGuns(); return; }
     }
 
     let gunToUse: 'left' | 'right';
-    if (leftClip <= 0) gunToUse = 'right';
-    else if (rightClip <= 0) gunToUse = 'left';
-    else if (leftClip > rightClip) gunToUse = 'left';
-    else if (rightClip > leftClip) gunToUse = 'right';
-    else gunToUse = currentGun === 'left' ? 'right' : 'left';
+    if (!dual) {
+      // Single weapons always fire left
+      gunToUse = 'left';
+    } else if (leftClip <= 0) {
+      gunToUse = 'right';
+    } else if (rightClip <= 0) {
+      gunToUse = 'left';
+    } else {
+      gunToUse = currentGun === 'left' ? 'right' : 'left';
+    }
 
     setCurrentGun(gunToUse);
     fireWithGun(gunToUse);
@@ -179,9 +192,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Update store (HUD reads from here)
     setDesktopAmmo(newLeft, newRight, gun, false);
-    // Update local state
-    setLeftClip(newLeft);
-    setRightClip(newRight);
+    // Update local state + refs
+    setLeftClip(newLeft);  leftClipRef.current = newLeft;
+    setRightClip(newRight); rightClipRef.current = newRight;
     // Notify parent if wired
     if (onClipChange) onClipChange(newLeft, newRight, gun, false);
 
@@ -279,14 +292,15 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       }
     }
 
-    // Piercing bullets — damage ALL enemies along the ray, stop only at solid walls
+    // Bullets — piercing by default, stopped at first enemy if weapon has piercing:false
+    const isPiercing = (getRangedCfg() as any).piercing !== false;
     const hitEnemies = new Set<THREE.Object3D>(); // avoid double-hitting same enemy
     for (const intersect of intersects) {
       let hitObject: THREE.Object3D | null = intersect.object;
       while (hitObject && !hitObject.userData.isEnemy && !hitObject.userData.isPillar && !hitObject.userData.isWall) {
         hitObject = hitObject.parent;
       }
-      if (!hitObject) continue; // skip untagged geometry, keep piercing
+      if (!hitObject) continue; // skip untagged geometry, keep going
 
       if (hitObject.userData.isEnemy && !hitObject.userData.isDead && !hitEnemies.has(hitObject)) {
         hitEnemies.add(hitObject);
@@ -294,7 +308,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         if (hitObject.userData.takeDamage) hitObject.userData.takeDamage(rangedDmg);
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
         registerHit();
-        // Keep piercing — don't break
+        if (!isPiercing) break; // non-piercing weapons stop at first enemy hit
         continue;
       }
       if (hitObject.userData.isPillar && !hitObject.userData.destroyed) {
@@ -331,8 +345,10 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     // Reload time from weapon config, scaled by AGI
     const reloadMs = computeReloadTime(getRangedCfg().baseReloadTime, playerStats.agi);
     setTimeout(() => {
-      setLeftClip(maxClipSize);
-      setRightClip(maxClipSize);
+      const dual = isDualWeapon(activeRangedWeapon);
+      const rFill = dual ? maxClipSize : 0;
+      setLeftClip(maxClipSize); leftClipRef.current = maxClipSize;
+      setRightClip(rFill);      rightClipRef.current = rFill;
       setCurrentGun('left');
       setIsReloading(false);
       setDesktopAmmo(maxClipSize, maxClipSize, 'left', false);
@@ -575,10 +591,12 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     const handleAmmoPickup = (e: Event) => {
       const { amount } = (e as CustomEvent).detail;
-      const fill = Math.max(maxClipSize, (amount as number) || maxClipSize);
-      setLeftClip(fill);
-      setRightClip(fill);
-      setDesktopAmmo(fill, fill, 'left', false);
+      const fill = Math.min(maxClipSize, leftClipRef.current + ((amount as number) || maxClipSize));
+      const dual = isDualWeapon(activeRangedWeapon);
+      const rFill = dual ? Math.min(maxClipSize, rightClipRef.current + ((amount as number) || maxClipSize)) : 0;
+      setLeftClip(fill);  leftClipRef.current = fill;
+      setRightClip(rFill); rightClipRef.current = rFill;
+      setDesktopAmmo(fill, rFill, 'left', false);
     };
 
     document.addEventListener('mousedown', handleMouseDown);
