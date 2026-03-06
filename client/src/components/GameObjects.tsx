@@ -63,12 +63,15 @@ export default function GameObjects() {
 
   return (
     <>
-      {/* Prison floor - dark concrete over the white base */}
+      {/* ── FLOOR — dark concrete ── */}
       <mesh receiveShadow position={[0, 0.01, -50]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[200, 100]} />
+        <planeGeometry args={[200, 120]} />
         <meshLambertMaterial color="#3a3a3a" />
       </mesh>
 
+      {/* ════════════════════════════════════
+          CELL (z=0 to z=-6) — keep untouched
+          ════════════════════════════════════ */}
       {/* Cell back wall (behind player) */}
       <mesh position={[0, 2, 0.5]} receiveShadow>
         <boxGeometry args={[7, 5, 0.3]} />
@@ -89,7 +92,6 @@ export default function GameObjects() {
         <boxGeometry args={[7, 0.3, 7]} />
         <meshLambertMaterial color="#484848" />
       </mesh>
-
       {/* Cell bars - broken open, 4 bars with center 2 missing */}
       {[-3, -1.8, 1.8, 3].map((x, i) => (
         <mesh key={`bar-${i}`} position={[x, 2.2, -6]} receiveShadow>
@@ -108,95 +110,217 @@ export default function GameObjects() {
         <meshLambertMaterial color="#222222" />
       </mesh>
 
-      {/* Corridor left wall */}
-      <mesh position={[-6, 2.5, -14]} receiveShadow>
-        <boxGeometry args={[0.3, 5, 16]} />
-        <meshLambertMaterial color="#585858" />
+      {/* ════════════════════════════════════
+          MAIN CORRIDOR — z=-6 to z=-45, x=[-4,4]
+          ════════════════════════════════════ */}
+      {/* Left wall: x=-4, z=-6 to z=-45 (length 39, center z=-25.5) */}
+      <mesh position={[-4, 2.5, -25.5]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 39]} />
+        <meshLambertMaterial color="#606060" />
       </mesh>
-      {/* Corridor right wall */}
-      <mesh position={[6, 2.5, -14]} receiveShadow>
-        <boxGeometry args={[0.3, 5, 16]} />
-        <meshLambertMaterial color="#585858" />
+      {/* Right wall: x=+4 */}
+      <mesh position={[4, 2.5, -25.5]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 39]} />
+        <meshLambertMaterial color="#606060" />
       </mesh>
-      {/* Corridor ceiling */}
-      <mesh position={[0, 5, -14]} receiveShadow>
-        <boxGeometry args={[12, 0.3, 16]} />
+      {/* Ceiling strip over corridor */}
+      <mesh position={[0, 5, -25.5]} receiveShadow>
+        <boxGeometry args={[8, 0.3, 39]} />
         <meshLambertMaterial color="#484848" />
       </mesh>
 
-      {/* Overhead fluorescent lights — mesh + actual point light */}
-      {([-14, -35, -60, -85] as number[]).map((z, i) => (
+      {/* ════════════════════════════════════
+          CROSS-HALL — z=-40 to z=-52, x=-40 to x=+40
+          ════════════════════════════════════ */}
+      {/* North wall left portion: z=-40, x=-40 to x=-6 (width 34, center x=-23) */}
+      <mesh position={[-23, 2.5, -40]} receiveShadow>
+        <boxGeometry args={[34, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* North wall right portion: z=-40, x=+6 to x=+40 (width 34, center x=+23) */}
+      <mesh position={[23, 2.5, -40]} receiveShadow>
+        <boxGeometry args={[34, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* South wall: z=-52, x=-40 to x=+40 (solid, width 80) */}
+      <mesh position={[0, 2.5, -52]} receiveShadow>
+        <boxGeometry args={[80, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Left end wall: x=-40, z=-40 to z=-52 (depth 12, center z=-46) */}
+      <mesh position={[-40, 2.5, -46]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 12]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Right end wall: x=+40 */}
+      <mesh position={[40, 2.5, -46]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 12]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Ceiling: x=-40 to +40 (width 80), z=-40 to -52 (depth 12, center z=-46) */}
+      <mesh position={[0, 5, -46]} receiveShadow>
+        <boxGeometry args={[80, 0.3, 12]} />
+        <meshLambertMaterial color="#484848" />
+      </mesh>
+
+      {/* ════════════════════════════════════
+          LEFT GUARD ROOM — x=-55 to x=-35, z=-25 to z=-55
+          ════════════════════════════════════ */}
+      {/* North wall: z=-25, x=-55 to x=-35 (width 20, center x=-45) */}
+      <mesh position={[-45, 2.5, -25]} receiveShadow>
+        <boxGeometry args={[20, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* South wall: z=-55 */}
+      <mesh position={[-45, 2.5, -55]} receiveShadow>
+        <boxGeometry args={[20, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* West wall: x=-55, z=-25 to z=-55 (depth 30, center z=-40) */}
+      <mesh position={[-55, 2.5, -40]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 30]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* East wall upper segment: x=-35, z=-25 to z=-37 (length 12, center z=-31) */}
+      <mesh position={[-35, 2.5, -31]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 12]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* East wall lower segment: x=-35, z=-43 to z=-55 (length 12, center z=-49) */}
+      <mesh position={[-35, 2.5, -49]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 12]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Ceiling: x=-55 to x=-35 (width 20), z=-25 to z=-55 (depth 30) */}
+      <mesh position={[-45, 5, -40]} receiveShadow>
+        <boxGeometry args={[20, 0.3, 30]} />
+        <meshLambertMaterial color="#484848" />
+      </mesh>
+      {/* Guard desk (left room) */}
+      <mesh position={[-45, 0.45, -38]} receiveShadow>
+        <boxGeometry args={[4, 0.9, 1.2]} />
+        <meshLambertMaterial color="#4a4a30" />
+      </mesh>
+
+      {/* ════════════════════════════════════
+          RIGHT GUARD ROOM — x=+35 to x=+55, z=-25 to z=-55
+          ════════════════════════════════════ */}
+      {/* North wall: z=-25, x=35 to x=55 (width 20, center x=45) */}
+      <mesh position={[45, 2.5, -25]} receiveShadow>
+        <boxGeometry args={[20, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* South wall: z=-55 */}
+      <mesh position={[45, 2.5, -55]} receiveShadow>
+        <boxGeometry args={[20, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* East wall: x=55, z=-25 to z=-55 (depth 30, center z=-40) */}
+      <mesh position={[55, 2.5, -40]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 30]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* West wall upper segment: x=35, z=-25 to z=-37 (length 12, center z=-31) */}
+      <mesh position={[35, 2.5, -31]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 12]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* West wall lower segment: x=35, z=-43 to z=-55 (length 12, center z=-49) */}
+      <mesh position={[35, 2.5, -49]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 12]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Ceiling: x=35 to x=55 (width 20), z=-25 to z=-55 (depth 30) */}
+      <mesh position={[45, 5, -40]} receiveShadow>
+        <boxGeometry args={[20, 0.3, 30]} />
+        <meshLambertMaterial color="#484848" />
+      </mesh>
+      {/* Guard desk (right room) */}
+      <mesh position={[45, 0.45, -38]} receiveShadow>
+        <boxGeometry args={[4, 0.9, 1.2]} />
+        <meshLambertMaterial color="#4a4a30" />
+      </mesh>
+
+      {/* ════════════════════════════════════
+          BACK SECTION — x=-25 to x=+25, z=-52 to z=-80
+          ════════════════════════════════════ */}
+      {/* Left wall: x=-25, z=-52 to z=-80 (depth 28, center z=-66) */}
+      <mesh position={[-25, 2.5, -66]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 28]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Right wall: x=+25 */}
+      <mesh position={[25, 2.5, -66]} receiveShadow>
+        <boxGeometry args={[0.3, 5, 28]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Back wall: z=-80, x=-25 to x=+25 (width 50) */}
+      <mesh position={[0, 2.5, -80]} receiveShadow>
+        <boxGeometry args={[50, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Ceiling: width 50, depth 28 */}
+      <mesh position={[0, 5, -66]} receiveShadow>
+        <boxGeometry args={[50, 0.3, 28]} />
+        <meshLambertMaterial color="#484848" />
+      </mesh>
+      {/* Concrete pillars */}
+      <mesh position={[-12, 2.5, -65]} receiveShadow>
+        <boxGeometry args={[0.8, 5, 0.8]} />
+        <meshLambertMaterial color="#505050" />
+      </mesh>
+      <mesh position={[12, 2.5, -65]} receiveShadow>
+        <boxGeometry args={[0.8, 5, 0.8]} />
+        <meshLambertMaterial color="#505050" />
+      </mesh>
+
+      {/* ════════════════════════════════════
+          OUTER BOUNDARY WALLS (safety net)
+          ════════════════════════════════════ */}
+      <mesh position={[0, 8, -120]} userData={{ isWall: true }}>
+        <boxGeometry args={[200, 16, 2]} />
+        <meshLambertMaterial color="#404040" />
+      </mesh>
+      <mesh position={[-100, 8, -60]} rotation={[0, Math.PI / 2, 0]} userData={{ isWall: true }}>
+        <boxGeometry args={[120, 16, 2]} />
+        <meshLambertMaterial color="#3a3a3a" />
+      </mesh>
+      <mesh position={[100, 8, -60]} rotation={[0, Math.PI / 2, 0]} userData={{ isWall: true }}>
+        <boxGeometry args={[120, 16, 2]} />
+        <meshLambertMaterial color="#3a3a3a" />
+      </mesh>
+
+      {/* ════════════════════════════════════
+          OVERHEAD LIGHTS
+          ════════════════════════════════════ */}
+      {([-20, -46, -66] as number[]).map((z, i) => (
         <group key={`light-${i}`} position={[0, 4.7, z]}>
           <mesh receiveShadow>
             <boxGeometry args={[1.2, 0.1, 0.3]} />
             <meshLambertMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.2} />
           </mesh>
-          {/* Actual light source — shines downward into the room */}
-          <pointLight
-            color="#e8eeff"
-            intensity={18}
-            distance={28}
-            decay={2}
-            position={[0, -0.2, 0]}
-          />
+          <pointLight color="#e8eeff" intensity={18} distance={28} decay={2} position={[0, -0.2, 0]} />
         </group>
       ))}
+      {/* Side lights in guard rooms */}
+      <group position={[-45, 4.7, -40]}>
+        <mesh receiveShadow>
+          <boxGeometry args={[1.2, 0.1, 0.3]} />
+          <meshLambertMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.2} />
+        </mesh>
+        <pointLight color="#e8eeff" intensity={12} distance={20} decay={2} position={[0, -0.2, 0]} />
+      </group>
+      <group position={[45, 4.7, -40]}>
+        <mesh receiveShadow>
+          <boxGeometry args={[1.2, 0.1, 0.3]} />
+          <meshLambertMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.2} />
+        </mesh>
+        <pointLight color="#e8eeff" intensity={12} distance={20} decay={2} position={[0, -0.2, 0]} />
+      </group>
 
-      {/* Back wall */}
-      <mesh position={[0, 8, -100]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[200, 16, 2]} />
-        <meshLambertMaterial color="#555555" />
-      </mesh>
-      {/* Left wall */}
-      <mesh position={[-100, 8, -60]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[80, 16, 2]} />
-        <meshLambertMaterial color="#4e4e4e" />
-      </mesh>
-      {/* Right wall */}
-      <mesh position={[100, 8, -60]} rotation={[0, Math.PI / 2, 0]} receiveShadow userData={{ isWall: true }}>
-        <boxGeometry args={[80, 16, 2]} />
-        <meshLambertMaterial color="#4e4e4e" />
-      </mesh>
-      {/* Arena ceiling */}
-      <mesh position={[0, 16, -60]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[200, 80]} />
-        <meshLambertMaterial color="#404040" />
-      </mesh>
-
-      {/* Guard checkpoint desk */}
-      <mesh position={[-2.5, 0.8, -22]} receiveShadow>
-        <boxGeometry args={[4, 0.15, 1.2]} />
-        <meshLambertMaterial color="#4a4a30" />
-      </mesh>
-      <mesh position={[-2.5, 0.4, -22]} receiveShadow>
-        <boxGeometry args={[3.8, 0.6, 1.0]} />
-        <meshLambertMaterial color="#3a3a28" />
-      </mesh>
-      {/* Monitor on desk */}
-      <mesh position={[-1.5, 1.0, -22.3]} receiveShadow>
-        <boxGeometry args={[0.5, 0.35, 0.05]} />
-        <meshLambertMaterial color="#111111" emissive="#003300" emissiveIntensity={0.6} />
-      </mesh>
-
-      {/* Prison cells lining the left wall */}
-      {([-30, -45, -60, -75] as number[]).map((z, i) => (
-        <group key={`cellfront-${i}`} position={[-18, 0, z]}>
-          {/* Cell door frame */}
-          <mesh position={[0, 2, 0]}>
-            <boxGeometry args={[3, 4.5, 0.2]} />
-            <meshLambertMaterial color="#2a2a2a" />
-          </mesh>
-          {/* 4 vertical bars in the door */}
-          {([-1, -0.3, 0.3, 1] as number[]).map((bx, bi) => (
-            <mesh key={bi} position={[bx, 2, 0.05]}>
-              <boxGeometry args={[0.07, 4.2, 0.07]} />
-              <meshLambertMaterial color="#1a1a1a" />
-            </mesh>
-          ))}
-        </group>
-      ))}
-
-      {/* ENEMY ARMY - Current wave only */}
+      {/* ════════════════════════════════════
+          ENEMIES — current wave only
+          ════════════════════════════════════ */}
       {currentWaveSpawns.map((spawn, index) => (
         <Enemy
           key={`wave${visibleWave}-${spawn.type}-${index}`}
@@ -204,8 +328,6 @@ export default function GameObjects() {
           position={spawn.position as [number, number, number]}
         />
       ))}
-      
-      {/* All red pillars removed per user request */}
     </>
   );
 }

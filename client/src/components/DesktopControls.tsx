@@ -77,6 +77,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const [shotCount, setShotCount] = useState(0);
   // Which gun last fired — for per-gun recoil
   const [lastFiredGun, setLastFiredGun] = useState<'left' | 'right' | null>(null);
+  // Auto-fire: track whether left mouse button is held
+  const mouseHeld = useRef(false);
 
   // Jetpack state — mirrors VR physics exactly
   const boostActiveRef = useRef(false);
@@ -416,6 +418,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     };
 
     const handleMouseDown = (event: MouseEvent) => {
+      if (event.button === 0) mouseHeld.current = true;
       const currentTime = Date.now();
       const currentWeapon = weaponRef.current; // ref avoids stale closure
 
@@ -480,7 +483,12 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('mousemove', handleMouseMove);
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 0) mouseHeld.current = false;
+    };
+
     document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('wheel', handleWheel, { passive: true });
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     document.addEventListener('click', handleClick);
@@ -491,6 +499,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       document.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('wheel', handleWheel);
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
       document.removeEventListener('click', handleClick);
@@ -650,6 +659,24 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Report fuel to store for HUD
     if (!isVRPresented) setDesktopFuel(Math.round(jetpackFuel.current));
+
+    // Auto-fire: fire continuously while mouse held for auto weapons
+    if (mouseHeld.current && weaponRef.current === 'gun' && isPointerLocked.current) {
+      const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
+      const rangedId = wi.ranged[rs];
+      if (rangedId) {
+        const cfg = getRangedCfg();
+        const isAuto = (cfg as any).autoFire === true;
+        if (isAuto) {
+          const now = Date.now();
+          const fireCooldown = cfg.fireRate ?? shotCooldown * 1000;
+          if (now > lastShot.current + fireCooldown) {
+            fireDesktopBullet();
+            lastShot.current = now;
+          }
+        }
+      }
+    }
   });
 
   return (
