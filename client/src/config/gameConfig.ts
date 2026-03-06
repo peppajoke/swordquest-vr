@@ -15,6 +15,7 @@ export const GAME_CONFIG = {
       maxSpeed: 19.2,
       accelerationRate: 12.0,
       turnRate: 0.3,
+      walkSpeed: 3.5,
       jetpackSpeed: 8,
       gravity: -9.8,
       jumpVelocity: 6,

@@ -89,6 +89,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   // Jetpack state — mirrors VR physics exactly
   const boostActiveRef = useRef(false);
   const normalSpeed = PLAYER_CONFIG.movement.jetpackSpeed;
+  const walkSpeed = PLAYER_CONFIG.movement.walkSpeed;
   const jetpackVelocity = useRef(new THREE.Vector3());
   const jetpackAcceleration = useRef(new THREE.Vector3());
   const jetpackFuel = useRef<number>(PLAYER_CONFIG.jetpack.maxFuel);
@@ -640,8 +641,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       if (jetpackVelocity.current.length() > 0.1) {
         velocity.current.copy(jetpackVelocity.current);
       } else {
-        velocity.current.x = direction.current.x * normalSpeed;
-        velocity.current.z = direction.current.z * normalSpeed;
+        velocity.current.x = direction.current.x * walkSpeed;
+        velocity.current.z = direction.current.z * walkSpeed;
         velocity.current.y = 0;
       }
     }
