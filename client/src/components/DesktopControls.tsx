@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import { useAudio } from '../lib/stores/useAudio';
 import DesktopWeaponVisual from './DesktopWeaponVisual';
+import { resolveWallCollision } from '../lib/levelCollision';
 import { PLAYER_CONFIG, COMBAT_CONFIG } from '../config/gameConfig';
 import { getMeleeWeapon, getRangedWeapon, computeMeleeDamage, computeReloadTime, type MeleeWeaponId, type RangedWeaponId } from '../lib/weapons';
 
@@ -647,10 +648,14 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     camera.position.add(velocity.current.clone().multiplyScalar(deltaTime));
 
-    // Bounds
-    const bounds = 95;
-    camera.position.x = Math.max(-bounds, Math.min(bounds, camera.position.x));
-    camera.position.z = Math.max(-95, Math.min(1, camera.position.z));
+    // Wall collision — push player out of any wall AABB
+    const playerResolved = resolveWallCollision(camera.position.x, camera.position.z, 0.45);
+    camera.position.x = playerResolved.x;
+    camera.position.z = playerResolved.z;
+
+    // Hard outer bounds (fallback safety net)
+    camera.position.x = Math.max(-58, Math.min(58, camera.position.x));
+    camera.position.z = Math.max(-82, Math.min(1, camera.position.z));
     camera.position.y = Math.min(18, camera.position.y);
 
     // Sword damage while swinging

@@ -9,6 +9,8 @@ import ShatterEffect from "./ShatterEffect";
 import enemyConfig from "../data/enemyConfig.json";
 import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
+import { resolveWallCollision } from "../lib/levelCollision";
+import { resolveWallCollision } from "../lib/levelCollision";
 
 // ─── Floating Damage Number ────────────────────────────────────────────────
 
@@ -390,8 +392,12 @@ export default function Enemy({ type, position }: EnemyProps) {
     }
     
     if (aiResult.shouldMove && aiResult.newPosition && meshRef.current) {
-      // AI computes position in world space; convert to local before applying
-      const localPos = aiResult.newPosition.clone();
+      // AI computes position in world space; resolve wall collision before converting to local
+      const worldPos = aiResult.newPosition.clone();
+      const enemyResolved = resolveWallCollision(worldPos.x, worldPos.z, 0.38);
+      worldPos.x = enemyResolved.x;
+      worldPos.z = enemyResolved.z;
+      const localPos = worldPos.clone();
       if (meshRef.current.parent) meshRef.current.parent.worldToLocal(localPos);
       localPos.y = 0; // gravity: ground enemies always stay at y=0
       meshRef.current.position.copy(localPos);
