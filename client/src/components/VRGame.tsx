@@ -29,6 +29,14 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   // Register dev test harness
   useEffect(() => { registerTestHarness(camera, scene); }, []);
 
+  // Hand light: point light attached to camera so weapon is always lit regardless of scene
+  useEffect(() => {
+    const handLight = new THREE.PointLight('#fff8ee', 6, 5, 2);
+    handLight.position.set(0.25, -0.15, -0.5); // weapon-hand position in camera space
+    camera.add(handLight);
+    return () => { camera.remove(handLight); };
+  }, [camera]);
+
   // Set initial camera tilt; weapon + stats set on pickup (not on mount)
   useEffect(() => {
     if (!isVRPresenting) {
