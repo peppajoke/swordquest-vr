@@ -108,6 +108,8 @@ function getEnemySize(enemyType: string): [number, number, number] {
 export default function Enemy({ type, position }: EnemyProps) {
   const meshRef = useRef<THREE.Group>(null);
   const isDeadRef = useRef(false);         // always-current, no stale-closure risk
+  // Stable ID for peer-separation registry (based on spawn position — unique per spawn)
+  const enemyIdRef = useRef(`${type}_${position[0]}_${position[1]}_${position[2]}`);
   const [fullyRemoved, setFullyRemoved] = useState(false); // triggers final unmount
   const [enemyState, setEnemyState] = useState<EnemyState>(() => ({
     health: EnemyAIService.getMaxHealth(type),
@@ -129,6 +131,12 @@ export default function Enemy({ type, position }: EnemyProps) {
   }, []);
 
   // Reset enemy when game resets
+  // Unregister from peer-separation registry on unmount
+  useEffect(() => {
+    const id = enemyIdRef.current;
+    return () => { EnemyAIService.unregisterPosition(id); };
+  }, []);
+
   useEffect(() => {
     if (gameResetKey > 0) {
       setEnemyState({
@@ -332,14 +340,18 @@ export default function Enemy({ type, position }: EnemyProps) {
 
     // Update enemy state position for AI service
     enemyState.position = enemyPos;
-    
+
+    // Register position for peer-separation steering
+    EnemyAIService.registerPosition(enemyIdRef.current, enemyPos);
+
     // Use AI service for decision making
     const aiResult = EnemyAIService.updateEnemyAI(
       type,
       enemyState,
       playerPos,
       currentTime,
-      deltaTime
+      deltaTime,
+      enemyIdRef.current,
     );
     
     // Handle AI results

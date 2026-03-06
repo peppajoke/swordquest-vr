@@ -24,7 +24,42 @@ export interface EnemyAIResult {
   logMessage?: string;
 }
 
+// Module-level registry: maps ephemeral enemy key → world position
+// Each Enemy component registers itself each frame; AI reads it for separation steering.
+const _enemyPositions = new Map<string, THREE.Vector3>();
+
 export class EnemyAIService {
+  /** Call from Enemy useFrame: register this enemy's current position for peer-separation. */
+  static registerPosition(id: string, pos: THREE.Vector3) {
+    _enemyPositions.set(id, pos.clone());
+  }
+
+  /** Call from Enemy on unmount/death to remove from registry. */
+  static unregisterPosition(id: string) {
+    _enemyPositions.delete(id);
+  }
+
+  /**
+   * Compute a separation steering vector: push away from peers within `radius`.
+   * Returns a Vector3 in world space (may be zero-length if no peers nearby).
+   */
+  static getSeparationSteering(id: string, pos: THREE.Vector3, radius = 2.2): THREE.Vector3 {
+    const steer = new THREE.Vector3();
+    let count = 0;
+    _enemyPositions.forEach((peerPos, peerId) => {
+      if (peerId === id) return;
+      const delta = pos.clone().sub(peerPos);
+      const dist = delta.length();
+      if (dist < radius && dist > 0.01) {
+        // Weighted by inverse distance: closer peers push harder
+        steer.add(delta.normalize().multiplyScalar((radius - dist) / radius));
+        count++;
+      }
+    });
+    if (count > 0) steer.multiplyScalar(1 / count);
+    return steer;
+  }
+
   private static getEnemyProperty(enemyType: string, property: keyof (typeof enemyConfig.enemyTypes)[keyof typeof enemyConfig.enemyTypes]) {
     const config = enemyConfig.enemyTypes[enemyType as keyof typeof enemyConfig.enemyTypes];
     return config ? config[property] : enemyConfig.enemyTypes.grunt[property];
@@ -101,7 +136,8 @@ export class EnemyAIService {
     state: EnemyState,
     playerPosition: THREE.Vector3,
     currentTime: number,
-    deltaTime: number
+    deltaTime: number,
+    enemyId?: string,
   ): EnemyAIResult {
     const result: EnemyAIResult = {
       shouldMove: false,
@@ -194,6 +230,14 @@ export class EnemyAIService {
             speed = baseSpeed * 2.0;
           }
 
+          // Separation: push away from nearby peers so they don't stack
+          if (enemyId) {
+            const sep = EnemyAIService.getSeparationSteering(enemyId, state.position, 2.2);
+            if (sep.lengthSq() > 0.0001) {
+              moveDir.add(sep.multiplyScalar(0.8)).normalize();
+            }
+          }
+
           result.newPosition = state.position.clone().add(moveDir.multiplyScalar(speed * deltaTime));
         }
         break;
@@ -205,7 +249,18 @@ export class EnemyAIService {
           result.shouldMove = true;
           const direction = playerPosition.clone().sub(state.position).normalize();
           const speed = this.getMovementSpeed(enemyType);
-          result.newPosition = state.position.clone().add(direction.multiplyScalar(speed * deltaTime));
+
+          let moveDir = direction.clone();
+
+          // Separation steering for non-grunt ground types too
+          if (enemyId) {
+            const sep = EnemyAIService.getSeparationSteering(enemyId, state.position, 2.2);
+            if (sep.lengthSq() > 0.0001) {
+              moveDir.add(sep.multiplyScalar(0.6)).normalize();
+            }
+          }
+
+          result.newPosition = state.position.clone().add(moveDir.multiplyScalar(speed * deltaTime));
         }
         break;
     }

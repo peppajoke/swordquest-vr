@@ -194,7 +194,7 @@
       "attackDamage": 12,
       "attackCooldown": 2100,
       "attackRange": 8.0,
-      "speed": 0.9,
+      "speed": 0.35,
       "category": "flying",
       "description": "Small, agile"
     },
