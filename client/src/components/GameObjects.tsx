@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
 import Enemy from './Enemy';
+import CheckpointBeacon from './CheckpointBeacon';
 import enemySpawns from '../data/enemySpawns.json';
 
 const MAX_WAVE = 3;
@@ -292,6 +293,19 @@ export default function GameObjects() {
           position={spawn.position as [number, number, number]}
         />
       ))}
+
+      {/* ════════════════════════════════════
+          CHECKPOINT BEACONS
+          ════════════════════════════════════ */}
+      {/* Prison exit → Canyon. Local z=-75 = center of back section, visible from corridor. */}
+      <CheckpointBeacon
+        position={[0, 0, -75]}
+        nextZone="canyon"
+        label="CANYON →"
+      />
+      {/* Canyon placeholder beacons — show COMING SOON until implemented */}
+      <CheckpointBeacon position={[-20, 0, -185]} comingSoon label="DUNGEON →" />
+      <CheckpointBeacon position={[ 20, 0, -185]} comingSoon label="AREA A →" />
     </>
   );
 }
