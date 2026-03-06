@@ -39,9 +39,8 @@ export default function HealthBar({ health, maxHealth }: HealthBarProps) {
   const fillWidth = BAR_W * healthPercentage;
   const fillOffsetX = -(BAR_W - fillWidth) / 2;
 
+  // GruntMesh wrapper at [0,-0.41,0]; head top ~1.6 in group space → bar at 2.1
   return (
-    {/* GruntMesh wrapper is at [0,-0.41,0] and head top ~2.0 above wrapper = ~1.6 in group space */}
-    {/* Put bar clearly above head with a small z-push so it's never edge-on */}
     <group ref={groupRef} position={[0, 2.1, 0]}>
       {/* White background */}
       <mesh position={[0, 0, 0]}>
