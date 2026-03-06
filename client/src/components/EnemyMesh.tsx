@@ -10,52 +10,167 @@ interface EnemyMeshProps {
 }
 
 // ─── GRUNT ───────────────────────────────────────────────────────────────────
-// Prison Guard: red uniform, grey helmet with dark visor, grey legs
-function GruntMesh({ color }: { color: string }) {
-  // color = "#CC1111" (red guard uniform)
-  // Offset -0.41 so boot bottoms sit at y=0 (ground level)
+// Blocky Robot Guard: angular dark-steel chassis, glowing orange visor strip,
+// chunky segmented limbs, warning stripe on chest. No organic shapes — all boxes.
+// Wrapper offset -0.41 keeps boot bottoms at world y=0.
+function GruntMesh({ color: _color }: { color: string }) {
+  // Fixed robot palette — ignore the inherited color (was red guard uniform)
+  const steel      = "#2c2f3a"; // primary chassis
+  const panel      = "#3d4150"; // secondary panel faces
+  const dark       = "#191b22"; // joints / recesses
+  const visor      = "#ff5500"; // emissive eye strip
+  const chestLight = "#ff2200"; // emissive chest sensor
+  const warningYel = "#ffaa00"; // warning stripe
+
   return (
     <group position={[0, -0.41, 0]}>
-      {/* Helmet - dark grey, fits over head */}
-      <mesh position={[0, 1.65, 0]} castShadow>
-        <boxGeometry args={[0.28, 0.16, 0.28]} />
-        <meshLambertMaterial color="#2a2a2a" />
+
+      {/* ── HEAD ── */}
+      {/* Main skull block */}
+      <mesh position={[0, 1.74, 0]} castShadow>
+        <boxGeometry args={[0.38, 0.32, 0.34]} />
+        <meshLambertMaterial color={steel} />
       </mesh>
-      {/* Helmet visor - thin dark strip across front */}
-      <mesh position={[0, 1.6, -0.12]} castShadow>
-        <boxGeometry args={[0.24, 0.06, 0.04]} />
-        <meshLambertMaterial color="#001133" emissive="#001133" emissiveIntensity={0.4} />
+      {/* Visor eye strip — full-width emissive orange bar */}
+      <mesh position={[0, 1.74, -0.172]}>
+        <boxGeometry args={[0.32, 0.08, 0.02]} />
+        <meshLambertMaterial color={visor} emissive={visor} emissiveIntensity={1.2} />
       </mesh>
-      {/* Head (sphere) */}
-      <mesh position={[0, 1.5, 0]} castShadow>
-        <sphereGeometry args={[0.12, 8, 6]} />
-        <meshLambertMaterial color="#d4a07a" />
+      {/* Top antenna nub */}
+      <mesh position={[0, 1.92, 0]} castShadow>
+        <boxGeometry args={[0.06, 0.1, 0.06]} />
+        <meshLambertMaterial color={dark} />
       </mesh>
-      {/* Torso - red uniform */}
-      <mesh position={[0, 1.1, 0]} castShadow>
-        <boxGeometry args={[0.32, 0.52, 0.22]} />
-        <meshLambertMaterial color={color} />
+      {/* Chin/jaw plate */}
+      <mesh position={[0, 1.60, -0.14]} castShadow>
+        <boxGeometry args={[0.28, 0.08, 0.06]} />
+        <meshLambertMaterial color={panel} />
       </mesh>
-      {/* Left arm - red sleeve */}
-      <mesh position={[-0.22, 1.1, 0]} castShadow>
-        <boxGeometry args={[0.09, 0.38, 0.09]} />
-        <meshLambertMaterial color={color} />
+
+      {/* ── NECK ── */}
+      <mesh position={[0, 1.50, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.1, 0.18]} />
+        <meshLambertMaterial color={dark} />
       </mesh>
-      {/* Right arm - red sleeve */}
-      <mesh position={[0.22, 1.1, 0]} castShadow>
-        <boxGeometry args={[0.09, 0.38, 0.09]} />
-        <meshLambertMaterial color={color} />
+
+      {/* ── TORSO ── */}
+      {/* Main body block */}
+      <mesh position={[0, 1.15, 0]} castShadow>
+        <boxGeometry args={[0.58, 0.62, 0.34]} />
+        <meshLambertMaterial color={steel} />
       </mesh>
-      {/* Left leg - dark grey pants */}
-      <mesh position={[-0.1, 0.6, 0]} castShadow>
-        <boxGeometry args={[0.09, 0.38, 0.09]} />
-        <meshLambertMaterial color="#3a3a3a" />
+      {/* Chest armour plate */}
+      <mesh position={[0, 1.22, -0.172]} castShadow>
+        <boxGeometry args={[0.40, 0.36, 0.04]} />
+        <meshLambertMaterial color={panel} />
       </mesh>
-      {/* Right leg - dark grey pants */}
-      <mesh position={[0.1, 0.6, 0]} castShadow>
-        <boxGeometry args={[0.09, 0.38, 0.09]} />
-        <meshLambertMaterial color="#3a3a3a" />
+      {/* Warning stripe on chest */}
+      <mesh position={[0, 1.10, -0.192]}>
+        <boxGeometry args={[0.38, 0.08, 0.02]} />
+        <meshLambertMaterial color={warningYel} emissive={warningYel} emissiveIntensity={0.5} />
       </mesh>
+      {/* Chest sensor dot */}
+      <mesh position={[0, 1.30, -0.192]}>
+        <boxGeometry args={[0.07, 0.07, 0.02]} />
+        <meshLambertMaterial color={chestLight} emissive={chestLight} emissiveIntensity={1.0} />
+      </mesh>
+
+      {/* ── SHOULDERS (wide pads) ── */}
+      <mesh position={[-0.42, 1.35, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.18, 0.30]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+      <mesh position={[0.42, 1.35, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.18, 0.30]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+
+      {/* ── UPPER ARMS ── */}
+      <mesh position={[-0.46, 1.08, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.32, 0.16]} />
+        <meshLambertMaterial color={steel} />
+      </mesh>
+      <mesh position={[0.46, 1.08, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.32, 0.16]} />
+        <meshLambertMaterial color={steel} />
+      </mesh>
+
+      {/* ── ELBOW JOINTS ── */}
+      <mesh position={[-0.46, 0.90, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.1, 0.18]} />
+        <meshLambertMaterial color={dark} />
+      </mesh>
+      <mesh position={[0.46, 0.90, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.1, 0.18]} />
+        <meshLambertMaterial color={dark} />
+      </mesh>
+
+      {/* ── FOREARMS ── */}
+      <mesh position={[-0.46, 0.70, 0]} castShadow>
+        <boxGeometry args={[0.14, 0.28, 0.14]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+      <mesh position={[0.46, 0.70, 0]} castShadow>
+        <boxGeometry args={[0.14, 0.28, 0.14]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+
+      {/* ── FISTS ── */}
+      <mesh position={[-0.46, 0.54, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.14, 0.16]} />
+        <meshLambertMaterial color={dark} />
+      </mesh>
+      <mesh position={[0.46, 0.54, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.14, 0.16]} />
+        <meshLambertMaterial color={dark} />
+      </mesh>
+
+      {/* ── HIP BLOCK ── */}
+      <mesh position={[0, 0.76, 0]} castShadow>
+        <boxGeometry args={[0.50, 0.18, 0.30]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+
+      {/* ── THIGHS ── */}
+      <mesh position={[-0.16, 0.56, 0]} castShadow>
+        <boxGeometry args={[0.20, 0.26, 0.22]} />
+        <meshLambertMaterial color={steel} />
+      </mesh>
+      <mesh position={[0.16, 0.56, 0]} castShadow>
+        <boxGeometry args={[0.20, 0.26, 0.22]} />
+        <meshLambertMaterial color={steel} />
+      </mesh>
+
+      {/* ── KNEE JOINTS ── */}
+      <mesh position={[-0.16, 0.42, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.10, 0.24]} />
+        <meshLambertMaterial color={dark} />
+      </mesh>
+      <mesh position={[0.16, 0.42, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.10, 0.24]} />
+        <meshLambertMaterial color={dark} />
+      </mesh>
+
+      {/* ── SHINS ── */}
+      <mesh position={[-0.16, 0.26, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.22, 0.20]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+      <mesh position={[0.16, 0.26, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.22, 0.20]} />
+        <meshLambertMaterial color={panel} />
+      </mesh>
+
+      {/* ── FEET (wide, flat boots) ── */}
+      <mesh position={[-0.16, 0.47, 0.04]} castShadow>
+        <boxGeometry args={[0.24, 0.12, 0.36]} />
+        <meshLambertMaterial color={steel} />
+      </mesh>
+      <mesh position={[0.16, 0.47, 0.04]} castShadow>
+        <boxGeometry args={[0.24, 0.12, 0.36]} />
+        <meshLambertMaterial color={steel} />
+      </mesh>
+
     </group>
   );
 }

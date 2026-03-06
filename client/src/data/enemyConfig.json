@@ -1,9 +1,9 @@
 {
   "enemyTypes": {
     "grunt": {
-      "name": "Prison Guard",
-      "health": 1,
-      "color": "#CC1111",
+      "name": "Robot Guard",
+      "health": 75,
+      "color": "#2c2f3a",
       "size": [
         0.8,
         1.5,
