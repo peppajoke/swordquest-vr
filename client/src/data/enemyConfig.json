@@ -2,6 +2,7 @@
   "enemyTypes": {
     "grunt": {
       "name": "Robot Guard",
+      "alertSound": "robot_powerup",
       "health": 75,
       "color": "#2c2f3a",
       "size": [

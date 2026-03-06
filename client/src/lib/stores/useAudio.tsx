@@ -104,14 +104,53 @@ function synthFootstep(ctx: AudioContext) {
 
 function synthEnemyAlert(ctx: AudioContext) {
   const now = ctx.currentTime;
-  // Rising electronic chirp — robot "spotted you"
-  const osc = ctx.createOscillator(); osc.type = 'square';
-  osc.frequency.setValueAtTime(600, now);
-  osc.frequency.exponentialRampToValueAtTime(2400, now + 0.25);
-  osc.frequency.setValueAtTime(1200, now + 0.26);
-  osc.frequency.exponentialRampToValueAtTime(2800, now + 0.45);
-  const g = ctx.createGain(); g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-  osc.connect(g); g.connect(ctx.destination); osc.start(now); osc.stop(now + 0.5);
+
+  // === ROBOT POWER-UP / TARGET LOCK ===
+  // Layer 1: Deep mechanical THUD — system activating (0–180ms)
+  const thudBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.18), ctx.sampleRate);
+  const thudData = thudBuf.getChannelData(0);
+  for (let i = 0; i < thudData.length; i++) {
+    const t = i / ctx.sampleRate;
+    thudData[i] = (Math.random() * 2 - 1) * Math.exp(-t / 0.04);
+  }
+  const thudSrc = ctx.createBufferSource(); thudSrc.buffer = thudBuf;
+  const thudLp = ctx.createBiquadFilter(); thudLp.type = 'lowpass'; thudLp.frequency.value = 90;
+  const thudGain = ctx.createGain(); thudGain.gain.setValueAtTime(1.2, now); thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+  thudSrc.connect(thudLp); thudLp.connect(thudGain); thudGain.connect(ctx.destination); thudSrc.start(now);
+
+  // Layer 2: Electrical charge whine — pitch rises as it powers up (80ms–850ms)
+  const whine = ctx.createOscillator(); whine.type = 'sawtooth';
+  whine.frequency.setValueAtTime(55, now + 0.08);
+  whine.frequency.exponentialRampToValueAtTime(3200, now + 0.82);
+  const whineGain = ctx.createGain();
+  whineGain.gain.setValueAtTime(0.0, now + 0.08);
+  whineGain.gain.linearRampToValueAtTime(0.18, now + 0.18);
+  whineGain.gain.linearRampToValueAtTime(0.30, now + 0.75);
+  whineGain.gain.exponentialRampToValueAtTime(0.001, now + 0.88);
+  // Mild distortion via waveshaper
+  const shaper = ctx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { const x = (i * 2) / 256 - 1; curve[i] = (Math.PI + 80) * x / (Math.PI + 80 * Math.abs(x)); }
+  shaper.curve = curve;
+  whine.connect(shaper); shaper.connect(whineGain); whineGain.connect(ctx.destination);
+  whine.start(now + 0.08); whine.stop(now + 0.9);
+
+  // Layer 3: Mechanical stutter — servo clicks during charge (120ms–650ms)
+  [0.12, 0.22, 0.34, 0.48, 0.60].forEach(t => {
+    const click = ctx.createOscillator(); click.type = 'square'; click.frequency.value = 180 + t * 400;
+    const cg = ctx.createGain(); cg.gain.setValueAtTime(0.12, now + t); cg.gain.exponentialRampToValueAtTime(0.001, now + t + 0.03);
+    click.connect(cg); cg.connect(ctx.destination); click.start(now + t); click.stop(now + t + 0.04);
+  });
+
+  // Layer 4: TARGET LOCK — sharp square burst at end (850ms–1100ms)
+  const lock = ctx.createOscillator(); lock.type = 'square'; lock.frequency.value = 3400;
+  const lockGain = ctx.createGain();
+  lockGain.gain.setValueAtTime(0.0, now + 0.84);
+  lockGain.gain.setValueAtTime(0.28, now + 0.86);
+  lockGain.gain.setValueAtTime(0.0,  now + 0.92); // double-blip
+  lockGain.gain.setValueAtTime(0.28, now + 0.94);
+  lockGain.gain.exponentialRampToValueAtTime(0.001, now + 1.15);
+  lock.connect(lockGain); lockGain.connect(ctx.destination); lock.start(now + 0.84); lock.stop(now + 1.2);
 }
 
 function synthRobotDeath(ctx: AudioContext) {
@@ -260,7 +299,7 @@ export const useAudio = create<AudioState>((set, get) => ({
 
   playEnemyAlert: () => {
     if (get().isMuted) return;
-    synth(synthEnemyAlert, 700);
+    synth(synthEnemyAlert, 1400); // 1.2s sound + buffer
   },
 
   playWeaponPickup: () => {
