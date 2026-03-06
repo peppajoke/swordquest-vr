@@ -72,43 +72,7 @@ export default function GameObjects() {
       {/* ════════════════════════════════════
           CELL (z=0 to z=-6) — keep untouched
           ════════════════════════════════════ */}
-      {/* Cell back wall (behind player) */}
-      <mesh position={[0, 2, 0.5]} receiveShadow>
-        <boxGeometry args={[7, 5, 0.3]} />
-        <meshLambertMaterial color="#606060" />
-      </mesh>
-      {/* Cell left wall */}
-      <mesh position={[-3.5, 2, -3]} receiveShadow>
-        <boxGeometry args={[0.3, 5, 7]} />
-        <meshLambertMaterial color="#585858" />
-      </mesh>
-      {/* Cell right wall */}
-      <mesh position={[3.5, 2, -3]} receiveShadow>
-        <boxGeometry args={[0.3, 5, 7]} />
-        <meshLambertMaterial color="#585858" />
-      </mesh>
-      {/* Cell ceiling */}
-      <mesh position={[0, 4.5, -3]} receiveShadow>
-        <boxGeometry args={[7, 0.3, 7]} />
-        <meshLambertMaterial color="#484848" />
-      </mesh>
-      {/* Cell bars - broken open, 4 bars with center 2 missing */}
-      {[-3, -1.8, 1.8, 3].map((x, i) => (
-        <mesh key={`bar-${i}`} position={[x, 2.2, -6]} receiveShadow>
-          <boxGeometry args={[0.08, 4, 0.08]} />
-          <meshLambertMaterial color="#222222" />
-        </mesh>
-      ))}
-      {/* Bent bar - left side, angled */}
-      <mesh position={[-2.5, 1.5, -6.3]} rotation={[0, 0, 0.4]} receiveShadow>
-        <boxGeometry args={[0.08, 2.5, 0.08]} />
-        <meshLambertMaterial color="#222222" />
-      </mesh>
-      {/* Top crossbar */}
-      <mesh position={[0, 4.2, -6]} receiveShadow>
-        <boxGeometry args={[7, 0.1, 0.08]} />
-        <meshLambertMaterial color="#222222" />
-      </mesh>
+      {/* Cell walls removed — open starting area */}
 
       {/* ════════════════════════════════════
           MAIN CORRIDOR — z=-6 to z=-45, x=[-4,4]

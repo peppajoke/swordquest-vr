@@ -7,13 +7,7 @@
 export type WallAABB = [number, number, number, number];
 
 export const WALLS: WallAABB[] = [
-  // ── CELL (z = 0 to -6) ──────────────────────────────────────────
-  // Back wall at z=+0.5 (behind spawn)
-  [-3.5,  0.35,   3.5,  0.65],
-  // Left wall x=-3.5 (mesh center -3.5, half-width 0.15)
-  [-3.65, -6.5,  -3.35,  0.5],
-  // Right wall x=+3.5
-  [ 3.35, -6.5,   3.65,  0.5],
+  // ── CELL: walls removed — open starting area ────────────────────
 
   // ── MAIN CORRIDOR (z = -6 to -45, x = -4 to +4) ────────────────
   [-4.15, -45.0, -3.85,  -6.0],  // left wall

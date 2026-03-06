@@ -123,7 +123,13 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
     lastAttackTime: 0,
     position: new THREE.Vector3(...position),
     rageMode: false,
-    teleportCooldown: 0
+    teleportCooldown: 0,
+    // NPC state machine
+    aiMode: 'wander',
+    spawnOrigin: new THREE.Vector3(...position),
+    wanderTarget: null,
+    wanderPauseUntil: 0,
+    wanderSeed: position[0] * 17.3 + position[2] * 11.7, // stable per-enemy
   }));
   const [isAttacking, setIsAttacking] = useState(false);
   const [damageNumbers, setDamageNumbers] = useState<DamageNumberEntry[]>([]);
@@ -153,6 +159,11 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
         lastAttackTime: 0,
         position: new THREE.Vector3(...position),
         rageMode: false,
+        aiMode: 'wander',
+        spawnOrigin: new THREE.Vector3(...position),
+        wanderTarget: null,
+        wanderPauseUntil: 0,
+        wanderSeed: position[0] * 17.3 + position[2] * 11.7,
         teleportCooldown: 0
       });
       setIsAttacking(false);
@@ -164,6 +175,9 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
 
   function takeDamage(damage: number) {
     if (isDeadRef.current) return;
+
+    // Any hit immediately switches NPC to pursuit mode
+    if (enemyState.aiMode === 'wander') enemyState.aiMode = 'pursuing';
 
     const currentTime = Date.now();
     const enemyDied = EnemyAIService.takeDamage(enemyState, damage, currentTime);

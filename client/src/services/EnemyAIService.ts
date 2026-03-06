@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from '../config/gameConfig';
 import enemyConfig from '../data/enemyConfig.json';
 
+export type AIMode = 'wander' | 'pursuing';
+
 export interface EnemyState {
   health: number;
   maxHealth: number;
@@ -13,6 +15,12 @@ export interface EnemyState {
   position: THREE.Vector3;
   velocity?: THREE.Vector3;
   target?: THREE.Vector3;
+  // NPC state machine
+  aiMode: AIMode;
+  spawnOrigin: THREE.Vector3;     // center of wander area (set once at spawn)
+  wanderTarget: THREE.Vector3 | null;
+  wanderPauseUntil: number;        // timestamp — enemy stands still until this time
+  wanderSeed: number;              // stable random seed per enemy
 }
 
 export interface EnemyAIResult {
@@ -196,73 +204,87 @@ export class EnemyAIService {
         );
         break;
 
-      case 'grunt': {
+      case 'grunt':
+      default: {
+        const SIGHT_RANGE = 14; // units — enemy "sees" player within this distance
+
+        // ── STATE TRANSITION: wander → pursuing ─────────────────────────────
+        if (state.aiMode === 'wander' && distance <= SIGHT_RANGE) {
+          state.aiMode = 'pursuing';
+        }
+
+        // ── WANDER MODE ─────────────────────────────────────────────────────
+        if (state.aiMode === 'wander') {
+          const WANDER_RADIUS = 5.0;
+          const WANDER_SPEED = this.getMovementSpeed(enemyType) * 0.38;
+          const ARRIVE_DIST = 0.6;
+
+          // Standing still during a "look around" pause
+          if (state.wanderPauseUntil > currentTime) {
+            result.shouldMove = false;
+            break;
+          }
+
+          // Need a new wander target?
+          const needTarget = !state.wanderTarget ||
+            state.position.distanceTo(state.wanderTarget) < ARRIVE_DIST;
+
+          if (needTarget) {
+            // Pause briefly before picking a new target (NPC "decides where to go")
+            const pauseMs = 1200 + Math.sin(state.wanderSeed + currentTime * 0.0001) * 1800 + 1800;
+            state.wanderPauseUntil = currentTime + Math.abs(pauseMs);
+
+            // Pick a new target within WANDER_RADIUS of spawn
+            const angle = (state.wanderSeed * 73.13 + currentTime * 0.00023) % (Math.PI * 2);
+            const r = WANDER_RADIUS * (0.3 + 0.7 * Math.abs(Math.sin(state.wanderSeed * 1.7 + currentTime * 0.0001)));
+            state.wanderTarget = new THREE.Vector3(
+              state.spawnOrigin.x + Math.cos(angle) * r,
+              state.spawnOrigin.y,
+              state.spawnOrigin.z + Math.sin(angle) * r,
+            );
+          }
+
+          if (state.wanderTarget && state.position.distanceTo(state.wanderTarget) >= ARRIVE_DIST) {
+            result.shouldMove = true;
+            const dir = state.wanderTarget.clone().sub(state.position).normalize();
+            result.newPosition = state.position.clone().add(dir.multiplyScalar(WANDER_SPEED * deltaTime));
+          }
+          break;
+        }
+
+        // ── PURSUING MODE ────────────────────────────────────────────────────
         if (distance > attackRange) {
           result.shouldMove = true;
           const baseSpeed = this.getMovementSpeed(enemyType);
-
-          // Use position as seed for stable-ish per-enemy randomness
-          const seed = state.position.x * 13.7 + state.position.z * 7.3;
+          const seed = state.wanderSeed;
           const t = currentTime * 0.001;
 
-          // Phase cycles: approach → circle-strafe → rush (each ~2–4s)
+          // Phase cycles: zigzag → circle-strafe → rush
           const phaseCycle = Math.floor((t + seed) / 3) % 3;
-
           let moveDir = playerPosition.clone().sub(state.position).normalize();
           let speed = baseSpeed;
 
           if (phaseCycle === 0) {
-            // Zigzag approach: weave left/right while closing in
             const lateral = new THREE.Vector3(-moveDir.z, 0, moveDir.x);
-            const weave = Math.sin(t * 3.5 + seed) * 0.7;
-            moveDir.add(lateral.multiplyScalar(weave)).normalize();
-
+            moveDir.add(lateral.multiplyScalar(Math.sin(t * 3.5 + seed) * 0.7)).normalize();
           } else if (phaseCycle === 1 && distance < 12) {
-            // Circle-strafe at medium range
             const perpDir = new THREE.Vector3(-moveDir.z, 0, moveDir.x);
-            const clockwise = Math.sin(seed) > 0 ? 1 : -1; // stable per-enemy direction
-            moveDir = perpDir.clone().multiplyScalar(clockwise);
-            // Still drift slightly inward
+            const cw = Math.sin(seed) > 0 ? 1 : -1;
+            moveDir = perpDir.clone().multiplyScalar(cw);
             moveDir.add(playerPosition.clone().sub(state.position).normalize().multiplyScalar(0.3)).normalize();
-
           } else {
-            // Rush: charge at 2× speed briefly, then resume normal
             speed = baseSpeed * 2.0;
           }
 
-          // Separation: push away from nearby peers so they don't stack
           if (enemyId) {
             const sep = EnemyAIService.getSeparationSteering(enemyId, state.position, 2.2);
-            if (sep.lengthSq() > 0.0001) {
-              moveDir.add(sep.multiplyScalar(0.8)).normalize();
-            }
+            if (sep.lengthSq() > 0.0001) moveDir.add(sep.multiplyScalar(0.8)).normalize();
           }
 
           result.newPosition = state.position.clone().add(moveDir.multiplyScalar(speed * deltaTime));
         }
         break;
       }
-
-      default:
-        // Ground enemies move toward player if not in attack range
-        if (distance > attackRange) {
-          result.shouldMove = true;
-          const direction = playerPosition.clone().sub(state.position).normalize();
-          const speed = this.getMovementSpeed(enemyType);
-
-          let moveDir = direction.clone();
-
-          // Separation steering for non-grunt ground types too
-          if (enemyId) {
-            const sep = EnemyAIService.getSeparationSteering(enemyId, state.position, 2.2);
-            if (sep.lengthSq() > 0.0001) {
-              moveDir.add(sep.multiplyScalar(0.6)).normalize();
-            }
-          }
-
-          result.newPosition = state.position.clone().add(moveDir.multiplyScalar(speed * deltaTime));
-        }
-        break;
     }
 
     return result;
