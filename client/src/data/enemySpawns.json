@@ -101,36 +101,6 @@
       "wave": 1
     },
     {
-      "type": "wasp",
-      "position": [
-        -3,
-        4,
-        -25
-      ],
-      "group": "Guard Drones",
-      "wave": 1
-    },
-    {
-      "type": "wasp",
-      "position": [
-        3,
-        4,
-        -32
-      ],
-      "group": "Guard Drones",
-      "wave": 1
-    },
-    {
-      "type": "wasp",
-      "position": [
-        0,
-        5,
-        -45
-      ],
-      "group": "Guard Drones",
-      "wave": 1
-    },
-    {
       "type": "grunt",
       "position": [
         -25,
@@ -158,36 +128,6 @@
         -30
       ],
       "group": "Guards",
-      "wave": 1
-    },
-    {
-      "type": "wasp",
-      "position": [
-        25,
-        7,
-        -35
-      ],
-      "group": "Flying",
-      "wave": 1
-    },
-    {
-      "type": "wasp",
-      "position": [
-        -55,
-        8,
-        -45
-      ],
-      "group": "Flying",
-      "wave": 1
-    },
-    {
-      "type": "wasp",
-      "position": [
-        75,
-        5,
-        -65
-      ],
-      "group": "Flying",
       "wave": 1
     }
   ]
