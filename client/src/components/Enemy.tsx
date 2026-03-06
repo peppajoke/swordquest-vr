@@ -132,6 +132,7 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
     wanderSeed: position[0] * 17.3 + position[2] * 11.7, // stable per-enemy
   }));
   const [isAttacking, setIsAttacking] = useState(false);
+  const isMovingRef = useRef(false);
   const [damageNumbers, setDamageNumbers] = useState<DamageNumberEntry[]>([]);
   const damageIdRef = useRef(0);
   const [showShatter, setShowShatter] = useState(false);
@@ -407,6 +408,8 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
       setEnemyState(prev => ({ ...prev, teleportCooldown: currentTime + 5000 }));
     }
     
+    isMovingRef.current = !!(aiResult.shouldMove && aiResult.newPosition);
+
     if (aiResult.shouldMove && aiResult.newPosition && meshRef.current) {
       // AI computes position in world space; resolve wall collision before converting to local
       const worldPos = aiResult.newPosition.clone();
@@ -683,7 +686,14 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
     <>
       <group ref={meshRef} position={position}>
         {/* Procedural enemy geometry */}
-        <EnemyMesh type={type} color={color} isAttacking={isAttacking} rageMode={enemyState.rageMode} />
+        <EnemyMesh
+          type={type}
+          color={color}
+          isAttacking={isAttacking}
+          rageMode={enemyState.rageMode}
+          isAlerted={enemyState.aiMode === 'pursuing'}
+          isMoving={isMovingRef.current}
+        />
 
         {/* Health Bar Component */}
         <HealthBar

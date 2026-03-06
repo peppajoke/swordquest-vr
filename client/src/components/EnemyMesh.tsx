@@ -6,21 +6,49 @@ interface EnemyMeshProps {
   type: string;
   color: string;
   isAttacking?: boolean;
+  isAlerted?: boolean;  // visor lights up when pursuing
+  isMoving?: boolean;   // legs animate when walking
   rageMode?: boolean;
 }
 
 // ─── GRUNT ───────────────────────────────────────────────────────────────────
-// Blocky Robot Guard: angular dark-steel chassis, glowing orange visor strip,
-// chunky segmented limbs, warning stripe on chest. No organic shapes — all boxes.
-// Wrapper offset -0.41 keeps boot bottoms at world y=0.
-function GruntMesh({ color: _color }: { color: string }) {
-  // Fixed robot palette — ignore the inherited color (was red guard uniform)
-  const steel      = "#2c2f3a"; // primary chassis
-  const panel      = "#3d4150"; // secondary panel faces
-  const dark       = "#191b22"; // joints / recesses
-  const visor      = "#ff5500"; // emissive eye strip
-  const chestLight = "#ff2200"; // emissive chest sensor
-  const warningYel = "#ffaa00"; // warning stripe
+// Blocky Robot Guard.
+// - Stealth mode (isAlerted=false): pure silhouette — visor/chest dark
+// - Alert mode (isAlerted=true): orange visor + red chest light glow
+// - Leg animation when isMoving=true
+function GruntMesh({ color: _color, isAlerted = false, isMoving = false }:
+  { color: string; isAlerted?: boolean; isMoving?: boolean }) {
+
+  const steel      = "#2c2f3a";
+  const panel      = "#3d4150";
+  const dark       = "#191b22";
+  const visorColor = "#ff5500";
+  const chestColor = "#ff2200";
+  const warningYel = "#ffaa00";
+
+  // Emissive only when alerted — completely dark silhouette otherwise
+  const visorEI    = isAlerted ? 1.2 : 0;
+  const chestEI    = isAlerted ? 1.0 : 0;
+  const warningEI  = isAlerted ? 0.5 : 0;
+
+  // Leg animation refs — hip pivot groups
+  const leftLegRef  = useRef<THREE.Group>(null);
+  const rightLegRef = useRef<THREE.Group>(null);
+  const walkTime    = useRef(0);
+
+  useFrame((_, delta) => {
+    if (!leftLegRef.current || !rightLegRef.current) return;
+    if (isMoving) {
+      walkTime.current += delta * 7; // ~7 rad/s = ~1.1 full swings/sec
+    } else {
+      // Ease legs back to neutral
+      walkTime.current *= 0.85;
+      if (Math.abs(walkTime.current) < 0.01) walkTime.current = 0;
+    }
+    const swing = Math.sin(walkTime.current) * 0.38; // ±0.38 rad ≈ ±22°
+    leftLegRef.current.rotation.x  =  swing;
+    rightLegRef.current.rotation.x = -swing;
+  });
 
   return (
     <group position={[0, -0.41, 0]}>
@@ -31,10 +59,10 @@ function GruntMesh({ color: _color }: { color: string }) {
         <boxGeometry args={[0.38, 0.32, 0.34]} />
         <meshLambertMaterial color={steel} />
       </mesh>
-      {/* Visor eye strip — full-width emissive orange bar */}
+      {/* Visor eye strip — lights up when alerted */}
       <mesh position={[0, 1.74, -0.172]}>
         <boxGeometry args={[0.32, 0.08, 0.02]} />
-        <meshLambertMaterial color={visor} emissive={visor} emissiveIntensity={1.2} />
+        <meshLambertMaterial color={visorColor} emissive={visorColor} emissiveIntensity={visorEI} />
       </mesh>
       {/* Top antenna nub */}
       <mesh position={[0, 1.92, 0]} castShadow>
@@ -64,15 +92,15 @@ function GruntMesh({ color: _color }: { color: string }) {
         <boxGeometry args={[0.40, 0.36, 0.04]} />
         <meshLambertMaterial color={panel} />
       </mesh>
-      {/* Warning stripe on chest */}
+      {/* Warning stripe on chest — glows on alert */}
       <mesh position={[0, 1.10, -0.192]}>
         <boxGeometry args={[0.38, 0.08, 0.02]} />
-        <meshLambertMaterial color={warningYel} emissive={warningYel} emissiveIntensity={0.5} />
+        <meshLambertMaterial color={warningYel} emissive={warningYel} emissiveIntensity={warningEI} />
       </mesh>
-      {/* Chest sensor dot */}
+      {/* Chest sensor dot — glows on alert */}
       <mesh position={[0, 1.30, -0.192]}>
         <boxGeometry args={[0.07, 0.07, 0.02]} />
-        <meshLambertMaterial color={chestLight} emissive={chestLight} emissiveIntensity={1.0} />
+        <meshLambertMaterial color={chestColor} emissive={chestColor} emissiveIntensity={chestEI} />
       </mesh>
 
       {/* ── SHOULDERS (wide pads) ── */}
@@ -131,45 +159,49 @@ function GruntMesh({ color: _color }: { color: string }) {
         <meshLambertMaterial color={panel} />
       </mesh>
 
-      {/* ── THIGHS ── */}
-      <mesh position={[-0.16, 0.56, 0]} castShadow>
-        <boxGeometry args={[0.20, 0.26, 0.22]} />
-        <meshLambertMaterial color={steel} />
-      </mesh>
-      <mesh position={[0.16, 0.56, 0]} castShadow>
-        <boxGeometry args={[0.20, 0.26, 0.22]} />
-        <meshLambertMaterial color={steel} />
-      </mesh>
+      {/* ── LEFT LEG — pivots at hip (y=0.69) for walk animation ── */}
+      <group ref={leftLegRef} position={[-0.16, 0.69, 0]}>
+        {/* Thigh */}
+        <mesh position={[0, -0.12, 0]} castShadow>
+          <boxGeometry args={[0.20, 0.26, 0.22]} />
+          <meshLambertMaterial color={steel} />
+        </mesh>
+        {/* Knee */}
+        <mesh position={[0, -0.27, 0]} castShadow>
+          <boxGeometry args={[0.22, 0.10, 0.24]} />
+          <meshLambertMaterial color={dark} />
+        </mesh>
+        {/* Shin */}
+        <mesh position={[0, -0.43, 0]} castShadow>
+          <boxGeometry args={[0.18, 0.22, 0.20]} />
+          <meshLambertMaterial color={panel} />
+        </mesh>
+        {/* Foot */}
+        <mesh position={[0, -0.22, 0.04]} castShadow>
+          <boxGeometry args={[0.24, 0.12, 0.36]} />
+          <meshLambertMaterial color={steel} />
+        </mesh>
+      </group>
 
-      {/* ── KNEE JOINTS ── */}
-      <mesh position={[-0.16, 0.42, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.10, 0.24]} />
-        <meshLambertMaterial color={dark} />
-      </mesh>
-      <mesh position={[0.16, 0.42, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.10, 0.24]} />
-        <meshLambertMaterial color={dark} />
-      </mesh>
-
-      {/* ── SHINS ── */}
-      <mesh position={[-0.16, 0.26, 0]} castShadow>
-        <boxGeometry args={[0.18, 0.22, 0.20]} />
-        <meshLambertMaterial color={panel} />
-      </mesh>
-      <mesh position={[0.16, 0.26, 0]} castShadow>
-        <boxGeometry args={[0.18, 0.22, 0.20]} />
-        <meshLambertMaterial color={panel} />
-      </mesh>
-
-      {/* ── FEET (wide, flat boots) ── */}
-      <mesh position={[-0.16, 0.47, 0.04]} castShadow>
-        <boxGeometry args={[0.24, 0.12, 0.36]} />
-        <meshLambertMaterial color={steel} />
-      </mesh>
-      <mesh position={[0.16, 0.47, 0.04]} castShadow>
-        <boxGeometry args={[0.24, 0.12, 0.36]} />
-        <meshLambertMaterial color={steel} />
-      </mesh>
+      {/* ── RIGHT LEG — opposite phase ── */}
+      <group ref={rightLegRef} position={[0.16, 0.69, 0]}>
+        <mesh position={[0, -0.12, 0]} castShadow>
+          <boxGeometry args={[0.20, 0.26, 0.22]} />
+          <meshLambertMaterial color={steel} />
+        </mesh>
+        <mesh position={[0, -0.27, 0]} castShadow>
+          <boxGeometry args={[0.22, 0.10, 0.24]} />
+          <meshLambertMaterial color={dark} />
+        </mesh>
+        <mesh position={[0, -0.43, 0]} castShadow>
+          <boxGeometry args={[0.18, 0.22, 0.20]} />
+          <meshLambertMaterial color={panel} />
+        </mesh>
+        <mesh position={[0, -0.22, 0.04]} castShadow>
+          <boxGeometry args={[0.24, 0.12, 0.36]} />
+          <meshLambertMaterial color={steel} />
+        </mesh>
+      </group>
 
     </group>
   );
@@ -418,13 +450,12 @@ function BossMesh({ color }: { color: string }) {
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
-export default function EnemyMesh({ type, color, isAttacking = false }: EnemyMeshProps) {
-  // During attack flash, override color to red
+export default function EnemyMesh({ type, color, isAttacking = false, isAlerted = false, isMoving = false }: EnemyMeshProps) {
   const displayColor = isAttacking ? "#FF0000" : color;
 
   switch (type) {
     case "grunt":
-      return <GruntMesh color={displayColor} />;
+      return <GruntMesh color={displayColor} isAlerted={isAlerted} isMoving={isMoving} />;
     case "wasp":
       return <WaspMesh color={displayColor} />;
     case "drone":
