@@ -704,6 +704,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         isVisible={!isVRPresented}
         recoilSignal={shotCount}
         recoilHand={lastFiredGun}
+        isReloading={isReloading}
       />
     </>
   );

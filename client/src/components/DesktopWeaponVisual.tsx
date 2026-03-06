@@ -22,6 +22,7 @@ interface DesktopWeaponVisualProps {
   isVisible?: boolean;
   recoilSignal?: number;
   recoilHand?: 'left' | 'right' | null;
+  isReloading?: boolean;
 }
 
 export default function DesktopWeaponVisual({
@@ -32,6 +33,7 @@ export default function DesktopWeaponVisual({
   isVisible = true,
   recoilSignal = 0,
   recoilHand = null,
+  isReloading = false,
 }: DesktopWeaponVisualProps) {
   const { camera } = useThree();
   const { weaponInventory, activeMeleeSlot, activeRangedSlot, playerStats } = useVRGame();
@@ -58,6 +60,8 @@ export default function DesktopWeaponVisual({
   // Gun refs
   const leftGunRef = useRef<THREE.Group>(null);
   const rightGunRef = useRef<THREE.Group>(null);
+  // Reload spin angle (accumulates while reloading)
+  const reloadSpinAngle = useRef(0);
 
   // Recoil
   const recoilRef = useRef(0);
@@ -230,21 +234,49 @@ export default function DesktopWeaponVisual({
     }
 
     // ---- GUNS ----
+    // Accumulate reload spin angle
+    if (isReloading) {
+      reloadSpinAngle.current += deltaTime * Math.PI * 4; // 2 full rotations/sec
+    } else {
+      // Snap back to 0 quickly when done
+      reloadSpinAngle.current = reloadSpinAngle.current % (Math.PI * 2);
+      if (Math.abs(reloadSpinAngle.current) > 0.05) {
+        reloadSpinAngle.current *= Math.pow(0.05, deltaTime); // fast decay
+      } else {
+        reloadSpinAngle.current = 0;
+      }
+    }
+
     const updateGun = (ref: React.RefObject<THREE.Group | null>, side: 'left' | 'right') => {
       if (!ref.current) return;
       const isThisGunRecoiling = recoilHandRef.current === side;
       const recoilPush = (activeWeapon === 'gun' && isThisGunRecoiling) ? recoilRef.current * 0.08 : 0;
       const sideOffset = side === 'left' ? -0.3 : 0.3;
+
+      // During reload: bring guns in closer to center and spin them
+      const reloadPull = isReloading ? 0.12 : 0;
+      const reloadRaise = isReloading ? 0.08 : 0;
+
       ref.current.position.copy(
         cameraPos.clone()
           .add(cameraDir.clone().multiplyScalar(0.55 - recoilPush))
-          .add(rightDir.clone().multiplyScalar(sideOffset))
-          .add(upDir.clone().multiplyScalar(-0.28))
+          .add(rightDir.clone().multiplyScalar(sideOffset * (1 - reloadPull)))
+          .add(upDir.clone().multiplyScalar(-0.28 + reloadRaise))
       );
+
+      // Base orientation
       ref.current.quaternion.copy(camera.quaternion);
       ref.current.quaternion.multiply(
         new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), side === 'left' ? 0.1 : -0.1)
       );
+
+      // Spin around the gun's forward axis (Z) while reloading
+      if (reloadSpinAngle.current !== 0) {
+        const spinDir = side === 'left' ? 1 : -1;
+        ref.current.quaternion.multiply(
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), reloadSpinAngle.current * spinDir)
+        );
+      }
     };
     updateGun(leftGunRef, 'left');
     updateGun(rightGunRef, 'right');
