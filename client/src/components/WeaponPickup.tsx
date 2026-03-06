@@ -74,6 +74,7 @@ export default function WeaponPickup({
         }
         pickedRef.current = true;
         setPicked(true);
+        import('../lib/stores/useAudio').then(({ useAudio }) => useAudio.getState().playWeaponPickup());
         onPicked?.(pickupId);
       } else {
         // Inventory full — brief red flash (debounced)

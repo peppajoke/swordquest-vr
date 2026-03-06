@@ -250,7 +250,9 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
       isDeadRef.current = true; // prevent re-entry before React re-renders
       useVRGame.getState().addKill();
       import("../lib/stores/useAudio").then(({ useAudio }) => {
-        useAudio.getState().playKill();
+        const audio = useAudio.getState();
+        audio.playKill();
+        audio.playRobotDeath();
       });
 
       // Guaranteed cleanup: if the frame-based dissolve check fails for any reason,
@@ -438,6 +440,10 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
     if (aiResult.alertTriggered) {
       // Enemy just spotted player — commit aiMode change to React state so isAlerted prop updates
       setEnemyState(prev => ({ ...prev, aiMode: 'pursuing' }));
+      // Play alert sound (stagger slightly so multiple robots don't sound in unison)
+      setTimeout(() => {
+        import('../lib/stores/useAudio').then(({ useAudio }) => useAudio.getState().playEnemyAlert());
+      }, Math.random() * 200);
     }
 
     if (aiResult.logMessage) {

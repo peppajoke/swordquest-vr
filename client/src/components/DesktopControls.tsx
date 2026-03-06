@@ -21,7 +21,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, weaponInventory, activeMeleeSlot, activeRangedSlot, setActiveMeleeSlot, setActiveRangedSlot, playerStats, setDesktopFuel, weaponLocked, pickupPhase, dropWeapon, addDroppedWeapon, registerHit } = useVRGame();
   const activeMeleeWeapon = weaponInventory.melee[activeMeleeSlot];
   const activeRangedWeapon = weaponInventory.ranged[activeRangedSlot];
-  const { playGunShoot, playSwordHit } = useAudio();
+  const { playGunShoot, playSwordHit, playSwordSwing, playFootstep, playJetpackBoost, playPlayerDamage } = useAudio();
+
+  // Footstep tracking
+  const lastStepPos = useRef(new THREE.Vector3());
+  const distanceSinceStep = useRef(0);
 
   // Movement state
   const velocity = useRef(new THREE.Vector3());
@@ -209,8 +213,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     // Muzzle flash from barrel position
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
     const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
-    const isSuppressed = wi.ranged[rs] === 'smg';
-    playGunShoot(isSuppressed);
+    playGunShoot(wi.ranged[rs] ?? 'pistols');
 
     // Piercing bullets — damage ALL enemies along the ray, stop only at solid walls
     const hitEnemies = new Set<THREE.Object3D>(); // avoid double-hitting same enemy
@@ -340,6 +343,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
             keys.current.shift = true;
             boostActiveRef.current = true;
             setBoostActive(true);
+            playJetpackBoost();
           }
           break;
         case 'Space':
@@ -449,6 +453,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
             setIsSwinging(true);
             setSwingingHand(currentSwordHand);
             lastSwordSwing.current = currentTime;
+            playSwordSwing();
             if (onSwordSwing) onSwordSwing(currentSwordHand);
           }
         } else if (currentWeapon === 'gun') {
@@ -678,6 +683,20 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     camera.position.add(velocity.current.clone().multiplyScalar(deltaTime));
 
+    // Footsteps — trigger every ~1.8 units of horizontal travel while grounded
+    if (isGrounded.current && !boostActiveRef.current) {
+      const moved = camera.position.distanceTo(lastStepPos.current);
+      distanceSinceStep.current += moved;
+      if (distanceSinceStep.current >= 1.8) {
+        distanceSinceStep.current = 0;
+        playFootstep();
+      }
+      lastStepPos.current.copy(camera.position);
+    } else {
+      lastStepPos.current.copy(camera.position);
+      distanceSinceStep.current = 0;
+    }
+
     // Wall collision — push player out of any wall AABB
     const playerResolved = resolveWallCollision(camera.position.x, camera.position.z, 0.45);
     camera.position.x = playerResolved.x;
@@ -721,6 +740,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
           setIsSwinging(true);
           setSwingingHand(nextHand);
           lastSwordSwing.current = now2;
+          playSwordSwing();
           if (onSwordSwing) onSwordSwing(nextHand);
         }
       }
