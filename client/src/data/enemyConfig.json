@@ -1,9 +1,9 @@
 {
   "enemyTypes": {
     "grunt": {
-      "name": "Grunt Soldier",
+      "name": "Prison Guard",
       "health": 1,
-      "color": "#8B4513",
+      "color": "#CC1111",
       "size": [
         0.8,
         1.5,

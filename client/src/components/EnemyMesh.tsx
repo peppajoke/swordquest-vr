@@ -10,39 +10,50 @@ interface EnemyMeshProps {
 }
 
 // ─── GRUNT ───────────────────────────────────────────────────────────────────
-// Sphere head + box torso + 4 stick limbs
+// Prison Guard: red uniform, grey helmet with dark visor, grey legs
 function GruntMesh({ color }: { color: string }) {
+  // color = "#CC1111" (red guard uniform)
   return (
     <group>
-      {/* Head with emissive glow */}
-      <mesh castShadow position={[0, 0.95, 0]}>
-        <sphereGeometry args={[0.25, 10, 10]} />
-        <meshLambertMaterial color={color} emissive={color} emissiveIntensity={0.35} />
+      {/* Helmet - dark grey, fits over head */}
+      <mesh position={[0, 1.65, 0]} castShadow>
+        <boxGeometry args={[0.28, 0.16, 0.28]} />
+        <meshLambertMaterial color="#2a2a2a" />
       </mesh>
-      {/* Torso */}
-      <mesh castShadow position={[0, 0.55, 0]}>
-        <boxGeometry args={[0.3, 0.5, 0.2]} />
+      {/* Helmet visor - thin dark strip across front */}
+      <mesh position={[0, 1.6, -0.12]} castShadow>
+        <boxGeometry args={[0.24, 0.06, 0.04]} />
+        <meshLambertMaterial color="#001133" emissive="#001133" emissiveIntensity={0.4} />
+      </mesh>
+      {/* Head (sphere) */}
+      <mesh position={[0, 1.5, 0]} castShadow>
+        <sphereGeometry args={[0.12, 8, 6]} />
+        <meshLambertMaterial color="#d4a07a" />
+      </mesh>
+      {/* Torso - red uniform */}
+      <mesh position={[0, 1.1, 0]} castShadow>
+        <boxGeometry args={[0.32, 0.52, 0.22]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      {/* Left arm */}
-      <mesh castShadow position={[-0.23, 0.52, 0]}>
-        <boxGeometry args={[0.08, 0.38, 0.08]} />
+      {/* Left arm - red sleeve */}
+      <mesh position={[-0.22, 1.1, 0]} castShadow>
+        <boxGeometry args={[0.09, 0.38, 0.09]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      {/* Right arm */}
-      <mesh castShadow position={[0.23, 0.52, 0]}>
-        <boxGeometry args={[0.08, 0.38, 0.08]} />
+      {/* Right arm - red sleeve */}
+      <mesh position={[0.22, 1.1, 0]} castShadow>
+        <boxGeometry args={[0.09, 0.38, 0.09]} />
         <meshLambertMaterial color={color} />
       </mesh>
-      {/* Left leg */}
-      <mesh castShadow position={[-0.1, 0.16, 0]}>
-        <boxGeometry args={[0.08, 0.35, 0.08]} />
-        <meshLambertMaterial color={color} />
+      {/* Left leg - dark grey pants */}
+      <mesh position={[-0.1, 0.6, 0]} castShadow>
+        <boxGeometry args={[0.09, 0.38, 0.09]} />
+        <meshLambertMaterial color="#3a3a3a" />
       </mesh>
-      {/* Right leg */}
-      <mesh castShadow position={[0.1, 0.16, 0]}>
-        <boxGeometry args={[0.08, 0.35, 0.08]} />
-        <meshLambertMaterial color={color} />
+      {/* Right leg - dark grey pants */}
+      <mesh position={[0.1, 0.6, 0]} castShadow>
+        <boxGeometry args={[0.09, 0.38, 0.09]} />
+        <meshLambertMaterial color="#3a3a3a" />
       </mesh>
     </group>
   );
