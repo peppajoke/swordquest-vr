@@ -5,10 +5,8 @@ import type { RangedWeaponId } from '../lib/weapons';
 
 function ReticlePulse() {
   const hitSignal = useVRGame(s => s.hitSignal);
-  const { activeWeapon, activeRangedWeapon } = useVRGame(s => ({
-    activeWeapon: s.activeWeapon,
-    activeRangedWeapon: s.weaponInventory.ranged[s.activeRangedSlot],
-  }));
+  const activeWeapon = useVRGame(s => s.activeWeapon);
+  const activeRangedWeapon = useVRGame(s => s.weaponInventory.ranged[s.activeRangedSlot]);
   const [hit, setHit] = useState(false);
   const prevSignal = useRef(0);
 
