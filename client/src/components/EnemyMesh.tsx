@@ -13,8 +13,9 @@ interface EnemyMeshProps {
 // Prison Guard: red uniform, grey helmet with dark visor, grey legs
 function GruntMesh({ color }: { color: string }) {
   // color = "#CC1111" (red guard uniform)
+  // Offset -0.41 so boot bottoms sit at y=0 (ground level)
   return (
-    <group>
+    <group position={[0, -0.41, 0]}>
       {/* Helmet - dark grey, fits over head */}
       <mesh position={[0, 1.65, 0]} castShadow>
         <boxGeometry args={[0.28, 0.16, 0.28]} />

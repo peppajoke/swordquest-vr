@@ -123,8 +123,8 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   return (
     <>
       {/* Environment Lighting */}
-      <color attach="background" args={["#0a0a0e"]} />
-      <ambientLight intensity={0.18} />
+      <color attach="background" args={["#1a1a22"]} />
+      <ambientLight intensity={0.55} />
       <directionalLight
         color="#aabbff"
         position={[5, 10, 5]}
