@@ -5,7 +5,7 @@ import VRGame from "./components/VRGame";
 import { ControlsInstructions } from "./components/ControlsInstructions";
 import DesktopUI from "./components/DesktopUI";
 import MainMenu from "./components/MainMenu";
-import DeathScreen from "./components/DeathScreen";
+
 import UpgradeScreen from "./components/UpgradeScreen";
 import { useVRGame } from "./lib/stores/useVRGame";
 import "@fontsource/inter";
@@ -106,8 +106,7 @@ function App() {
       {/* Upgrade Screen — shown after room clear */}
       {showUpgradeScreen && gameMode !== 'menu' && <UpgradeScreen />}
 
-      {/* Death Screen — shown when player dies outside of main menu */}
-      {isDead && gameMode !== 'menu' && <DeathScreen />}
+      {/* Death Screen removed — death now triggers instant respawn at prison start */}
     </div>
   );
 }

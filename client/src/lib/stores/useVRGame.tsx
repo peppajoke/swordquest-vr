@@ -465,11 +465,32 @@ export const useVRGame = create<VRGameState>()(
       const newHealth = Math.max(0, state.health - damage);
       const isDead = newHealth <= 0;
       
-      set({ health: newHealth, isDead, gameOver: isDead });
-      
       if (isDead) {
-        console.log('💀 GAME OVER');
+        console.log('💀 Died — respawning at prison start, weapons cleared, stats kept');
+        // Short invincibility window then respawn — keep stats, clear weapons
+        setTimeout(() => {
+          set((s) => ({
+            health: s.maxHealth,
+            isDead: false,
+            gameOver: false,
+            killCount: 0,
+            comboCount: 0,
+            comboTimer: 0,
+            roomCleared: false,
+            showUpgradeScreen: false,
+            activeWeapon: null,
+            activeMeleeSlot: 0,
+            activeRangedSlot: 0,
+            weaponInventory: { melee: [null, null], ranged: [null, null] },
+            droppedWeapons: [],
+            pickupPhase: true,
+            gameResetKey: (s.gameResetKey || 0) + 1,
+            // playerStats intentionally NOT reset — stats persist through death
+          }));
+        }, 800); // 800ms delay so the hit flash registers before respawn
+        set({ health: 0, isDead: true });
       } else {
+        set({ health: newHealth });
         console.log(`💥 Took ${damage} damage! Health: ${newHealth}/${state.maxHealth}`);
       }
     },
