@@ -145,6 +145,10 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     setLastFiredGun(gun);
     if (onShoot) onShoot(gun);
 
+    // Camera pitch kick upward on firing (feels like real recoil)
+    const recoilPitch = 0.045;
+    mouseMovement.current.y = Math.max(-Math.PI / 2, mouseMovement.current.y - recoilPitch);
+
     // --- Compute barrel origin ---
     const cameraPos = camera.position.clone();
     const cameraDir = new THREE.Vector3(0, 0, -1);
@@ -324,7 +328,8 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
           break;
         case 'Space':
           keys.current.space = true;
-          if (isGrounded.current) {
+          // Only jump if NOT jetpacking; jetpack ascent handled in useFrame
+          if (isGrounded.current && !boostActiveRef.current) {
             verticalVelocity.current = jumpVelocity;
             isGrounded.current = false;
           }
@@ -565,6 +570,15 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
         jetpackVelocity.current.setLength(desiredSpeed);
       }
       velocity.current.copy(jetpackVelocity.current);
+
+      // Space held while jetpacking = ascend (independent of look direction)
+      if (keys.current.space) {
+        const ascentRate = 10.0; // units/s upward
+        verticalVelocity.current = Math.min(
+          verticalVelocity.current + ascentRate * deltaTime,
+          ascentRate
+        );
+      }
     } else {
       // Velocity decay (same exponential as VR)
       const spd = jetpackVelocity.current.length();
