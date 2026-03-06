@@ -5,29 +5,71 @@ import type { RangedWeaponId } from '../lib/weapons';
 
 function ReticlePulse() {
   const hitSignal = useVRGame(s => s.hitSignal);
-  const [scale, setScale] = useState(1);
-  const [color, setColor] = useState('white');
+  const { activeWeapon, activeRangedWeapon } = useVRGame(s => ({
+    activeWeapon: s.activeWeapon,
+    activeRangedWeapon: s.weaponInventory.ranged[s.activeRangedSlot],
+  }));
+  const [hit, setHit] = useState(false);
   const prevSignal = useRef(0);
 
   useEffect(() => {
     if (hitSignal === prevSignal.current) return;
     prevSignal.current = hitSignal;
-    setScale(1.9);
-    setColor('#ff4400');
-    const t = setTimeout(() => { setScale(1); setColor('white'); }, 120);
+    setHit(true);
+    const t = setTimeout(() => setHit(false), 130);
     return () => clearTimeout(t);
   }, [hitSignal]);
+
+  // Spread gap: wider for shotgun/sniper scoped, tighter for pistols/smg
+  const spreadMap: Record<string, number> = {
+    pistols: 5, smg: 7, shotgun: 14, sniper: 2,
+  };
+  const gap = activeWeapon === 'gun'
+    ? (spreadMap[activeRangedWeapon ?? 'pistols'] ?? 5)
+    : 4;
+
+  const c = hit ? '#ff3300' : 'rgba(255,255,255,0.92)';
+  const shadow = hit
+    ? '0 0 6px #ff3300, 0 0 12px #ff0000'
+    : '0 0 4px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,1)';
+  const dotSize = hit ? 3 : 2;
+
+  const bar = (style: React.CSSProperties) => (
+    <div style={{
+      position: 'absolute',
+      background: c,
+      boxShadow: shadow,
+      borderRadius: 1,
+      transition: 'all 0.07s ease-out',
+      ...style,
+    }} />
+  );
 
   return (
     <div style={{
       position: 'fixed', top: '50%', left: '50%',
-      transform: `translate(-50%, -50%) scale(${scale})`,
-      transition: 'transform 0.08s ease-out, color 0.12s ease-out',
+      transform: 'translate(-50%, -50%)',
       zIndex: 999, pointerEvents: 'none',
-      color, fontSize: '20px',
-      textShadow: `0 0 8px ${color === 'white' ? 'rgba(0,0,0,0.8)' : color}`,
+      width: 0, height: 0,
     }}>
-      ⊕
+      {/* Top */}
+      {bar({ width: 2, height: 8, top: -(gap + 8), left: -1 })}
+      {/* Bottom */}
+      {bar({ width: 2, height: 8, top: gap, left: -1 })}
+      {/* Left */}
+      {bar({ width: 8, height: 2, left: -(gap + 8), top: -1 })}
+      {/* Right */}
+      {bar({ width: 8, height: 2, left: gap, top: -1 })}
+      {/* Center dot */}
+      <div style={{
+        position: 'absolute',
+        width: dotSize, height: dotSize,
+        borderRadius: '50%',
+        background: c,
+        boxShadow: shadow,
+        top: -(dotSize / 2), left: -(dotSize / 2),
+        transition: 'all 0.07s ease-out',
+      }} />
     </div>
   );
 }
