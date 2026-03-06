@@ -21,7 +21,7 @@ export default function DesktopUI({
   const roomClearedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waveFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon, roomCleared, health, maxHealth } = useVRGame();
+  const { activeWeapon, isBoostActive, desktopLeftClip, desktopRightClip, desktopCurrentGun, desktopIsReloading, desktopFuel, killCount, comboCount, playerStats, activeMeleeWeapon, activeRangedWeapon, weaponInventory, activeMeleeSlot, activeRangedSlot, roomCleared, health, maxHealth } = useVRGame();
   const isLowHealth = health < maxHealth * 0.25;
 
   // Always use store values — DesktopControls keeps them live via setDesktopAmmo
@@ -261,14 +261,35 @@ export default function DesktopUI({
           </div>
         </div>
 
-        {/* Weapon indicator */}
-        <div style={{
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: activeWeapon === 'sword' ? '#88ddff' : '#ffcc44',
-          marginBottom: '4px',
-        }}>
-          WEAPON: {activeWeapon === 'sword' ? '⚔️ SWORD' : '🔫 GUN'}
+        {/* 4-slot weapon bar */}
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+          {[
+            { key: '1', type: 'melee' as const, slot: 0, icon: '⚔️' },
+            { key: '2', type: 'melee' as const, slot: 1, icon: '⚔️' },
+            { key: '3', type: 'ranged' as const, slot: 0, icon: '🔫' },
+            { key: '4', type: 'ranged' as const, slot: 1, icon: '🔫' },
+          ].map(({ key, type, slot, icon }) => {
+            const weaponId = type === 'melee' ? weaponInventory.melee[slot] : weaponInventory.ranged[slot];
+            const isActive = type === 'melee'
+              ? activeWeapon === 'sword' && activeMeleeSlot === slot
+              : activeWeapon === 'gun' && activeRangedSlot === slot;
+            return (
+              <div key={key} style={{
+                border: `1px solid ${isActive ? (type === 'melee' ? '#88ddff' : '#ffcc44') : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: '4px',
+                padding: '3px 6px',
+                minWidth: '54px',
+                backgroundColor: isActive ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.3)',
+                opacity: weaponId ? 1 : 0.35,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '10px', color: '#888', marginBottom: '1px' }}>[{key}]</div>
+                <div style={{ fontSize: '12px', color: isActive ? (type === 'melee' ? '#88ddff' : '#ffcc44') : '#ccc' }}>
+                  {weaponId ? `${icon} ${weaponId.slice(0,6)}` : '—'}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Boost indicator */}
@@ -302,7 +323,7 @@ export default function DesktopUI({
           WASD Move · Mouse Look · Space Jump
         </div>
         <div style={{ fontSize: '12px', color: '#aaaaaa' }}>
-          Shift(hold) Boost · 1 Sword · 2 Gun · Scroll Switch
+          Shift(hold) Boost · 1-4 Weapon Slots · Scroll Switch
         </div>
         <div style={{ fontSize: '12px', color: '#aaaaaa' }}>
           Left Click: {activeWeapon === 'sword' ? 'Swing' : 'Shoot'} · R Reload

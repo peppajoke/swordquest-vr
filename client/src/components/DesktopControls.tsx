@@ -336,15 +336,31 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
           event.preventDefault();
           break;
         case 'Digit1': {
-          // Cycle active melee slot
-          const { activeMeleeSlot: ms } = useVRGame.getState();
-          setActiveMeleeSlot(ms === 0 ? 1 : 0);
+          // Melee slot 0
+          const { weaponInventory: wi } = useVRGame.getState();
+          setActiveMeleeSlot(0);
+          if (wi.melee[0]) setActiveWeapon('sword');
           break;
         }
         case 'Digit2': {
-          // Cycle active ranged slot
-          const { activeRangedSlot: rs } = useVRGame.getState();
-          setActiveRangedSlot(rs === 0 ? 1 : 0);
+          // Melee slot 1
+          const { weaponInventory: wi } = useVRGame.getState();
+          setActiveMeleeSlot(1);
+          if (wi.melee[1]) setActiveWeapon('sword');
+          break;
+        }
+        case 'Digit3': {
+          // Ranged slot 0
+          const { weaponInventory: wi } = useVRGame.getState();
+          setActiveRangedSlot(0);
+          if (wi.ranged[0]) setActiveWeapon('gun');
+          break;
+        }
+        case 'Digit4': {
+          // Ranged slot 1
+          const { weaponInventory: wi } = useVRGame.getState();
+          setActiveRangedSlot(1);
+          if (wi.ranged[1]) setActiveWeapon('gun');
           break;
         }
         case 'KeyG': {
@@ -430,10 +446,20 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     };
 
     const handleWheel = (event: WheelEvent) => {
-      if (event.deltaY < 0) {
-        switchWeapon('sword');
-      } else {
-        switchWeapon('gun');
+      // Cycle through all 4 slots: melee[0] → melee[1] → ranged[0] → ranged[1] → wrap
+      const { weaponInventory: wi, activeWeapon: aw, activeMeleeSlot: ms, activeRangedSlot: rs } = useVRGame.getState();
+      // Map current state to slot index 0-3
+      let currentSlot = aw === 'sword' ? ms : 2 + rs;
+      const dir = event.deltaY < 0 ? -1 : 1;
+      // Try up to 4 steps to find an occupied slot
+      for (let i = 1; i <= 4; i++) {
+        const next = ((currentSlot + dir * i) + 4) % 4;
+        if (next < 2) {
+          if (wi.melee[next]) { setActiveMeleeSlot(next as 0|1); setActiveWeapon('sword'); break; }
+        } else {
+          const rs2 = next - 2 as 0|1;
+          if (wi.ranged[rs2]) { setActiveRangedSlot(rs2); setActiveWeapon('gun'); break; }
+        }
       }
     };
 
