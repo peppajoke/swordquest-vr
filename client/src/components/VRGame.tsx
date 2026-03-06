@@ -55,12 +55,7 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
     }
   }, []);
   const { initializeGame, health, maxHealth, setActiveWeapon, setPlayerStats, setWeaponLocked, setPickupPhase, pickupPhase, dropOrbs, droppedWeapons, removeDroppedWeapon } = useVRGame();
-  const { 
-    setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, 
-    setGunHitSound, setPlayerDamageSound, setAccelerationSound, 
-    setBoostSound, setGunAmmoSound, setReloadSound,
-    startAmbient, stopAmbient,
-  } = useAudio();
+  const { startAmbient, stopAmbient } = useAudio();
   const [fuel, setFuel] = useState(100);
   const [maxFuel] = useState(100);
   const [ammo, setAmmo] = useState(30);
@@ -92,40 +87,8 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
   }, [isVRPresenting]);
 
   useEffect(() => {
-    // Initialize audio store with sound files
-    const loadAudio = async () => {
-      try {
-        const hitSound = new Audio('/sounds/hit.mp3');
-        const successSound = new Audio('/sounds/success.mp3');
-        const swordHitSound = new Audio('/sounds/sword_hit.mp3');
-        const gunShootSound = new Audio('/sounds/gun_shoot.mp3');
-        const gunHitSound = new Audio('/sounds/gun_hit.mp3');
-        const playerDamageSound = new Audio('/sounds/player_damage.mp3');
-        const accelerationSound = new Audio('/sounds/acceleration.mp3');
-        const boostSound = new Audio('/sounds/boost.mp3');
-        const gunAmmoSound = new Audio('/sounds/gun_ammo.mp3');
-        const reloadSound = new Audio('/sounds/reload.mp3');
-        
-        // Set all sounds in the store
-        setHitSound(hitSound);
-        setSuccessSound(successSound);
-        setSwordHitSound(swordHitSound);
-        setGunShootSound(gunShootSound);
-        setGunHitSound(gunHitSound);
-        setPlayerDamageSound(playerDamageSound);
-        setAccelerationSound(accelerationSound);
-        setBoostSound(boostSound);
-        setGunAmmoSound(gunAmmoSound);
-        setReloadSound(reloadSound);
-        
-      } catch (error) {
-        console.error('Failed to load audio:', error);
-      }
-    };
-
-    loadAudio();
     initializeGame();
-  }, [initializeGame, setHitSound, setSuccessSound, setSwordHitSound, setGunShootSound, setGunHitSound, setPlayerDamageSound, setAccelerationSound, setBoostSound, setGunAmmoSound, setReloadSound]);
+  }, [initializeGame]);
 
   // Game is now fully loaded when this component renders
   return (
