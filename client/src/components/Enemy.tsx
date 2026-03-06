@@ -10,7 +10,6 @@ import enemyConfig from "../data/enemyConfig.json";
 import { EnemyAIService, EnemyState } from "../services/EnemyAIService";
 import { COMBAT_CONFIG, PERFORMANCE_CONFIG, ANIMATION_CONFIG } from "../config/gameConfig";
 import { resolveWallCollision } from "../lib/levelCollision";
-import { resolveWallCollision } from "../lib/levelCollision";
 
 // ─── Floating Damage Number ────────────────────────────────────────────────
 
