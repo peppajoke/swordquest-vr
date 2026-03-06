@@ -177,8 +177,9 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
   function takeDamage(damage: number) {
     if (isDeadRef.current) return;
 
-    // Any hit immediately switches NPC to pursuit mode
-    if (enemyState.aiMode === 'wander') enemyState.aiMode = 'pursuing';
+    // Any hit immediately switches NPC to pursuit mode (via proper React state update)
+    const wasWandering = enemyState.aiMode === 'wander';
+    if (wasWandering) enemyState.aiMode = 'pursuing'; // mutate so AI sees it this frame
 
     const currentTime = Date.now();
     const enemyDied = EnemyAIService.takeDamage(enemyState, damage, currentTime);
@@ -197,7 +198,8 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
       }
     ]);
     
-    setEnemyState(prev => ({ ...prev })); // Trigger re-render
+    // Commit any aiMode change (damage alert) along with the re-render trigger
+    setEnemyState(prev => ({ ...prev, ...(wasWandering ? { aiMode: 'pursuing' as const } : {}) }));
 
     // Handle death
     if (enemyDied) {
@@ -433,6 +435,11 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
       meshRef.current.position.copy(localPos);
     }
     
+    if (aiResult.alertTriggered) {
+      // Enemy just spotted player — commit aiMode change to React state so isAlerted prop updates
+      setEnemyState(prev => ({ ...prev, aiMode: 'pursuing' }));
+    }
+
     if (aiResult.logMessage) {
       console.log(aiResult.logMessage);
     }

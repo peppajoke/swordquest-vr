@@ -30,6 +30,7 @@ export interface EnemyAIResult {
   newPosition?: THREE.Vector3;
   attackDamage?: number;
   logMessage?: string;
+  alertTriggered?: boolean; // true the frame enemy first spots player
 }
 
 // Module-level registry: maps ephemeral enemy key → world position
@@ -211,6 +212,7 @@ export class EnemyAIService {
         // ── STATE TRANSITION: wander → pursuing ─────────────────────────────
         if (state.aiMode === 'wander' && distance <= SIGHT_RANGE) {
           state.aiMode = 'pursuing';
+          result.alertTriggered = true; // tells Enemy.tsx to call setEnemyState
         }
 
         // ── WANDER MODE ─────────────────────────────────────────────────────
