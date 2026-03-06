@@ -18,7 +18,7 @@ interface DesktopControlsProps {
 export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }: DesktopControlsProps) {
   const { camera, scene } = useThree();
   const isVRPresented = !!useXR((s) => s.session);
-  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, weaponInventory, activeMeleeSlot, activeRangedSlot, setActiveMeleeSlot, setActiveRangedSlot, playerStats, setDesktopFuel, weaponLocked, pickupPhase, dropWeapon, addDroppedWeapon } = useVRGame();
+  const { addHitEffect, setActiveWeapon, setBoostActive, activeWeapon, setDesktopAmmo, weaponInventory, activeMeleeSlot, activeRangedSlot, setActiveMeleeSlot, setActiveRangedSlot, playerStats, setDesktopFuel, weaponLocked, pickupPhase, dropWeapon, addDroppedWeapon, registerHit } = useVRGame();
   const activeMeleeWeapon = weaponInventory.melee[activeMeleeSlot];
   const activeRangedWeapon = weaponInventory.ranged[activeRangedSlot];
   const { playGunShoot, playSwordHit } = useAudio();
@@ -210,29 +210,33 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
     playGunShoot();
 
+    // Piercing bullets — damage ALL enemies along the ray, stop only at solid walls
+    const hitEnemies = new Set<THREE.Object3D>(); // avoid double-hitting same enemy
     for (const intersect of intersects) {
-      // Walk up hierarchy — raycaster hits child geometry, but userData lives on the parent group
       let hitObject: THREE.Object3D | null = intersect.object;
-      while (hitObject && !hitObject.userData.isEnemy && !hitObject.userData.isPillar) {
+      while (hitObject && !hitObject.userData.isEnemy && !hitObject.userData.isPillar && !hitObject.userData.isWall) {
         hitObject = hitObject.parent;
       }
-      if (!hitObject) {
-        addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
-        break;
-      }
-      if (hitObject.userData.isEnemy && !hitObject.userData.isDead) {
+      if (!hitObject) continue; // skip untagged geometry, keep piercing
+
+      if (hitObject.userData.isEnemy && !hitObject.userData.isDead && !hitEnemies.has(hitObject)) {
+        hitEnemies.add(hitObject);
         const rangedDmg = getRangedCfg().baseDamage ?? 25;
         if (hitObject.userData.takeDamage) hitObject.userData.takeDamage(rangedDmg);
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
-        break;
+        registerHit();
+        // Keep piercing — don't break
+        continue;
       }
       if (hitObject.userData.isPillar && !hitObject.userData.destroyed) {
         hitObject.userData.destroyed = true;
         addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
-        break;
+        break; // pillars block bullets
       }
-      addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
-      break;
+      if (hitObject.userData.isWall) {
+        addHitEffect([intersect.point.x, intersect.point.y, intersect.point.z]);
+        break; // walls stop bullets
+      }
     }
 
     if (newLeft <= 0 && newRight <= 0) startAutoReload();
@@ -286,6 +290,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
           const dmg = computeMeleeDamage(getMeleeCfg().baseDamage, playerStats.str);
           if (child.userData.takeDamage) child.userData.takeDamage(dmg);
           addHitEffect([enemyPos.x, enemyPos.y + 1, enemyPos.z]);
+          registerHit();
           hitAnyEnemy = true;
         }
       }
@@ -497,8 +502,17 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       if (event.button === 2) adsHeld.current = false;
     };
 
+    const handleAmmoPickup = (e: Event) => {
+      const { amount } = (e as CustomEvent).detail;
+      const fill = Math.max(maxClipSize, (amount as number) || maxClipSize);
+      setLeftClip(fill);
+      setRightClip(fill);
+      setDesktopAmmo(fill, fill, 'left', false);
+    };
+
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('ammo-pickup', handleAmmoPickup);
     document.addEventListener('wheel', handleWheel, { passive: true });
     document.addEventListener('pointerlockchange', handlePointerLockChange);
     document.addEventListener('click', handleClick);
@@ -510,6 +524,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('ammo-pickup', handleAmmoPickup);
       document.removeEventListener('wheel', handleWheel);
       document.removeEventListener('pointerlockchange', handlePointerLockChange);
       document.removeEventListener('click', handleClick);
@@ -680,6 +695,22 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Report fuel to store for HUD
     if (!isVRPresented) setDesktopFuel(Math.round(jetpackFuel.current));
+
+    // Auto-melee: continuous back-and-forth swing while mouse held for sword
+    if (mouseHeld.current && weaponRef.current === 'sword' && isPointerLocked.current) {
+      const { weaponInventory: wi2, activeMeleeSlot: ms2 } = useVRGame.getState();
+      if (wi2.melee[ms2] !== null) {
+        const now2 = Date.now();
+        if (now2 > lastSwordSwing.current + swingCooldown && !isSwinging) {
+          // Alternate hands for back-and-forth feel
+          const nextHand: 'left' | 'right' = currentSwordHand === 'left' ? 'right' : 'left';
+          setIsSwinging(true);
+          setSwingingHand(nextHand);
+          lastSwordSwing.current = now2;
+          if (onSwordSwing) onSwordSwing(nextHand);
+        }
+      }
+    }
 
     // Auto-fire: fire continuously while mouse held for auto weapons
     if (mouseHeld.current && weaponRef.current === 'gun' && isPointerLocked.current) {

@@ -5,13 +5,14 @@ import { useVRGame } from '../lib/stores/useVRGame';
 
 interface DropOrbProps {
   id: string;
-  type: 'health' | 'xp';
+  type: 'health' | 'xp' | 'ammo';
   position: [number, number, number];
   spawnTime: number;
 }
 
 const HEALTH_COLOR = '#00ff88';
 const XP_COLOR = '#4488ff';
+const AMMO_COLOR = '#ffcc00';
 const COLLECT_RADIUS = 1.2;
 const LIFETIME_MS = 15000;
 const FADE_START_MS = 12000; // start fading at 12s
@@ -25,7 +26,7 @@ export default function DropOrb({ id, type, position, spawnTime }: DropOrbProps)
 
   const { removeDropOrb, heal, addXP } = useVRGame();
 
-  const color = type === 'health' ? HEALTH_COLOR : XP_COLOR;
+  const color = type === 'health' ? HEALTH_COLOR : type === 'ammo' ? AMMO_COLOR : XP_COLOR;
 
   // Cleanup after fade out
   useEffect(() => {
@@ -94,6 +95,13 @@ export default function DropOrb({ id, type, position, spawnTime }: DropOrbProps)
 
       if (type === 'health') {
         heal(15);
+      } else if (type === 'ammo') {
+        // Reload both guns to full via the audio store's reload trigger
+        import('../lib/stores/useAudio').then(({ useAudio }) => {
+          useAudio.getState().playReload();
+        });
+        // Signal ammo pickup to DesktopControls via a custom event
+        window.dispatchEvent(new CustomEvent('ammo-pickup', { detail: { amount: 12 } }));
       } else {
         addXP(10);
       }

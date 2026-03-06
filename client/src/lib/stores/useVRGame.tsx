@@ -29,7 +29,7 @@ interface SwordCollider {
 
 interface DropOrb {
   id: string;
-  type: 'health' | 'xp';
+  type: 'health' | 'xp' | 'ammo';
   position: [number, number, number];
   spawnTime: number;
 }
@@ -42,6 +42,7 @@ interface DroppedWeapon {
 }
 
 interface VRGameState {
+  hitSignal: number; // increments on every successful hit — reticle watches this
   score: number;
   targets: Target[];
   pillars: Pillar[];
@@ -87,6 +88,7 @@ interface VRGameState {
   updateMovement: (deltaTime: number) => void;
   spawnNewTargets: () => void;
   cleanupOldTargets: (playerZ: number) => void;
+  registerHit: () => void;
   addKill: () => void;
   resetRun: () => void;
 
@@ -164,6 +166,7 @@ const createInitialPillars = (): Pillar[] => [];
 
 export const useVRGame = create<VRGameState>()(
   subscribeWithSelector((set, get) => ({
+    hitSignal: 0,
     score: 0,
     targets: [],
     pillars: [],
@@ -216,6 +219,7 @@ export const useVRGame = create<VRGameState>()(
 
     initializeGame: () => {
       set({
+        hitSignal: 0,
         score: 0,
         health: 100,
         maxHealth: 100,
@@ -626,6 +630,8 @@ export const useVRGame = create<VRGameState>()(
     setDesktopAmmo: (left: number, right: number, gun: 'left' | 'right', reloading: boolean) => {
       set({ desktopLeftClip: left, desktopRightClip: right, desktopCurrentGun: gun, desktopIsReloading: reloading });
     },
+
+    registerHit: () => set(s => ({ hitSignal: s.hitSignal + 1 })),
 
     addKill: () => {
       const now = Date.now();

@@ -263,25 +263,62 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
   
   playReload: () => {
-    const { reloadSound, successSound, isMuted } = get();
-    const sound = reloadSound || successSound; // Fallback to success sound
-    if (sound && !isMuted) {
-      const soundClone = sound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.6;
-      soundClone.currentTime = 0; // Play from beginning
-      soundClone.play().catch(error => {});
-    }
+    const { isMuted } = get();
+    if (isMuted) return;
+    try {
+      const ctx = new AudioContext();
+      // Two metallic "click-clack" sounds 90ms apart
+      const playClick = (time: number, freq: number, dur: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, time);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.3, time + dur);
+        gain.gain.setValueAtTime(0.35, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(time);
+        osc.stop(time + dur);
+      };
+      playClick(ctx.currentTime,        220, 0.07); // clack
+      playClick(ctx.currentTime + 0.09, 340, 0.06); // click
+      playClick(ctx.currentTime + 0.16, 180, 0.1);  // thunk
+      setTimeout(() => ctx.close(), 400);
+    } catch {}
   },
-  
+
   playKill: () => {
-    const { successSound, isMuted } = get();
-    if (successSound && !isMuted) {
-      const soundClone = successSound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.9;
-      soundClone.playbackRate = 1.2; // Slightly higher pitch = satisfying kill confirm
-      soundClone.currentTime = 0;
-      soundClone.play().catch(() => {});
-    }
+    const { isMuted } = get();
+    if (isMuted) return;
+    try {
+      const ctx = new AudioContext();
+      // Satisfying "ding-click" — sine at 880Hz fast decay + noise snap
+      const now = ctx.currentTime;
+      const ding = ctx.createOscillator();
+      const dingGain = ctx.createGain();
+      ding.type = 'sine';
+      ding.frequency.setValueAtTime(1050, now);
+      ding.frequency.exponentialRampToValueAtTime(660, now + 0.12);
+      dingGain.gain.setValueAtTime(0.5, now);
+      dingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      ding.connect(dingGain);
+      dingGain.connect(ctx.destination);
+      ding.start(now);
+      ding.stop(now + 0.2);
+      // Add a sharp click snap 30ms later
+      const click = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+      click.type = 'square';
+      click.frequency.setValueAtTime(2200, now + 0.03);
+      clickGain.gain.setValueAtTime(0.25, now + 0.03);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+      click.connect(clickGain);
+      clickGain.connect(ctx.destination);
+      click.start(now + 0.03);
+      click.stop(now + 0.08);
+      setTimeout(() => ctx.close(), 400);
+    } catch {}
   },
 
   stopAcceleration: () => {

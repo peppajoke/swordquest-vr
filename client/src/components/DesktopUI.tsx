@@ -1,6 +1,35 @@
 import { useState, useEffect, useRef } from 'react';
 import { useVRGame } from '../lib/stores/useVRGame';
 
+function ReticlePulse() {
+  const hitSignal = useVRGame(s => s.hitSignal);
+  const [scale, setScale] = useState(1);
+  const [color, setColor] = useState('white');
+  const prevSignal = useRef(0);
+
+  useEffect(() => {
+    if (hitSignal === prevSignal.current) return;
+    prevSignal.current = hitSignal;
+    setScale(1.9);
+    setColor('#ff4400');
+    const t = setTimeout(() => { setScale(1); setColor('white'); }, 120);
+    return () => clearTimeout(t);
+  }, [hitSignal]);
+
+  return (
+    <div style={{
+      position: 'fixed', top: '50%', left: '50%',
+      transform: `translate(-50%, -50%) scale(${scale})`,
+      transition: 'transform 0.08s ease-out, color 0.12s ease-out',
+      zIndex: 999, pointerEvents: 'none',
+      color, fontSize: '20px',
+      textShadow: `0 0 8px ${color === 'white' ? 'rgba(0,0,0,0.8)' : color}`,
+    }}>
+      ⊕
+    </div>
+  );
+}
+
 interface DesktopUIProps {
   leftClip?: number;
   rightClip?: number;
@@ -142,22 +171,8 @@ export default function DesktopUI({
         </div>
       )}
 
-      {/* Crosshair */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 999,
-          pointerEvents: 'none',
-          color: 'white',
-          fontSize: '20px',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-        }}
-      >
-        ⊕
-      </div>
+      {/* Crosshair with hit pulse */}
+      <ReticlePulse />
 
       {/* Kill Counter + Stats Panel (top-left) */}
       <div

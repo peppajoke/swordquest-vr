@@ -204,8 +204,11 @@ export default function Enemy({ type, position }: EnemyProps) {
           addDropOrb({ id: mkId('hp'), type: 'health', position: [orbPos[0] - 0.4, orbPos[1], orbPos[2]], spawnTime: currentTime });
           addDropOrb({ id: mkId('xp'), type: 'xp', position: [orbPos[0] + 0.4, orbPos[1], orbPos[2]], spawnTime: currentTime });
         } else if (type === 'grunt' || type === 'wasp') {
-          // Grunt/wasp: XP only (70% chance)
-          if (Math.random() < 0.7) {
+          // Grunt/wasp: 40% ammo, 30% XP, 30% nothing
+          const dropRoll = Math.random();
+          if (dropRoll < 0.4) {
+            addDropOrb({ id: mkId('ammo'), type: 'ammo', position: orbPos, spawnTime: currentTime });
+          } else if (dropRoll < 0.7) {
             addDropOrb({ id: mkId('xp'), type: 'xp', position: orbPos, spawnTime: currentTime });
           }
         } else if (type === 'heavy') {
@@ -396,6 +399,17 @@ export default function Enemy({ type, position }: EnemyProps) {
       const enemyResolved = resolveWallCollision(worldPos.x, worldPos.z, 0.38);
       worldPos.x = enemyResolved.x;
       worldPos.z = enemyResolved.z;
+
+      // Rotate to face movement direction before converting to local
+      const currentWorldPos = new THREE.Vector3();
+      meshRef.current.getWorldPosition(currentWorldPos);
+      const dx = worldPos.x - currentWorldPos.x;
+      const dz = worldPos.z - currentWorldPos.z;
+      if (dx * dx + dz * dz > 0.0004) {
+        // atan2(dx, -dz): makes robot's -Z local axis face movement direction
+        meshRef.current.rotation.y = Math.atan2(dx, -dz);
+      }
+
       const localPos = worldPos.clone();
       if (meshRef.current.parent) meshRef.current.parent.worldToLocal(localPos);
       localPos.y = 0; // gravity: ground enemies always stay at y=0
