@@ -167,11 +167,11 @@
   "ranged": {
     "pistols": {
       "name": "Dual Pistols",
-      "baseDamage": 40,
-      "clipSize": 12,
-      "baseReloadTime": 1500,
-      "fireRate": 300,
-      "spread": 0.02,
+      "baseDamage": 35,
+      "clipSize": 15,
+      "baseReloadTime": 1100,
+      "fireRate": 250,
+      "spread": 0.025,
       "weight": "light",
       "visual": {
         "bodyLength": 0.25,
@@ -191,10 +191,10 @@
     "smg": {
       "name": "SMG",
       "baseDamage": 10,
-      "clipSize": 30,
-      "baseReloadTime": 1200,
-      "fireRate": 100,
-      "spread": 0.05,
+      "clipSize": 45,
+      "baseReloadTime": 1800,
+      "fireRate": 80,
+      "spread": 0.07,
       "weight": "medium",
       "visual": {
         "bodyLength": 0.32,
@@ -216,9 +216,9 @@
       "name": "Shotgun",
       "baseDamage": 90,
       "clipSize": 6,
-      "baseReloadTime": 2500,
-      "fireRate": 800,
-      "spread": 0.15,
+      "baseReloadTime": 3500,
+      "fireRate": 1100,
+      "spread": 0.18,
       "weight": "heavy",
       "visual": {
         "bodyLength": 0.42,
@@ -239,9 +239,9 @@
       "name": "Sniper Rifle",
       "baseDamage": 150,
       "clipSize": 5,
-      "baseReloadTime": 3000,
-      "fireRate": 1500,
-      "spread": 0.002,
+      "baseReloadTime": 4500,
+      "fireRate": 2800,
+      "spread": 0.001,
       "weight": "heavy",
       "visual": {
         "bodyLength": 0.55,

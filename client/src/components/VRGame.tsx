@@ -161,23 +161,25 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
         <GameObjects />
         <SwordEffects />
 
-        {/* Starting weapon pickups — arranged in a semicircle around spawn
-             worldGroup is at world [0,0,10], so local z = world_z - 10.
-             Player spawns near world z=5 → local z=-5. Weapons at local z=-4 to -8. */}
+        {/* Weapons scattered through the first corridor section
+             worldGroup at world z=10, so local z = world_z - 10.
+             First corridor stretch: local z -12 to -22 (world z -2 to -12).
+             Spread on both sides of the hall — explore to arm up. */}
         {pickupPhase && !isVRPresenting && (
           <>
-            {/* Melee weapons — arc on left */}
-            <WeaponPickup pickupId="start-dagger"     weaponType="melee"  weaponId="dagger"     position={[-2.5, 1.2, -4.0]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-shortsword" weaponType="melee"  weaponId="shortsword" position={[-2.5, 1.2, -5.5]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-longsword"  weaponType="melee"  weaponId="longsword"  position={[-2.5, 1.2, -7.0]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-battleaxe"  weaponType="melee"  weaponId="battleaxe"  position={[-1.0, 1.2, -8.0]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-greatsword" weaponType="melee"  weaponId="greatsword" position={[ 0.0, 1.2, -8.5]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-warhammer"  weaponType="melee"  weaponId="warhammer"  position={[ 1.0, 1.2, -8.0]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            {/* Ranged weapons — arc on right */}
-            <WeaponPickup pickupId="start-pistols"    weaponType="ranged" weaponId="pistols"    position={[ 2.5, 1.2, -4.0]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-smg"        weaponType="ranged" weaponId="smg"        position={[ 2.5, 1.2, -5.5]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-shotgun"    weaponType="ranged" weaponId="shotgun"    position={[ 2.5, 1.2, -7.0]} onPicked={() => setStartPickupCount(c => c + 1)} />
-            <WeaponPickup pickupId="start-sniper"     weaponType="ranged" weaponId="sniper"     position={[ 2.5, 1.2, -8.5]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            {/* Left wall side — melee */}
+            <WeaponPickup pickupId="start-dagger"     weaponType="melee"  weaponId="dagger"     position={[-3.2, 1.2, -12]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-shortsword" weaponType="melee"  weaponId="shortsword" position={[-3.2, 1.2, -15]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-longsword"  weaponType="melee"  weaponId="longsword"  position={[-3.2, 1.2, -18]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-battleaxe"  weaponType="melee"  weaponId="battleaxe"  position={[-3.2, 1.2, -21]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            {/* Center — heavy melee */}
+            <WeaponPickup pickupId="start-greatsword" weaponType="melee"  weaponId="greatsword" position={[ 0.0, 1.2, -13]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-warhammer"  weaponType="melee"  weaponId="warhammer"  position={[ 0.0, 1.2, -20]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            {/* Right wall side — ranged */}
+            <WeaponPickup pickupId="start-pistols"    weaponType="ranged" weaponId="pistols"    position={[ 3.2, 1.2, -12]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-smg"        weaponType="ranged" weaponId="smg"        position={[ 3.2, 1.2, -15]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-shotgun"    weaponType="ranged" weaponId="shotgun"    position={[ 3.2, 1.2, -18]} onPicked={() => setStartPickupCount(c => c + 1)} />
+            <WeaponPickup pickupId="start-sniper"     weaponType="ranged" weaponId="sniper"     position={[ 3.2, 1.2, -21]} onPicked={() => setStartPickupCount(c => c + 1)} />
           </>
         )}
       </group>
