@@ -482,8 +482,14 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     direction.current.applyQuaternion(camera.quaternion);
     direction.current.y = 0; // Keep horizontal
 
-    // Gravity
-    verticalVelocity.current += gravity * deltaTime;
+    // Gravity — suppressed while jetpacking so player hovers freely
+    const isActivelyJetpacking = boostActiveRef.current && jetpackFuel.current > 0;
+    if (!isActivelyJetpacking) {
+      verticalVelocity.current += gravity * deltaTime;
+    } else {
+      // Bleed off vertical velocity quickly when jetpack kicks in (no sudden stop)
+      verticalVelocity.current *= Math.pow(0.05, deltaTime);
+    }
     const newY = camera.position.y + verticalVelocity.current * deltaTime;
     if (newY <= groundLevel) {
       camera.position.y = groundLevel;
