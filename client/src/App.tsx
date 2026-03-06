@@ -13,16 +13,10 @@ import "@fontsource/inter";
 import "./index.css";
 
 const store = createXRStore({
-  hand: false, // Disable hand tracking - controllers only
+  hand: false,
   controller: { left: false, right: false },
-  // optional: also disable hands/transient pointers if they pop in
   transientPointer: false,
 });
-
-const sessionInit = {
-  requiredFeatures: [], // none
-  optionalFeatures: ["local-floor", "bounded-floor", "layers"], // omit 'hand-tracking'
-};
 
 type GameMode = 'menu' | 'playing' | 'dev';
 
@@ -31,9 +25,6 @@ function App() {
   const isDead = useVRGame((s) => s.isDead);
   const showUpgradeScreen = useVRGame((s) => s.showUpgradeScreen);
   const [isMobile] = useState(() => isTouchDevice());
-  const [fuel, setFuel] = useState(100);
-  const [jetpackEnabled, setJetpackEnabled] = useState(false);
-  const [currentSwordHand, setCurrentSwordHand] = useState<'left' | 'right'>('right');
   const [leftClip, setLeftClip] = useState(12);
   const [rightClip, setRightClip] = useState(12);
   const [currentGun, setCurrentGun] = useState<'left' | 'right'>('left');
@@ -42,42 +33,47 @@ function App() {
   const [isPortrait, setIsPortrait] = useState(false);
 
   useEffect(() => {
-    // Subscribe to XR store session changes to detect VR mode
     const unsubscribe = store.subscribe((state) => {
       setIsVRPresenting(!!state.session);
     });
     return () => unsubscribe();
   }, []);
 
-  // Force landscape orientation on mobile
+  // Force landscape on mobile — CSS rotation fallback covers iOS where lock() is unsupported
   useEffect(() => {
     if (!isMobile) return;
-    // Attempt API lock (supported on Android Chrome, ignored elsewhere)
-    try {
-      (screen.orientation as any).lock('landscape').catch(() => {});
-    } catch {}
+    try { (screen.orientation as any).lock('landscape').catch(() => {}); } catch {}
 
-    const checkOrientation = () => {
-      setIsPortrait(window.innerWidth < window.innerHeight);
-    };
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
+    const check = () => setIsPortrait(window.innerWidth < window.innerHeight);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
     return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
     };
   }, [isMobile]);
 
+  // When portrait on mobile, rotate the entire app -90deg so it renders as landscape.
+  // Works on iOS (where orientation lock is ignored) and any other device.
+  const rotatedStyle: React.CSSProperties = (isMobile && isPortrait) ? {
+    position: 'fixed',
+    top: '100%',
+    left: 0,
+    width: '100vh',   // swap dimensions: height becomes the new width
+    height: '100vw',
+    transformOrigin: 'top left',
+    transform: 'rotate(-90deg)',
+    overflow: 'hidden',
+  } : {
+    width: '100vw',
+    height: '100vh',
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
   return (
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <div style={rotatedStyle}>
       {/* Main Menu */}
       {gameMode === 'menu' && (
         <MainMenu
@@ -86,17 +82,17 @@ function App() {
         />
       )}
 
-      {/* VR Entry Button — only shown in-game */}
-      {gameMode !== 'menu' && (
+      {/* VR Entry Button — only shown in-game, not on mobile */}
+      {gameMode !== 'menu' && !isMobile && (
         <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 1000 }}>
           <VRButton store={store} />
         </div>
       )}
 
-      {/* Controls Instructions */}
-      {gameMode !== 'menu' && <ControlsInstructions />}
+      {/* Controls Instructions — desktop only (useless on mobile, takes up space) */}
+      {gameMode !== 'menu' && !isMobile && <ControlsInstructions />}
 
-      {/* Main Canvas - fills the full viewport */}
+      {/* Main Canvas */}
       <Canvas
         shadows
         style={{ display: 'block', width: '100%', height: '100%' }}
@@ -117,43 +113,22 @@ function App() {
           </Suspense>
         </XR>
       </Canvas>
-      
-      {/* Desktop UI Overlay */}
-      <DesktopUI
-        leftClip={leftClip}
-        rightClip={rightClip}
-        currentGun={currentGun}
-        isReloading={isReloading}
-      />
 
-      {/* Upgrade Screen — shown after room clear */}
+      {/* Desktop UI Overlay — hidden on mobile */}
+      {!isMobile && (
+        <DesktopUI
+          leftClip={leftClip}
+          rightClip={rightClip}
+          currentGun={currentGun}
+          isReloading={isReloading}
+        />
+      )}
+
+      {/* Upgrade Screen */}
       {showUpgradeScreen && gameMode !== 'menu' && <UpgradeScreen />}
 
       {/* Mobile touch controls */}
       {isMobile && gameMode !== 'menu' && <MobileControls />}
-
-      {/* Portrait mode warning — blocks gameplay until rotated */}
-      {isMobile && isPortrait && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9999,
-          background: 'rgba(0,0,0,0.95)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontFamily: 'sans-serif',
-          gap: 16,
-        }}>
-          <div style={{ fontSize: 64 }}>↻</div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>Rotate your device</div>
-          <div style={{ fontSize: 14, opacity: 0.6 }}>This game requires landscape mode</div>
-        </div>
-      )}
-
-      {/* Death Screen removed — death now triggers instant respawn at prison start */}
     </div>
   );
 }
