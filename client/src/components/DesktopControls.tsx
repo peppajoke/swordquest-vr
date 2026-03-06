@@ -79,6 +79,11 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
   const [lastFiredGun, setLastFiredGun] = useState<'left' | 'right' | null>(null);
   // Auto-fire: track whether left mouse button is held
   const mouseHeld = useRef(false);
+  // ADS (aim down sights): right mouse held
+  const adsHeld = useRef(false);
+  const ADS_FOV = 42;
+  const NORMAL_FOV = 75;
+  const ADS_SENS_MUL = 0.35; // 35% sensitivity while ADS
 
   // Jetpack state — mirrors VR physics exactly
   const boostActiveRef = useRef(false);
@@ -411,14 +416,16 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     const handleMouseMove = (event: MouseEvent) => {
       if (isPointerLocked.current) {
-        mouseMovement.current.x -= event.movementX * 0.002;
-        mouseMovement.current.y -= event.movementY * 0.002;
+        const sens = adsHeld.current ? 0.002 * ADS_SENS_MUL : 0.002;
+        mouseMovement.current.x -= event.movementX * sens;
+        mouseMovement.current.y -= event.movementY * sens;
         mouseMovement.current.y = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, mouseMovement.current.y));
       }
     };
 
     const handleMouseDown = (event: MouseEvent) => {
       if (event.button === 0) mouseHeld.current = true;
+      if (event.button === 2) adsHeld.current = true;
       const currentTime = Date.now();
       const currentWeapon = weaponRef.current; // ref avoids stale closure
 
@@ -485,6 +492,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     document.addEventListener('mousemove', handleMouseMove);
     const handleMouseUp = (event: MouseEvent) => {
       if (event.button === 0) mouseHeld.current = false;
+      if (event.button === 2) adsHeld.current = false;
     };
 
     document.addEventListener('mousedown', handleMouseDown);
@@ -656,6 +664,13 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Turret bullet hit detection (desktop — VR handles its own in VRControllers)
     if (!isVRPresented) checkTurretBullets(camera.position.clone());
+
+    // ADS: smoothly lerp FOV
+    if (!isVRPresented && camera instanceof THREE.PerspectiveCamera) {
+      const targetFov = adsHeld.current ? ADS_FOV : NORMAL_FOV;
+      camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, Math.min(deltaTime / 0.08, 1));
+      camera.updateProjectionMatrix();
+    }
 
     // Report fuel to store for HUD
     if (!isVRPresented) setDesktopFuel(Math.round(jetpackFuel.current));
