@@ -32,16 +32,17 @@ export default function HealthBar({ health, maxHealth }: HealthBarProps) {
   };
 
   const healthColor = getHealthColor(healthPercentage);
-  const BAR_W = 0.9;
-  const BAR_H = 0.1;
+  const BAR_W = 1.0;
+  const BAR_H = 0.12;
 
   // Fill bar: anchor to left edge, scale inward
   const fillWidth = BAR_W * healthPercentage;
   const fillOffsetX = -(BAR_W - fillWidth) / 2;
 
   return (
-    // Local position: 0.8 units above the enemy root (child of enemy group)
-    <group ref={groupRef} position={[0, 0.85, 0]}>
+    {/* GruntMesh wrapper is at [0,-0.41,0] and head top ~2.0 above wrapper = ~1.6 in group space */}
+    {/* Put bar clearly above head with a small z-push so it's never edge-on */}
+    <group ref={groupRef} position={[0, 2.1, 0]}>
       {/* White background */}
       <mesh position={[0, 0, 0]}>
         <planeGeometry args={[BAR_W + 0.04, BAR_H + 0.04]} />

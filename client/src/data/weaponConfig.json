@@ -167,7 +167,7 @@
   "ranged": {
     "pistols": {
       "name": "Dual Pistols",
-      "baseDamage": 25,
+      "baseDamage": 40,
       "clipSize": 12,
       "baseReloadTime": 1500,
       "fireRate": 300,
@@ -190,7 +190,7 @@
     },
     "smg": {
       "name": "SMG",
-      "baseDamage": 15,
+      "baseDamage": 10,
       "clipSize": 30,
       "baseReloadTime": 1200,
       "fireRate": 100,
@@ -209,11 +209,12 @@
         "gripColor": "#1a1a1a",
         "barrelColor": "#111111"
       },
-      "autoFire": true
+      "autoFire": true,
+      "recoil": 0.015
     },
     "shotgun": {
       "name": "Shotgun",
-      "baseDamage": 60,
+      "baseDamage": 90,
       "clipSize": 6,
       "baseReloadTime": 2500,
       "fireRate": 800,
@@ -236,7 +237,7 @@
     },
     "sniper": {
       "name": "Sniper Rifle",
-      "baseDamage": 80,
+      "baseDamage": 150,
       "clipSize": 5,
       "baseReloadTime": 3000,
       "fireRate": 1500,

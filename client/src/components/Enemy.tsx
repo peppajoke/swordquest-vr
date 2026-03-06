@@ -91,6 +91,8 @@ interface EnemyProps {
     | "wasp"
     | "phoenix";
   position: [number, number, number];
+  /** Optional health override (overrides enemyConfig.json value) */
+  maxHealth?: number;
 }
 
 // Helper functions to get enemy properties from configuration
@@ -107,15 +109,16 @@ function getEnemySize(enemyType: string): [number, number, number] {
   return getEnemyProperty(enemyType, 'size') as [number, number, number];
 }
 
-export default function Enemy({ type, position }: EnemyProps) {
+export default function Enemy({ type, position, maxHealth: maxHealthOverride }: EnemyProps) {
   const meshRef = useRef<THREE.Group>(null);
   const isDeadRef = useRef(false);         // always-current, no stale-closure risk
   // Stable ID for peer-separation registry (based on spawn position — unique per spawn)
   const enemyIdRef = useRef(`${type}_${position[0]}_${position[1]}_${position[2]}`);
   const [fullyRemoved, setFullyRemoved] = useState(false); // triggers final unmount
+  const resolvedMaxHealth = maxHealthOverride ?? EnemyAIService.getMaxHealth(type);
   const [enemyState, setEnemyState] = useState<EnemyState>(() => ({
-    health: EnemyAIService.getMaxHealth(type),
-    maxHealth: EnemyAIService.getMaxHealth(type),
+    health: resolvedMaxHealth,
+    maxHealth: resolvedMaxHealth,
     isDead: false,
     lastAttackTime: 0,
     position: new THREE.Vector3(...position),
@@ -144,8 +147,8 @@ export default function Enemy({ type, position }: EnemyProps) {
   useEffect(() => {
     if (gameResetKey > 0) {
       setEnemyState({
-        health: EnemyAIService.getMaxHealth(type),
-        maxHealth: EnemyAIService.getMaxHealth(type),
+        health: resolvedMaxHealth,
+        maxHealth: resolvedMaxHealth,
         isDead: false,
         lastAttackTime: 0,
         position: new THREE.Vector3(...position),
@@ -204,11 +207,8 @@ export default function Enemy({ type, position }: EnemyProps) {
           addDropOrb({ id: mkId('hp'), type: 'health', position: [orbPos[0] - 0.4, orbPos[1], orbPos[2]], spawnTime: currentTime });
           addDropOrb({ id: mkId('xp'), type: 'xp', position: [orbPos[0] + 0.4, orbPos[1], orbPos[2]], spawnTime: currentTime });
         } else if (type === 'grunt' || type === 'wasp') {
-          // Grunt/wasp: 40% ammo, 30% XP, 30% nothing
-          const dropRoll = Math.random();
-          if (dropRoll < 0.4) {
-            addDropOrb({ id: mkId('ammo'), type: 'ammo', position: orbPos, spawnTime: currentTime });
-          } else if (dropRoll < 0.7) {
+          // Grunt/wasp: 50% XP, 50% nothing (ammo only at safe zones)
+          if (Math.random() < 0.5) {
             addDropOrb({ id: mkId('xp'), type: 'xp', position: orbPos, spawnTime: currentTime });
           }
         } else if (type === 'heavy') {

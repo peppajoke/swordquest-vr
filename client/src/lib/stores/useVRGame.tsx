@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import * as THREE from 'three';
 import type { MeleeWeaponId, RangedWeaponId } from '../weapons';
+import type { ZoneId } from '../zones';
 
 interface Target {
   id: string;
@@ -96,6 +97,10 @@ interface VRGameState {
   addDropOrb: (orb: DropOrb) => void;
   removeDropOrb: (id: string) => void;
   addXP: (amount: number) => void;
+
+  // Zone system
+  currentZone: ZoneId;
+  setZone: (zone: ZoneId) => void;
 
   // Room / wave state
   roomCleared: boolean;
@@ -658,6 +663,17 @@ export const useVRGame = create<VRGameState>()(
 
     addXP: (amount: number) => {
       set(state => ({ xp: state.xp + amount }));
+    },
+
+    // Zone system
+    currentZone: 'prison' as ZoneId,
+    setZone: (zone: ZoneId) => {
+      set((s) => ({
+        currentZone: zone,
+        gameResetKey: s.gameResetKey + 1,
+        roomCleared: false,
+        showUpgradeScreen: false,
+      }));
     },
 
     // Room / wave state

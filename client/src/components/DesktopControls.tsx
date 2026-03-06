@@ -155,7 +155,7 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
     if (onShoot) onShoot(gun);
 
     // Camera pitch kick upward on firing (feels like real recoil)
-    const recoilPitch = 0.045;
+    const recoilPitch = (getRangedCfg() as any).recoil ?? 0.045;
     mouseMovement.current.y = Math.min(Math.PI / 2, mouseMovement.current.y + recoilPitch);
 
     // --- Compute barrel origin ---
@@ -208,7 +208,9 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
 
     // Muzzle flash from barrel position
     addHitEffect([shootPos.x, shootPos.y, shootPos.z]);
-    playGunShoot();
+    const { weaponInventory: wi, activeRangedSlot: rs } = useVRGame.getState();
+    const isSuppressed = wi.ranged[rs] === 'smg';
+    playGunShoot(isSuppressed);
 
     // Piercing bullets — damage ALL enemies along the ray, stop only at solid walls
     const hitEnemies = new Set<THREE.Object3D>(); // avoid double-hitting same enemy
@@ -651,6 +653,18 @@ export default function DesktopControls({ onShoot, onSwordSwing, onClipChange }:
       } else {
         jetpackVelocity.current.set(0, 0, 0);
       }
+
+      // WASD drag: while drifting, keyboard input steers the residual velocity
+      // — lets the player "muscle out" of drift by holding a direction
+      if (direction.current.lengthSq() > 0.01 && spd > 0.05) {
+        const dragForce = direction.current.clone().multiplyScalar(walkSpeed * 4.5 * deltaTime);
+        jetpackVelocity.current.add(dragForce);
+        // Clamp so WASD can't re-accelerate beyond max
+        if (jetpackVelocity.current.length() > PLAYER_CONFIG.movement.maxSpeed * 0.7) {
+          jetpackVelocity.current.setLength(PLAYER_CONFIG.movement.maxSpeed * 0.7);
+        }
+      }
+
       jetpackAcceleration.current.multiplyScalar(Math.pow(0.85, deltaTime * 60));
 
       if (jetpackVelocity.current.length() > 0.1) {

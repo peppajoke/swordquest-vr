@@ -42,7 +42,7 @@ interface AudioState {
   playHit: () => void;
   playSuccess: () => void;
   playSwordHit: () => void;
-  playGunShoot: () => void;
+  playGunShoot: (suppressed?: boolean) => void;
   playGunHit: () => void;
   playPlayerDamage: () => void;
   playAcceleration: () => void;
@@ -185,14 +185,15 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
   },
   
-  playGunShoot: () => {
+  playGunShoot: (suppressed = false) => {
     const { gunShootSound, hitSound, isMuted } = get();
-    const sound = gunShootSound || hitSound; // Fallback to generic hit sound
+    const sound = gunShootSound || hitSound;
     if (sound && !isMuted) {
       const soundClone = sound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.5;
-      soundClone.currentTime = 0; // Play from beginning
-      soundClone.play().catch(error => {});
+      soundClone.volume = suppressed ? 0.18 : 0.5;
+      soundClone.playbackRate = suppressed ? 0.6 : 1.0; // lower pitch = suppressed thwump
+      soundClone.currentTime = 0;
+      soundClone.play().catch(() => {});
     }
   },
   
