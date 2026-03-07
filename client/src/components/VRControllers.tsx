@@ -4,6 +4,16 @@ import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import { useAudio } from "../lib/stores/useAudio";
 import { PLAYER_CONFIG, COMBAT_CONFIG, WORLD_CONFIG } from "../config/gameConfig";
+import weaponConfig from "../data/weaponConfig.json";
+
+const WEAPON_SLOTS = [
+  { melee: "longsword", gun: "pistols" },
+  { melee: "dagger",    gun: "smg"     },
+  { melee: "greatsword",gun: "shotgun" },
+  { melee: "battleaxe", gun: "sniper"  },
+  { melee: "shortsword",gun: "pistols" },
+  { melee: "warhammer", gun: "smg"     },
+] as const;
 
 interface VRControllersProps {
   onFuelChange?: (fuel: number) => void;
@@ -46,8 +56,8 @@ export default function VRControllers({
   const lastYButtonPressed = useRef(false);
   const rightSwordRotation = useRef(0);
   const leftSwordRotation = useRef(0);
-  const leftSwordRotationMode = useRef(0); // 0 = standard, 1 = side
-  const rightSwordRotationMode = useRef(0); // Cycles through different positions
+  const leftWeaponSlot = useRef(0);
+  const rightWeaponSlot = useRef(0);
   const hiddenXRDefaultsRef = useRef(false);
   // Controller sync status tracking
   const controllerSyncStatus = useRef({
@@ -474,98 +484,139 @@ export default function VRControllers({
     );
   }
 
-  function createSword() {
-    const sword = new THREE.Group();
-    sword.userData.isCustomModel = true; // Mark as custom model
-    sword.userData.isSword = true; // Mark as sword for collision detection
+  function createMeleeWeapon(id: string): THREE.Group {
+    const cfg = (weaponConfig.melee as any)[id];
+    if (!cfg) {
+      console.warn(`Unknown melee weapon: ${id}, falling back to longsword`);
+      return createMeleeWeapon("longsword");
+    }
+    const v = cfg.visual;
 
-    // Handle (much shorter - 80% reduction)
-    const handleGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.05);
-    const handleMaterial = new THREE.MeshLambertMaterial({ color: "#4a4a4a" });
+    const weapon = new THREE.Group();
+    weapon.userData.isCustomModel = true;
+    weapon.userData.isSword = true;
+
+    // Handle
+    const handleGeometry = new THREE.CylinderGeometry(
+      v.handleRadius * 0.8,
+      v.handleRadius,
+      v.handleLength,
+      8,
+    );
+    const handleMaterial = new THREE.MeshLambertMaterial({ color: v.handleColor });
     const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-    handle.userData.isCustomModel = true; // Mark as custom
-    handle.position.y = -0.08;
-    sword.add(handle);
+    handle.userData.isCustomModel = true;
+    handle.position.y = -v.handleLength / 2;
+    weapon.add(handle);
 
-    // Guard (bigger)
-    const guardGeometry = new THREE.BoxGeometry(0.15, 0.02, 0.035);
-    const guardMaterial = new THREE.MeshLambertMaterial({ color: "#666" });
-    const guard = new THREE.Mesh(guardGeometry, guardMaterial);
-    guard.userData.isCustomModel = true; // Mark as custom
-    guard.position.y = 0.04;
-    sword.add(guard);
+    // Guard (only if it has dimensions)
+    if (v.guardWidth > 0 && v.guardHeight > 0) {
+      const guardGeometry = new THREE.BoxGeometry(v.guardWidth, v.guardHeight, v.guardDepth);
+      const guardMaterial = new THREE.MeshLambertMaterial({ color: v.guardColor });
+      const guard = new THREE.Mesh(guardGeometry, guardMaterial);
+      guard.userData.isCustomModel = true;
+      guard.position.y = 0;
+      weapon.add(guard);
+    }
 
-    // Blade (much bigger)
-    const bladeGeometry = new THREE.BoxGeometry(0.018, 0.5, 0.008);
-    const bladeMaterial = new THREE.MeshLambertMaterial({ color: "#c0c0c0" });
-    const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
-    blade.userData.isCustomModel = true; // Mark as custom
-    blade.position.y = 0.32;
-    sword.add(blade);
+    if (v.axeHead) {
+      // Axe head at top of handle
+      const axeGeometry = new THREE.BoxGeometry(v.axeHeadWidth, v.axeHeadHeight, v.axeHeadDepth);
+      const axeMaterial = new THREE.MeshLambertMaterial({
+        color: v.bladeColor,
+        emissive: v.emissive,
+        emissiveIntensity: v.emissiveIntensity,
+      });
+      const axeHead = new THREE.Mesh(axeGeometry, axeMaterial);
+      axeHead.userData.isCustomModel = true;
+      axeHead.position.y = v.handleLength / 2;
+      weapon.add(axeHead);
+    } else if (v.hammerHead) {
+      // Hammer head at top of handle
+      const hammerGeometry = new THREE.BoxGeometry(
+        v.hammerHeadWidth,
+        v.hammerHeadHeight,
+        v.hammerHeadDepth,
+      );
+      const hammerMaterial = new THREE.MeshLambertMaterial({
+        color: v.bladeColor,
+        emissive: v.emissive,
+        emissiveIntensity: v.emissiveIntensity,
+      });
+      const hammerHead = new THREE.Mesh(hammerGeometry, hammerMaterial);
+      hammerHead.userData.isCustomModel = true;
+      hammerHead.position.y = v.handleLength / 2;
+      weapon.add(hammerHead);
+    } else if (v.bladeLength > 0) {
+      // Sword blade
+      const bladeGeometry = new THREE.BoxGeometry(v.bladeWidth, v.bladeLength, v.bladeDepth);
+      const bladeMaterial = new THREE.MeshLambertMaterial({
+        color: v.bladeColor,
+        emissive: v.emissive,
+        emissiveIntensity: v.emissiveIntensity,
+      });
+      const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+      blade.userData.isCustomModel = true;
+      blade.position.y = v.bladeLength / 2;
+      weapon.add(blade);
+    }
 
-    // Rotate sword to point forward properly
-    sword.rotation.z = Math.PI / 2; // 90 degrees to point forward
+    // Rotate to point forward (same orientation as original sword)
+    weapon.rotation.z = Math.PI / 2;
 
-    return sword;
+    return weapon;
   }
 
-  function createGun() {
+  function createRangedWeapon(id: string): THREE.Group {
+    const cfg = (weaponConfig.ranged as any)[id];
+    if (!cfg) {
+      console.warn(`Unknown ranged weapon: ${id}, falling back to pistols`);
+      return createRangedWeapon("pistols");
+    }
+    const v = cfg.visual;
+
     const gun = new THREE.Group();
-    gun.userData.isCustomModel = true; // Mark as custom model
-
-    // Grip
-    const gripGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.03);
-    const gripMaterial = new THREE.MeshLambertMaterial({ color: "#2a2a2a" });
-    const grip = new THREE.Mesh(gripGeometry, gripMaterial);
-    grip.userData.isCustomModel = true; // Mark as custom
-    grip.position.y = -0.04;
-    gun.add(grip);
-
-    // Barrel (2x longer, thicker, rotated and positioned closer to player)
-    const barrelGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.25); // Made 2x longer: 0.125 -> 0.25
-    const barrelMaterial = new THREE.MeshLambertMaterial({ color: "#1a1a1a" });
-    const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
-    barrel.userData.isCustomModel = true; // Mark as custom
-    barrel.rotation.x = Math.PI / 2; // Rotate 90 degrees to point forward
-    barrel.position.y = 0.02;
-    barrel.position.z = -0.1125; // Adjusted for longer barrel center
-    gun.add(barrel);
+    gun.userData.isCustomModel = true;
 
     // Body
-    const bodyGeometry = new THREE.BoxGeometry(0.025, 0.04, 0.08);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: "#333" });
+    const bodyGeometry = new THREE.BoxGeometry(v.bodyWidth, v.bodyHeight, v.bodyLength);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: v.color });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.userData.isCustomModel = true; // Mark as custom
+    body.userData.isCustomModel = true;
     body.position.y = 0.02;
     gun.add(body);
 
-    // Front sight ring at tip of barrel
+    // Barrel (rotated 90° to point forward along -Z)
+    const barrelGeometry = new THREE.CylinderGeometry(v.barrelRadius, v.barrelRadius, v.barrelLength, 8);
+    const barrelMaterial = new THREE.MeshLambertMaterial({ color: v.barrelColor });
+    const barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
+    barrel.userData.isCustomModel = true;
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.y = 0.02;
+    barrel.position.z = -(v.bodyLength / 2 + v.barrelLength / 2);
+    gun.add(barrel);
+
+    // Grip (below body)
+    const gripGeometry = new THREE.BoxGeometry(v.gripWidth, v.gripLength, v.gripDepth);
+    const gripMaterial = new THREE.MeshLambertMaterial({ color: v.gripColor });
+    const grip = new THREE.Mesh(gripGeometry, gripMaterial);
+    grip.userData.isCustomModel = true;
+    grip.position.y = -(v.bodyHeight / 2 + v.gripLength / 2);
+    gun.add(grip);
+
+    // Front sight ring at barrel tip — primary aiming reference
     const frontSightGeometry = new THREE.RingGeometry(0.008, 0.012, 16);
-    const frontSightMaterial = new THREE.MeshLambertMaterial({
-      color: "#000000",
-    });
+    const frontSightMaterial = new THREE.MeshLambertMaterial({ color: "#000000" });
     const frontSight = new THREE.Mesh(frontSightGeometry, frontSightMaterial);
     frontSight.userData.isCustomModel = true;
-    frontSight.name = "gunSight"; // This is the primary aiming reference
+    frontSight.name = "gunSight";
     frontSight.position.y = 0.05;
-    frontSight.position.z = -0.2375; // At tip of longer barrel
+    frontSight.position.z = -(v.bodyLength / 2 + v.barrelLength);
     frontSight.rotation.x = 0;
     gun.add(frontSight);
 
-    // Rear sight ring at back of barrel
-    const rearSightGeometry = new THREE.RingGeometry(0.008, 0.012, 16);
-    const rearSightMaterial = new THREE.MeshLambertMaterial({
-      color: "#000000",
-    });
-    const rearSight = new THREE.Mesh(rearSightGeometry, rearSightMaterial);
-    rearSight.userData.isCustomModel = true;
-    rearSight.position.y = 0.05;
-    rearSight.position.z = 0.0125; // At back of barrel
-    rearSight.rotation.x = 0;
-    gun.add(rearSight);
-
-    // Rotate gun to point forward and upward
-    gun.rotation.x = -Math.PI / 2 + Math.PI / 4; // 90 degrees up - 45 degrees = 45 degrees total upward
+    // Rotate gun to point forward and upward (same as original)
+    gun.rotation.x = -Math.PI / 2 + Math.PI / 4;
 
     return gun;
   }
@@ -740,7 +791,7 @@ export default function VRControllers({
         (window as any).vrDebugLog(`✅ VR SYSTEM READY!`);
         (window as any).vrDebugLog(`Squeeze RIGHT grip to spawn sword`);
         (window as any).vrDebugLog(`Point sword where you want it`);
-        (window as any).vrDebugLog(`Press A button to capture rotation`);
+        (window as any).vrDebugLog(`Press A/X to cycle weapon slots`);
         (window as any).vrDebugLog(
           `Tell me what that position should be called!`,
         );
@@ -859,118 +910,47 @@ export default function VRControllers({
 
     if (!leftControllerObj || !rightControllerObj) return;
 
-    // A button: captures controller rotation OR toggles RIGHT sword rotation mode
+    // A button (right gamepad buttons[4]): cycle RIGHT weapon slot
     const aButtonPressed = rightGamepad.buttons[4]?.pressed || false;
     if (aButtonPressed && !lastAButtonPressed.current) {
-      if (rightSwordRef.current || leftSwordRef.current) {
-        // Toggle between standard mode (config 23) and side mode (config 71) for BOTH swords
-        rightSwordRotationMode.current =
-          (rightSwordRotationMode.current + 1) % 2;
-        leftSwordRotationMode.current = rightSwordRotationMode.current; // Keep them in sync
-
-        let configNumber, modeName;
-        let xIndex, yIndex, zIndex;
-
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode = config 23 (22 in 0-based indexing)
-          configNumber = 23;
-          modeName = "STANDARD";
-          zIndex = 22 % 8;
-          yIndex = Math.floor(22 / 8) % 8;
-          xIndex = Math.floor(22 / 64) % 8;
-        } else {
-          // Side mode = config 71 (70 in 0-based indexing)
-          configNumber = 71;
-          modeName = "SIDE";
-          zIndex = 70 % 8;
-          yIndex = Math.floor(70 / 8) % 8;
-          xIndex = Math.floor(70 / 64) % 8;
-        }
-
-        // Convert indices to actual rotation values
-        const xRotation = (xIndex * 45 * Math.PI) / 180;
-        const yRotation = (yIndex * 45 * Math.PI) / 180;
-        const zRotation = (zIndex * 45 * Math.PI) / 180;
-
-        // Apply to right sword if it exists
-        if (rightSwordRef.current) {
-          rightSwordRef.current.rotation.set(xRotation, yRotation, zRotation);
-        }
-
-        // Apply to left sword if it exists - mirror Z rotation with standard mode fix
-        if (leftSwordRef.current) {
-          if (rightSwordRotationMode.current === 0) {
-            // Standard mode: flip Z and add 180° to point up instead of down
-            leftSwordRef.current.rotation.set(
-              xRotation,
-              yRotation,
-              -zRotation + Math.PI,
-            );
-          } else {
-            // Side mode: just mirror Z (this is already perfect)
-            leftSwordRef.current.rotation.set(xRotation, yRotation, -zRotation);
-          }
-        }
-
-        // Enable jetpack when switching to side mode, disable for standard mode
-        if (rightSwordRotationMode.current === 1) {
-          // Side mode - enable jetpack
-          jetpackEnabled.current = true;
-          console.log(`🗡️ BOTH swords ${modeName} mode + 🚀 Jetpack ENABLED`);
-          if (onJetpackChange) {
-            onJetpackChange(true);
-          }
-        } else {
-          // Standard mode - disable jetpack
-          jetpackEnabled.current = false;
-          console.log(`🗡️ BOTH swords ${modeName} mode + 🚫 Jetpack DISABLED`);
-          if (onJetpackChange) {
-            onJetpackChange(false);
-          }
-        }
-
-        if (typeof window !== "undefined" && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`🗡️ BOTH swords: ${modeName} mode`);
-          (window as any).vrDebugLog(
-            `Right: X:${xIndex * 45}° Y:${yIndex * 45}° Z:${zIndex * 45}°`,
-          );
-          (window as any).vrDebugLog(
-            `Left: X:${xIndex * 45}° Y:${yIndex * 45}° Z:${-(zIndex * 45)}°`,
-          );
-          (window as any).vrDebugLog(
-            `🚀 Jetpack: ${jetpackEnabled.current ? "ENABLED" : "DISABLED"}`,
-          );
-        }
-      } else {
-        // If no sword spawned, capture controller rotation
-        const controllerRotation = rightControllerObj.rotation;
-        const rotationData = {
-          x: Number(controllerRotation.x.toFixed(3)),
-          y: Number(controllerRotation.y.toFixed(3)),
-          z: Number(controllerRotation.z.toFixed(3)),
-        };
-
-        console.log("🎮 CAPTURED CONTROLLER ROTATION:", rotationData);
-
-        // Display on VR overlay
-        if (typeof window !== "undefined" && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(`📐 CAPTURED CONTROLLER ROTATION:`);
-          (window as any).vrDebugLog(
-            `X: ${rotationData.x} (${((rotationData.x * 180) / Math.PI).toFixed(1)}°)`,
-          );
-          (window as any).vrDebugLog(
-            `Y: ${rotationData.y} (${((rotationData.y * 180) / Math.PI).toFixed(1)}°)`,
-          );
-          (window as any).vrDebugLog(
-            `Z: ${rotationData.z} (${((rotationData.z * 180) / Math.PI).toFixed(1)}°)`,
-          );
-          (window as any).vrDebugLog(
-            `Tell me what this position should be called!`,
-          );
-        }
+      rightWeaponSlot.current = (rightWeaponSlot.current + 1) % 6;
+      const rSlot = WEAPON_SLOTS[rightWeaponSlot.current];
+      const rMeleeName = (weaponConfig.melee as any)[rSlot.melee]?.name ?? rSlot.melee;
+      const rGunName   = (weaponConfig.ranged as any)[rSlot.gun]?.name   ?? rSlot.gun;
+      console.log(`🗡️ RIGHT weapon slot ${rightWeaponSlot.current}: ${rMeleeName} / ${rGunName}`);
+      if (rightGunRef.current) {
+        rightControllerObj.remove(rightGunRef.current);
+        rightGunRef.current = undefined;
+        const newGun = createRangedWeapon(rSlot.gun);
+        rightGunRef.current = newGun;
+        rightControllerObj.add(newGun);
+      }
+      if (typeof window !== "undefined" && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog(`🗡️ RIGHT: ${rMeleeName} / ${rGunName}`);
       }
     }
     lastAButtonPressed.current = aButtonPressed;
+
+    // X button (left gamepad buttons[3]): cycle LEFT weapon slot
+    const xButtonPressed = leftGamepad.buttons[3]?.pressed || false;
+    if (xButtonPressed && !lastXButtonPressed.current) {
+      leftWeaponSlot.current = (leftWeaponSlot.current + 1) % 6;
+      const lSlot = WEAPON_SLOTS[leftWeaponSlot.current];
+      const lMeleeName = (weaponConfig.melee as any)[lSlot.melee]?.name ?? lSlot.melee;
+      const lGunName   = (weaponConfig.ranged as any)[lSlot.gun]?.name   ?? lSlot.gun;
+      console.log(`🗡️ LEFT weapon slot ${leftWeaponSlot.current}: ${lMeleeName} / ${lGunName}`);
+      if (leftGunRef.current) {
+        leftControllerObj.remove(leftGunRef.current);
+        leftGunRef.current = undefined;
+        const newGun = createRangedWeapon(lSlot.gun);
+        leftGunRef.current = newGun;
+        leftControllerObj.add(newGun);
+      }
+      if (typeof window !== "undefined" && (window as any).vrDebugLog) {
+        (window as any).vrDebugLog(`🗡️ LEFT: ${lMeleeName} / ${lGunName}`);
+      }
+    }
+    lastXButtonPressed.current = xButtonPressed;
 
     /*
      * ========================================================================
@@ -986,7 +966,7 @@ export default function VRControllers({
 
     // LEFT PHYSICAL HAND WEAPON MANAGEMENT
     if (!leftGunRef.current) {
-      const gun = createGun();
+      const gun = createRangedWeapon(WEAPON_SLOTS[leftWeaponSlot.current].gun);
       leftGunRef.current = gun;
       leftControllerObj.add(gun); // Attach to LEFT physical hand (whatever index it is)
     }
@@ -997,39 +977,8 @@ export default function VRControllers({
         console.log(
           `⚔️ LEFT physical hand sword spawned (on Three.js controller ${leftIndex})`,
         );
-        const sword = createSword();
+        const sword = createMeleeWeapon(WEAPON_SLOTS[leftWeaponSlot.current].melee);
         sword.scale.x = -1; // Mirror for left hand dual-wielding
-
-        // Set rotation to remembered mode (either standard or side)
-        let configNumber, xIndex, yIndex, zIndex;
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode = config 23 (22 in 0-based indexing)
-          configNumber = 23;
-          zIndex = 22 % 8;
-          yIndex = Math.floor(22 / 8) % 8;
-          xIndex = Math.floor(22 / 64) % 8;
-        } else {
-          // Side mode = config 71 (70 in 0-based indexing)
-          configNumber = 71;
-          zIndex = 70 % 8;
-          yIndex = Math.floor(70 / 8) % 8;
-          xIndex = Math.floor(70 / 64) % 8;
-        }
-        
-        const xRotation = (xIndex * 45 * Math.PI) / 180;
-        const yRotation = (yIndex * 45 * Math.PI) / 180;
-        
-        // Apply mirrored rotation for left hand
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode: mirror Z and add 180° to point up instead of down
-          const zRotation = (-(zIndex * 45) * Math.PI) / 180 + Math.PI;
-          sword.rotation.set(xRotation, yRotation, zRotation);
-        } else {
-          // Side mode: just mirror Z (this is already perfect)
-          const zRotation = (-(zIndex * 45) * Math.PI) / 180;
-          sword.rotation.set(xRotation, yRotation, zRotation);
-        }
-
         leftSwordRef.current = sword;
         leftControllerObj.add(sword); // Attach to LEFT physical hand
       }
@@ -1042,44 +991,21 @@ export default function VRControllers({
 
     // RIGHT PHYSICAL HAND WEAPON MANAGEMENT
     if (!rightGunRef.current) {
-      const gun = createGun();
+      const gun = createRangedWeapon(WEAPON_SLOTS[rightWeaponSlot.current].gun);
       rightGunRef.current = gun;
       rightControllerObj.add(gun); // Attach to RIGHT physical hand (whatever index it is)
     }
 
     // RIGHT physical hand grip spawns RIGHT sword
-
     if (rightGrabbing.current) {
       if (!rightSwordRef.current) {
-        const sword = createSword();
-        // Set rotation to remembered mode (either standard or side)
-        let configNumber, xIndex, yIndex, zIndex;
-        if (rightSwordRotationMode.current === 0) {
-          // Standard mode = config 23 (22 in 0-based indexing)
-          configNumber = 23;
-          zIndex = 22 % 8;
-          yIndex = Math.floor(22 / 8) % 8;
-          xIndex = Math.floor(22 / 64) % 8;
-        } else {
-          // Side mode = config 71 (70 in 0-based indexing)
-          configNumber = 71;
-          zIndex = 70 % 8;
-          yIndex = Math.floor(70 / 8) % 8;
-          xIndex = Math.floor(70 / 64) % 8;
-        }
-        
-        const xRotation = (xIndex * 45 * Math.PI) / 180;
-        const yRotation = (yIndex * 45 * Math.PI) / 180;
-        const zRotation = (zIndex * 45 * Math.PI) / 180;
-        sword.rotation.set(xRotation, yRotation, zRotation);
+        const sword = createMeleeWeapon(WEAPON_SLOTS[rightWeaponSlot.current].melee);
         rightSwordRef.current = sword;
         rightControllerObj.add(sword);
 
         if (typeof window !== "undefined" && (window as any).vrDebugLog) {
-          (window as any).vrDebugLog(
-            `🗡️ RIGHT sword spawned in ${rightSwordRotationMode.current === 0 ? "STANDARD" : "SIDE"} mode`,
-          );
-          (window as any).vrDebugLog(`Press Y button to toggle rotation modes`);
+          const slotName = (weaponConfig.melee as any)[WEAPON_SLOTS[rightWeaponSlot.current].melee]?.name ?? WEAPON_SLOTS[rightWeaponSlot.current].melee;
+          (window as any).vrDebugLog(`🗡️ RIGHT ${slotName} spawned`);
         }
       }
     } else {
@@ -1099,60 +1025,14 @@ export default function VRControllers({
     const deltaTime = 1 / 60;
     const currentTime = Date.now();
 
-    // Get the direction from controller hands instead of camera
-    let handDirection = new THREE.Vector3();
-    let validDirections = 0;
-
-    /*
-     * ========================================================================
-     * SWORD DIRECTION CALCULATION FOR JETPACK SYSTEM
-     * ========================================================================
-     *
-     * For jetpack/acceleration, we need the direction the player is "pointing" with swords.
-     * We average the directions from both hands if both swords are active.
-     */
-
-    // Check if we're in 3D flight mode (jetpack enabled)
-    const isGrounded = camera.position.y <= 1.8; // Player height when standing
-    const isTurboMode = burstSpeedMultiplier.current > 1.0;
-    const allow3DFlight = jetpackEnabled.current; // Allow 3D flight whenever jetpack is enabled
-
-    // Get direction from LEFT hand if left sword is active
-    if (leftControllerObj && leftSwordRef.current) {
-      const leftDirection = new THREE.Vector3();
-      leftControllerObj.getWorldDirection(leftDirection);
-      if (!allow3DFlight) {
-        leftDirection.y = 0; // Remove vertical component for ground-based movement
-      }
-      leftDirection.normalize();
-      handDirection.add(leftDirection);
-      validDirections++;
+    // Jetpack always follows where the player is looking (headset/camera forward)
+    const allow3DFlight = jetpackEnabled.current;
+    const handDirection = new THREE.Vector3();
+    camera.getWorldDirection(handDirection);
+    if (!allow3DFlight) {
+      handDirection.y = 0;
     }
-
-    // Get direction from RIGHT hand if right sword is active
-    if (rightControllerObj && rightSwordRef.current) {
-      const rightDirection = new THREE.Vector3();
-      rightControllerObj.getWorldDirection(rightDirection);
-      if (!allow3DFlight) {
-        rightDirection.y = 0; // Remove vertical component for ground-based movement
-      }
-      rightDirection.normalize();
-      handDirection.add(rightDirection);
-      validDirections++;
-    }
-
-    // Average the directions and fallback to camera if no swords
-    if (validDirections > 0) {
-      handDirection.divideScalar(validDirections);
-      handDirection.normalize();
-    } else {
-      // Fallback to camera direction if no swords are held
-      camera.getWorldDirection(handDirection);
-      if (!allow3DFlight) {
-        handDirection.y = 0;
-      }
-      handDirection.normalize();
-    }
+    handDirection.normalize();
 
     // Burst speed timing system (only if jetpack is enabled)
     const currentlyAccelerating =

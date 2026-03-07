@@ -13,27 +13,43 @@ interface VROverlayProps {
 
 export function VROverlay({ fuel, maxFuel, health, maxHealth }: VROverlayProps) {
   const groupRef = useRef<THREE.Group>(null);
-  
+  const smoothedPosition = useRef(new THREE.Vector3());
+  const smoothedQuaternion = useRef(new THREE.Quaternion());
+  const initialized = useRef(false);
+
   useFrame(({ camera }) => {
-    // Position overlay in bottom left of VR view
-    if (groupRef.current) {
-      const cameraPosition = camera.position.clone();
-      const cameraQuaternion = camera.quaternion.clone();
-      
-      // Create local coordinate system from camera
-      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraQuaternion);
-      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
-      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
-      
-      // Position in bottom left: closer and more visible in VR
-      const overlayPosition = cameraPosition.clone()
-        .add(forward.multiplyScalar(0.8)) // 0.8 units in front (closer)
-        .add(right.multiplyScalar(-0.6))  // 0.6 units to the left
-        .add(up.multiplyScalar(-0.4));    // 0.4 units down
-      
-      groupRef.current.position.copy(overlayPosition);
-      groupRef.current.lookAt(camera.position);
+    if (!groupRef.current) return;
+
+    const cameraQuaternion = camera.quaternion;
+
+    // Build target position in camera-local space
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraQuaternion);
+    const right   = new THREE.Vector3(1, 0, 0).applyQuaternion(cameraQuaternion);
+    const up      = new THREE.Vector3(0, 1, 0).applyQuaternion(cameraQuaternion);
+
+    const targetPos = camera.position.clone()
+      .add(forward.multiplyScalar(0.8))
+      .add(right.multiplyScalar(-0.6))
+      .add(up.multiplyScalar(-0.4));
+
+    // Facing quaternion: panel looks toward camera
+    const lookTarget = new THREE.Matrix4().lookAt(
+      targetPos, camera.position, new THREE.Vector3(0, 1, 0)
+    );
+    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(lookTarget);
+
+    if (!initialized.current) {
+      smoothedPosition.current.copy(targetPos);
+      smoothedQuaternion.current.copy(targetQuat);
+      initialized.current = true;
     }
+
+    // Smooth lag — feel like it's floating, not teleporting every frame
+    smoothedPosition.current.lerp(targetPos, 0.05);
+    smoothedQuaternion.current.slerp(targetQuat, 0.05);
+
+    groupRef.current.position.copy(smoothedPosition.current);
+    groupRef.current.quaternion.copy(smoothedQuaternion.current);
   });
 
   const fuelPercentage = Math.max(0, Math.min(100, (fuel / maxFuel) * 100));
