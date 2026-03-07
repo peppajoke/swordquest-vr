@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
+import { resolveWallCollision, WALLS } from '../lib/levelCollision';
 import * as THREE from "three";
 import { useVRGame } from "../lib/stores/useVRGame";
 import { useAudio } from "../lib/stores/useAudio";
@@ -32,6 +33,7 @@ export default function VRControllers({
 }: VRControllersProps) {
   const { playGunShoot } = useAudio();
   const { addHitEffect, explodePillar } = useVRGame();
+  const { camera, scene } = useThree();
 
   const controller0Ref = useRef<THREE.XRTargetRaySpace>();
   const controller1Ref = useRef<THREE.XRTargetRaySpace>();
@@ -180,28 +182,52 @@ export default function VRControllers({
     };
   }, []);
 
+  // VR teleport event — reposition worldGroup so headset tracking puts player at target spawn
+  useEffect(() => {
+    const handleVRTeleport = (e: Event) => {
+      const { x, y, z } = (e as CustomEvent).detail;
+      const wg = scene.getObjectByName('worldGroup') as THREE.Group | null;
+      if (!wg) return;
+      // Position worldGroup so player appears at the target spawn position
+      wg.position.x = camera.position.x - x;
+      wg.position.y = camera.position.y - y;
+      wg.position.z = camera.position.z - z;
+    };
+    window.addEventListener('vrTeleport', handleVRTeleport);
+    return () => window.removeEventListener('vrTeleport', handleVRTeleport);
+  }, [camera, scene]);
+
   function hideDefaultXRVisuals() {
-    const kill = (obj?: THREE.Object3D | null) =>
-      obj?.traverse((child: any) => {
+    // Only hide CHILDREN of each controller root — never hide the root itself,
+    // because setting root.visible=false would also hide our custom weapons.
+    const killChildren = (obj?: THREE.Object3D | null) => {
+      if (!obj) return;
+      obj.children.forEach((child: any) => {
+        // Skip anything we attached (custom models)
         if (child?.userData?.isCustomModel) return;
-        if (
-          child.isLine ||
-          child.type === "Line" ||
-          child.type === "LineSegments" ||
-          child.type === "LineLoop" ||
-          child.isMesh ||
-          child.isSkinnedMesh ||
-          child.isGroup ||
-          child.isObject3D ||
-          child.name?.toLowerCase().includes("controller") ||
-          child.name?.toLowerCase().includes("profile")
-        )
-          child.visible = false;
+        child.traverse((node: any) => {
+          if (node?.userData?.isCustomModel) return;
+          if (
+            node.isLine ||
+            node.type === "Line" ||
+            node.type === "LineSegments" ||
+            node.type === "LineLoop" ||
+            node.isMesh ||
+            node.isSkinnedMesh ||
+            node.isGroup ||
+            node.isObject3D ||
+            node.name?.toLowerCase().includes("controller") ||
+            node.name?.toLowerCase().includes("profile")
+          )
+            node.visible = false;
+        });
+        if (!child?.userData?.isCustomModel) child.visible = false;
       });
-    kill(controller0Ref.current);
-    kill(controller1Ref.current);
-    kill(controllerGrip0Ref.current);
-    kill(controllerGrip1Ref.current);
+    };
+    killChildren(controller0Ref.current);
+    killChildren(controller1Ref.current);
+    killChildren(controllerGrip0Ref.current);
+    killChildren(controllerGrip1Ref.current);
   }
 
   // Burst speed system
@@ -1287,20 +1313,19 @@ export default function VRControllers({
       }
     }
 
-    // Right stick camera rotation
-    if (Math.abs(rightStickX) > 0.1 || Math.abs(rightStickY) > 0.1) {
-      // Apply smooth camera rotation based on right stick input
-      const rotationSpeed = 0.02;
-
-      // Horizontal rotation (yaw)
-      camera.rotation.y -= rightStickX * rotationSpeed;
-
-      // Vertical rotation (pitch) with limits to prevent flipping
-      camera.rotation.x -= rightStickY * rotationSpeed;
-      camera.rotation.x = Math.max(
-        -Math.PI / 3,
-        Math.min(Math.PI / 3, camera.rotation.x),
-      ); // Limit to ±60 degrees
+    // Right stick — yaw rotation in VR.
+    // camera.rotation is owned by the headset, so we rotate worldGroup around the camera instead.
+    if (Math.abs(rightStickX) > 0.1) {
+      const yawDelta = -rightStickX * 0.025;
+      const wg = scene.getObjectByName("worldGroup") as THREE.Group;
+      if (wg) {
+        // Orbit worldGroup around camera's Y axis so the world turns and the player pivots in place
+        const pivot = camera.position.clone();
+        wg.position.sub(pivot);
+        wg.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), yawDelta);
+        wg.position.add(pivot);
+        wg.rotation.y += yawDelta;
+      }
     }
 
     // Left stick free movement (slower speed)
@@ -1328,6 +1353,21 @@ export default function VRControllers({
 
         // No collision check - free movement
         worldGroup.position.add(stickMoveVector);
+        // Resolve player against walls (VR: player local pos = camera.position - worldGroup.position)
+        {
+          const px = camera.position.x - worldGroup.position.x;
+          const pz = camera.position.z - worldGroup.position.z;
+          const resolved = resolveWallCollision(px, pz, 0.35, WALLS);
+          worldGroup.position.x = camera.position.x - resolved.x;
+          worldGroup.position.z = camera.position.z - resolved.z;
+        }
+        // Floor clamp — prevent falling through floor (y=0 in worldGroup space)
+        {
+          const minWorldGroupY = camera.position.y - 1.7;
+          if (worldGroup.position.y > minWorldGroupY) {
+            worldGroup.position.y = minWorldGroupY;
+          }
+        }
       }
     }
 
@@ -1338,6 +1378,21 @@ export default function VRControllers({
       if (worldGroup) {
         // No wall collision - free movement
         worldGroup.position.add(moveVector);
+        // Resolve player against walls (VR: player local pos = camera.position - worldGroup.position)
+        {
+          const px = camera.position.x - worldGroup.position.x;
+          const pz = camera.position.z - worldGroup.position.z;
+          const resolved = resolveWallCollision(px, pz, 0.35, WALLS);
+          worldGroup.position.x = camera.position.x - resolved.x;
+          worldGroup.position.z = camera.position.z - resolved.z;
+        }
+        // Floor clamp — prevent falling through floor (y=0 in worldGroup space)
+        {
+          const minWorldGroupY = camera.position.y - 1.7;
+          if (worldGroup.position.y > minWorldGroupY) {
+            worldGroup.position.y = minWorldGroupY;
+          }
+        }
       }
     }
 

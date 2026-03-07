@@ -75,6 +75,11 @@ export default function CheckpointBeacon({
       // 1. Teleport player to the new zone spawn (world coords)
       const [sx, sy, sz] = zoneConfig.playerSpawnWorld;
       camera.position.set(sx, sy, sz);
+      // VR: camera.position.set() doesn't work with WebXR headset tracking.
+      // Dispatch a teleport event so VRControllers can reposition worldGroup.
+      window.dispatchEvent(new CustomEvent('vrTeleport', {
+        detail: { x: sx, y: sy, z: sz }
+      }));
 
       // 2. Transition zone in the store (increments gameResetKey → enemy reset)
       setZone(nextZone);

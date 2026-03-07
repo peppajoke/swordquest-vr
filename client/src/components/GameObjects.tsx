@@ -107,11 +107,20 @@ export default function GameObjects() {
         <boxGeometry args={[34, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
       </mesh>
-      {/* South wall: z=-52, x=-40 to x=+40 (solid, width 80) — NOT tagged isWall;
-          intentionally passthrough to keep back section accessible */}
-      <mesh position={[0, 2.5, -52]} receiveShadow>
-        <boxGeometry args={[80, 5, 0.3]} />
+      {/* South wall left segment: z=-52, x=-40 to x=-4 (width 36, center x=-22) */}
+      <mesh position={[-22, 2.5, -52]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[36, 5, 0.3]} />
         <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* South wall right segment: z=-52, x=+4 to x=+40 (width 36, center x=+22) */}
+      <mesh position={[22, 2.5, -52]} receiveShadow userData={{ isWall: true }}>
+        <boxGeometry args={[36, 5, 0.3]} />
+        <meshLambertMaterial color="#606060" />
+      </mesh>
+      {/* Door frame top lintel: z=-52, x=-4 to x=+4 (width 8), y=4.5 to y=5 */}
+      <mesh position={[0, 4.7, -52]} receiveShadow>
+        <boxGeometry args={[8, 0.6, 0.3]} />
+        <meshLambertMaterial color="#484848" />
       </mesh>
       {/* Left end wall: x=-40, z=-40 to z=-52 (depth 12, center z=-46) */}
       <mesh position={[-40, 2.5, -46]} receiveShadow userData={{ isWall: true }}>

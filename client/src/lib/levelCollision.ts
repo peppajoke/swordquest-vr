@@ -29,7 +29,9 @@ export const WALLS: WallAABB[] = [
   [-40.15, -52.0, -39.85, -40.0],
   // Right end wall x=+40
   [ 39.85, -52.0,  40.15, -40.0],
-  // South wall OMITTED — back section is accessible through it
+  // ── SOUTH WALL of cross-hall — door gap at x=-4 to x=+4 ─────────────
+  [-40.0, -52.15, -4.0, -51.85],   // left segment
+  [  4.0, -52.15, 40.0, -51.85],   // right segment
 
   // ── LEFT GUARD ROOM (x = -55 to -35, z = -25 to -55) ───────────
   [-55.0, -25.15, -35.0, -24.85],   // north wall
