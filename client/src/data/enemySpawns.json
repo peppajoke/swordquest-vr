@@ -1,15 +1,103 @@
 {
   "spawns": [
-    { "type": "grunt", "position": [0, 0, -38], "group": "Corridor", "wave": 1 },
-    { "type": "grunt", "position": [-2, 0, -43], "group": "Corridor", "wave": 1 },
-    { "type": "grunt", "position": [-20, 0, -44], "group": "Cross-hall", "wave": 1 },
-    { "type": "grunt", "position": [20, 0, -46], "group": "Cross-hall", "wave": 1 },
-    { "type": "grunt", "position": [-47, 0, -40], "group": "Left Room", "wave": 1 },
-    { "type": "grunt", "position": [47, 0, -40], "group": "Right Room", "wave": 1 },
-    { "type": "grunt", "position": [0, 0, -68], "group": "Back Section", "wave": 1 },
-    { "type": "grunt", "position": [-5, 0, -60], "group": "Back Section", "wave": 2 },
-    { "type": "grunt", "position": [5, 0, -65], "group": "Back Section", "wave": 2 },
-    { "type": "grunt", "position": [-3, 0, -70], "group": "Back Section", "wave": 2 },
-    { "type": "grunt", "position": [3, 0, -72], "group": "Back Section", "wave": 2 }
+    {
+      "type": "grunt",
+      "position": [
+        0,
+        0,
+        -38
+      ],
+      "group": "Corridor"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        -2,
+        0,
+        -43
+      ],
+      "group": "Corridor"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        -20,
+        0,
+        -44
+      ],
+      "group": "Cross-hall"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        20,
+        0,
+        -46
+      ],
+      "group": "Cross-hall"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        -47,
+        0,
+        -40
+      ],
+      "group": "Left Room"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        47,
+        0,
+        -40
+      ],
+      "group": "Right Room"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        0,
+        0,
+        -68
+      ],
+      "group": "Back Section"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        -5,
+        0,
+        -60
+      ],
+      "group": "Back Section"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        5,
+        0,
+        -65
+      ],
+      "group": "Back Section"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        -3,
+        0,
+        -70
+      ],
+      "group": "Back Section"
+    },
+    {
+      "type": "grunt",
+      "position": [
+        3,
+        0,
+        -72
+      ],
+      "group": "Back Section"
+    }
   ]
 }

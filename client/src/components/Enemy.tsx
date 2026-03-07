@@ -278,6 +278,7 @@ export default function Enemy({ type, position, maxHealth: maxHealthOverride }: 
     if (meshRef.current) {
       // Mark for collision detection
       meshRef.current.userData.isEnemy = true;
+      meshRef.current.userData.enemyId = enemyIdRef.current;
       meshRef.current.userData.enemyType = type;
       meshRef.current.userData.health = enemyState.health;
       meshRef.current.userData.maxHealth = enemyState.maxHealth;

@@ -65,13 +65,10 @@ function pickRandom<T>(arr: T[], n: number): T[] {
 }
 
 export default function UpgradeScreen() {
-  const { playerStats, setPlayerStats, heal, setShowUpgradeScreen } =
-    useVRGame((s) => ({
-      playerStats: s.playerStats,
-      setPlayerStats: s.setPlayerStats,
-      heal: s.heal,
-      setShowUpgradeScreen: s.setShowUpgradeScreen,
-    }));
+  const playerStats        = useVRGame((s) => s.playerStats);
+  const setPlayerStats     = useVRGame((s) => s.setPlayerStats);
+  const heal               = useVRGame((s) => s.heal);
+  const setShowUpgradeScreen = useVRGame((s) => s.setShowUpgradeScreen);
 
   const [choices] = useState<Upgrade[]>(() => pickRandom(UPGRADE_POOL, 3));
   const [visible, setVisible] = useState(false);

@@ -92,6 +92,16 @@ export default function HeadlessMode() {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const eventsRef  = useRef<string[]>([]);
   const harnessInitRef = useRef(false);
+  const currentWaveRef = useRef(1);
+
+  // Track actual wave via event from GameObjects
+  useEffect(() => {
+    const handler = (e: Event) => {
+      currentWaveRef.current = (e as CustomEvent).detail?.wave ?? currentWaveRef.current;
+    };
+    window.addEventListener('waveAdvance', handler);
+    return () => window.removeEventListener('waveAdvance', handler);
+  }, []);
 
   // Initial camera setup — bird's-eye, high above scene center
   useEffect(() => {
@@ -142,16 +152,16 @@ export default function HeadlessMode() {
       position: { x: number; y: number; z: number };
       distanceFromPlayer: number; health: number; isDead: boolean;
     }> = [];
-    const seenEnemyIds = new Set<string>();
+    const seenObjects = new Set<THREE.Object3D>();
 
     const camXZ = new THREE.Vector3(playerX, 0, playerZ);
     scene.traverse((obj) => {
       if (!obj.userData.isEnemy) return;
       // Only count root enemy objects — skip if parent is also an enemy
       if (obj.parent?.userData?.isEnemy) return;
-      const id = (obj.userData.enemyId as string) ?? 'unknown';
-      if (seenEnemyIds.has(id)) return;
-      seenEnemyIds.add(id);
+      if (seenObjects.has(obj)) return;
+      seenObjects.add(obj);
+      const id = (obj.userData.enemyId as string) ?? `obj_${obj.id}`;
       const wp = new THREE.Vector3();
       obj.getWorldPosition(wp);
       const distVec = new THREE.Vector3(wp.x, 0, wp.z);
@@ -167,18 +177,21 @@ export default function HeadlessMode() {
 
     // ── Collect checkpoint beacons ────────────────────────────────────────
     const beacons: Array<{ label: string; distanceFromPlayer: number }> = [];
+    const seenBeacons = new Set<THREE.Object3D>();
     scene.traverse((obj) => {
-      if (
-        obj.name?.toLowerCase().includes('beacon') ||
-        obj.parent?.name?.toLowerCase().includes('beacon')
-      ) {
-        const wp = new THREE.Vector3();
-        obj.getWorldPosition(wp);
-        beacons.push({
-          label: obj.name || obj.parent?.name || 'beacon',
-          distanceFromPlayer: new THREE.Vector3(wp.x, 0, wp.z).distanceTo(camXZ),
-        });
-      }
+      const isBeacon = obj.userData.isBeacon ||
+        obj.name?.toLowerCase().includes('beacon');
+      if (!isBeacon) return;
+      // Only root beacon objects (no parent beacon)
+      if (obj.parent?.userData?.isBeacon || obj.parent?.name?.toLowerCase().includes('beacon')) return;
+      if (seenBeacons.has(obj)) return;
+      seenBeacons.add(obj);
+      const wp = new THREE.Vector3();
+      obj.getWorldPosition(wp);
+      beacons.push({
+        label: obj.userData.label || obj.name || 'beacon',
+        distanceFromPlayer: new THREE.Vector3(wp.x, 0, wp.z).distanceTo(camXZ),
+      });
     });
 
     const aliveEnemies = enemies.filter((e) => !e.isDead);
@@ -203,7 +216,7 @@ export default function HeadlessMode() {
       },
       room: {
         zone:          store.currentZone,
-        wave:          1,
+        wave:          0, // waves removed — all enemies spawn at once
         cleared:       store.roomCleared,
         enemiesAlive:  aliveEnemies.length,
         enemiesTotal:  enemies.length,
@@ -233,7 +246,6 @@ export default function HeadlessMode() {
       if (tl) {
         tl.textContent = [
           `Zone:  ${r.zone.toUpperCase()}`,
-          `Wave:  ${r.wave}`,
           `Enemies: ${r.enemiesAlive}/${r.enemiesTotal} alive`,
           `Cleared: ${r.cleared ? '✅ YES' : '❌ NO'}`,
         ].join('\n');

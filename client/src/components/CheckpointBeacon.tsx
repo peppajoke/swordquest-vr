@@ -102,7 +102,7 @@ export default function CheckpointBeacon({
   });
 
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={position} userData={{ isBeacon: true, label: label || nextZone || 'beacon' }}>
       {/* Pillar group — this rotates */}
       <group ref={pillarRef}>
         {/* Base ring */}

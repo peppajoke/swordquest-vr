@@ -1,233 +1,279 @@
-import { useEffect, useRef, useState } from 'react';
+/**
+ * MobileControls — industry-standard dual-zone layout
+ *
+ * LEFT ZONE  (left 45% of screen): floating joystick for movement
+ *   - Spawns at touch point, moves with finger
+ *   - X axis = strafe, Y axis = forward/back
+ *
+ * RIGHT ZONE (right 55% of screen): swipe-to-look
+ *   - No joystick visual — direct delta maps to camera rotation
+ *   - Matches PUBG Mobile / CoD Mobile feel
+ *
+ * FIRE button: fixed bottom-right
+ *
+ * Uses native addEventListener (passive:false) so preventDefault() works
+ * and touch events are never stolen by the browser or canvas.
+ */
+
+import { useEffect, useRef } from 'react';
 import { mobileInput } from '../lib/mobileInput';
 
-const MOVE_RADIUS = 60;
-const LOOK_RADIUS = 60;
-const KNOB_SIZE = 50;
+// ── tunables ──────────────────────────────────────────────────────────────────
+const MOVE_ZONE_WIDTH  = 0.45;   // left 45% = move zone
+const MOVE_RADIUS      = 55;     // px — virtual joystick radius
+const LOOK_SENSITIVITY = 0.0025; // radians per pixel of swipe
 
-interface StickState {
-  ox: number; // origin x (px from left edge of viewport)
-  oy: number; // origin y (px from top edge)
-  dx: number; // knob offset x (clamped to radius)
-  dy: number; // knob offset y (clamped to radius)
-}
+// ── state (module-level, no re-renders needed) ───────────────────────────────
+type JoystickState = { ox: number; oy: number; dx: number; dy: number } | null;
 
-/** Renders dual floating joysticks + action buttons. Writes to mobileInput singleton. */
 export default function MobileControls() {
-  // ── Left joystick (movement) ────────────────────────────────────────
-  const moveTouchId = useRef<number | null>(null);
-  const moveOrigin  = useRef<{ x: number; y: number } | null>(null);
-  const [moveStick, setMoveStick] = useState<StickState | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // ── Right joystick (look/aim) ───────────────────────────────────────
-  const lookTouchId = useRef<number | null>(null);
-  const lookOrigin  = useRef<{ x: number; y: number } | null>(null);
-  const [lookStick, setLookStick] = useState<StickState | null>(null);
+  // Visual-only refs — we write these and trigger a single RAF loop to update DOM
+  const moveStickRef  = useRef<JoystickState>(null);
+  const lookActiveRef = useRef(false);
+
+  // DOM refs for visuals (updated imperatively, no React re-renders)
+  const moveRingRef  = useRef<HTMLDivElement>(null);
+  const moveKnobRef  = useRef<HTMLDivElement>(null);
+  const moveGhostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     mobileInput.active = true;
+
+    // Per-touch tracking
+    const moveTouchId = { current: -1 };
+    const lookTouchId = { current: -1 };
+    const lookPrev    = { x: 0, y: 0 };
+
+    // ── visual updater ─────────────────────────────────────────────────────
+    function updateMoveVisual(stick: JoystickState) {
+      const ring  = moveRingRef.current;
+      const knob  = moveKnobRef.current;
+      const ghost = moveGhostRef.current;
+      if (!ring || !knob || !ghost) return;
+
+      if (!stick) {
+        ring.style.display  = 'none';
+        knob.style.display  = 'none';
+        ghost.style.display = 'block';
+      } else {
+        ghost.style.display = 'none';
+        ring.style.display  = 'block';
+        knob.style.display  = 'block';
+        ring.style.left  = `${stick.ox - MOVE_RADIUS}px`;
+        ring.style.top   = `${stick.oy - MOVE_RADIUS}px`;
+        knob.style.left  = `${stick.ox - 26 + stick.dx}px`;
+        knob.style.top   = `${stick.oy - 26 + stick.dy}px`;
+      }
+    }
+
+    // ── touch handlers ──────────────────────────────────────────────────────
+    function onTouchStart(e: TouchEvent) {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) {
+        const isMove = t.clientX < window.innerWidth * MOVE_ZONE_WIDTH;
+
+        if (isMove && moveTouchId.current === -1) {
+          moveTouchId.current = t.identifier;
+          const stick = { ox: t.clientX, oy: t.clientY, dx: 0, dy: 0 };
+          moveStickRef.current = stick;
+          mobileInput.moveX = 0;
+          mobileInput.moveY = 0;
+          updateMoveVisual(stick);
+
+        } else if (!isMove && lookTouchId.current === -1) {
+          lookTouchId.current  = t.identifier;
+          lookPrev.x = t.clientX;
+          lookPrev.y = t.clientY;
+          lookActiveRef.current = true;
+          mobileInput.lookX = 0;
+          mobileInput.lookY = 0;
+        }
+      }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) {
+        // ── Move joystick ──────────────────────────────────────────────────
+        if (t.identifier === moveTouchId.current) {
+          const stick = moveStickRef.current;
+          if (!stick) continue;
+          const rawDx = t.clientX - stick.ox;
+          const rawDy = t.clientY - stick.oy;
+          const dist  = Math.hypot(rawDx, rawDy);
+          const clamp = dist > MOVE_RADIUS ? MOVE_RADIUS / dist : 1;
+          const dx    = rawDx * clamp;
+          const dy    = rawDy * clamp;
+
+          const newStick = { ...stick, dx, dy };
+          moveStickRef.current = newStick;
+
+          mobileInput.moveX = Math.max(-1, Math.min(1, rawDx / MOVE_RADIUS));
+          // moveY negative = forward (joystick up = finger above origin = rawDy<0)
+          mobileInput.moveY = Math.max(-1, Math.min(1, rawDy / MOVE_RADIUS));
+
+          updateMoveVisual(newStick);
+        }
+
+        // ── Look swipe ─────────────────────────────────────────────────────
+        if (t.identifier === lookTouchId.current) {
+          const dx = t.clientX - lookPrev.x;
+          const dy = t.clientY - lookPrev.y;
+          lookPrev.x = t.clientX;
+          lookPrev.y = t.clientY;
+          // Accumulate as per-frame deltas — DesktopControls resets them each frame
+          mobileInput.lookDX += dx * LOOK_SENSITIVITY;
+          mobileInput.lookDY += dy * LOOK_SENSITIVITY;
+        }
+      }
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) {
+        if (t.identifier === moveTouchId.current) {
+          moveTouchId.current  = -1;
+          moveStickRef.current = null;
+          mobileInput.moveX   = 0;
+          mobileInput.moveY   = 0;
+          updateMoveVisual(null);
+        }
+        if (t.identifier === lookTouchId.current) {
+          lookTouchId.current   = -1;
+          lookActiveRef.current = false;
+          mobileInput.lookDX   = 0;
+          mobileInput.lookDY   = 0;
+        }
+      }
+    }
+
+    const opts = { passive: false } as const;
+    document.addEventListener('touchstart',  onTouchStart, opts);
+    document.addEventListener('touchmove',   onTouchMove,  opts);
+    document.addEventListener('touchend',    onTouchEnd,   opts);
+    document.addEventListener('touchcancel', onTouchEnd,   opts);
+
     return () => {
       mobileInput.active = false;
-      mobileInput.moveX = 0;
-      mobileInput.moveY = 0;
-      mobileInput.lookX = 0;
-      mobileInput.lookY = 0;
+      mobileInput.moveX = mobileInput.moveY = 0;
+      mobileInput.lookX = mobileInput.lookY = 0;
+      mobileInput.lookDX = mobileInput.lookDY = 0;
+      document.removeEventListener('touchstart',  onTouchStart);
+      document.removeEventListener('touchmove',   onTouchMove);
+      document.removeEventListener('touchend',    onTouchEnd);
+      document.removeEventListener('touchcancel', onTouchEnd);
     };
   }, []);
 
-  // ── Touch event routing ─────────────────────────────────────────────
-  // Left half → move joystick, right half → look joystick
-  const handleTouchStart = (e: React.TouchEvent) => {
-    for (const t of Array.from(e.changedTouches)) {
-      const isLeft = t.clientX < window.innerWidth / 2;
-      if (isLeft && moveTouchId.current === null) {
-        moveTouchId.current = t.identifier;
-        moveOrigin.current = { x: t.clientX, y: t.clientY };
-        setMoveStick({ ox: t.clientX, oy: t.clientY, dx: 0, dy: 0 });
-      } else if (!isLeft && lookTouchId.current === null) {
-        lookTouchId.current = t.identifier;
-        lookOrigin.current = { x: t.clientX, y: t.clientY };
-        setLookStick({ ox: t.clientX, oy: t.clientY, dx: 0, dy: 0 });
-        mobileInput.lookX = 0;
-        mobileInput.lookY = 0;
-      }
-    }
+  // ── fire button handlers (React events fine for buttons) ────────────────
+  const onFireStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    mobileInput.fire = true;
+    mobileInput.fireJustPressed = true;
+  };
+  const onFireEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    mobileInput.fire = false;
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    for (const t of Array.from(e.changedTouches)) {
-      // Move joystick
-      if (t.identifier === moveTouchId.current && moveOrigin.current) {
-        const rawDx = t.clientX - moveOrigin.current.x;
-        const rawDy = t.clientY - moveOrigin.current.y;
-        const dist  = Math.hypot(rawDx, rawDy);
-        const scale = dist > MOVE_RADIUS ? MOVE_RADIUS / dist : 1;
-        mobileInput.moveX = Math.max(-1, Math.min(1, rawDx / MOVE_RADIUS));
-        mobileInput.moveY = Math.max(-1, Math.min(1, rawDy / MOVE_RADIUS));
-        setMoveStick(prev => prev
-          ? { ...prev, dx: rawDx * scale, dy: rawDy * scale }
-          : null
-        );
-      }
-      // Look joystick
-      if (t.identifier === lookTouchId.current && lookOrigin.current) {
-        const rawDx = t.clientX - lookOrigin.current.x;
-        const rawDy = t.clientY - lookOrigin.current.y;
-        const dist  = Math.hypot(rawDx, rawDy);
-        const scale = dist > LOOK_RADIUS ? LOOK_RADIUS / dist : 1;
-        mobileInput.lookX = Math.max(-1, Math.min(1, rawDx / LOOK_RADIUS));
-        mobileInput.lookY = Math.max(-1, Math.min(1, rawDy / LOOK_RADIUS));
-        setLookStick(prev => prev
-          ? { ...prev, dx: rawDx * scale, dy: rawDy * scale }
-          : null
-        );
-      }
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    for (const t of Array.from(e.changedTouches)) {
-      if (t.identifier === moveTouchId.current) {
-        moveTouchId.current = null;
-        moveOrigin.current  = null;
-        mobileInput.moveX   = 0;
-        mobileInput.moveY   = 0;
-        setMoveStick(null);
-      }
-      if (t.identifier === lookTouchId.current) {
-        lookTouchId.current = null;
-        lookOrigin.current  = null;
-        mobileInput.lookX   = 0;
-        mobileInput.lookY   = 0;
-        setLookStick(null);
-      }
-    }
-  };
-
-  // ── Button helper ───────────────────────────────────────────────────
-  const btn = (
-    label: string,
-    style: React.CSSProperties,
-    onPress: () => void,
-    onRelease?: () => void,
-  ) => (
-    <div
-      key={label}
-      style={{
-        position: 'absolute',
-        width: 64, height: 64,
-        borderRadius: '50%',
-        border: '2px solid rgba(255,255,255,0.5)',
-        background: 'rgba(0,0,0,0.35)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: 'white', fontSize: 11, fontWeight: 700,
-        userSelect: 'none', WebkitUserSelect: 'none',
-        backdropFilter: 'blur(4px)',
-        pointerEvents: 'auto',
-        touchAction: 'none',
-        ...style,
-      }}
-      onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); onPress(); }}
-      onTouchEnd={(e)   => { e.stopPropagation(); e.preventDefault(); if (onRelease) onRelease(); }}
-    >
-      {label}
-    </div>
-  );
-
-  // ── Joystick renderer ───────────────────────────────────────────────
-  const renderStick = (stick: StickState | null, radius: number, hint?: { bottom: number; left?: number; right?: number }) => {
-    // While idle, show a faint ghost indicator
-    if (!stick) {
-      if (!hint) return null;
-      const hintStyle: React.CSSProperties = {
-        position: 'absolute',
-        width: radius * 2, height: radius * 2,
-        borderRadius: '50%',
-        border: '1.5px solid rgba(255,255,255,0.10)',
-        background: 'rgba(255,255,255,0.04)',
-        pointerEvents: 'none',
-        bottom: hint.bottom - radius,
-        ...(hint.left  !== undefined ? { left:  hint.left  - radius } : {}),
-        ...(hint.right !== undefined ? { right: hint.right - radius } : {}),
-      };
-      return <div style={hintStyle} />;
-    }
-    const halfKnob = KNOB_SIZE / 2;
-    return (
-      <>
-        {/* Outer ring */}
-        <div style={{
-          position: 'fixed',
-          left: stick.ox - radius,
-          top:  stick.oy - radius,
-          width: radius * 2, height: radius * 2,
-          borderRadius: '50%',
-          border: '2px solid rgba(255,255,255,0.25)',
-          background: 'rgba(0,0,0,0.20)',
-          pointerEvents: 'none',
-        }} />
-        {/* Inner knob */}
-        <div style={{
-          position: 'fixed',
-          left: stick.ox - halfKnob + stick.dx,
-          top:  stick.oy - halfKnob + stick.dy,
-          width: KNOB_SIZE, height: KNOB_SIZE,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.40)',
-          border: '2px solid rgba(255,255,255,0.70)',
-          pointerEvents: 'none',
-        }} />
-      </>
-    );
+  // ── shared button style ──────────────────────────────────────────────────
+  const btnBase: React.CSSProperties = {
+    position:  'absolute',
+    width:  72, height: 72,
+    borderRadius: '50%',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'white', fontSize: 12, fontWeight: 700,
+    userSelect: 'none', WebkitUserSelect: 'none',
+    touchAction: 'none',
   };
 
   return (
     <div
+      ref={containerRef}
       style={{ position: 'fixed', inset: 0, zIndex: 500, pointerEvents: 'none' }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
     >
-      {/* ── Left half: movement touch zone ── */}
+      {/* ── Ghost indicator: where to put thumb for movement ── */}
+      <div
+        ref={moveGhostRef}
+        style={{
+          position: 'absolute',
+          width: MOVE_RADIUS * 2, height: MOVE_RADIUS * 2,
+          borderRadius: '50%',
+          border: '1.5px solid rgba(255,255,255,0.12)',
+          background: 'rgba(255,255,255,0.04)',
+          bottom: 90, left: 36,
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Inner dot for ghost */}
       <div style={{
-        position: 'absolute', top: 0, left: 0,
-        width: '50%', height: '100%',
-        pointerEvents: 'auto',
-        touchAction: 'none',
+        position: 'absolute',
+        width: 20, height: 20,
+        borderRadius: '50%',
+        background: 'rgba(255,255,255,0.10)',
+        bottom: 90 + MOVE_RADIUS - 10, left: 36 + MOVE_RADIUS - 10,
+        pointerEvents: 'none',
       }} />
 
-      {/* ── Right half: look touch zone ── */}
+      {/* ── Live joystick ring (hidden when idle) ── */}
+      <div
+        ref={moveRingRef}
+        style={{
+          display: 'none',
+          position: 'fixed',
+          width: MOVE_RADIUS * 2, height: MOVE_RADIUS * 2,
+          borderRadius: '50%',
+          border: '2px solid rgba(255,255,255,0.30)',
+          background: 'rgba(0,0,0,0.25)',
+          pointerEvents: 'none',
+        }}
+      />
+      {/* ── Live joystick knob (hidden when idle) ── */}
+      <div
+        ref={moveKnobRef}
+        style={{
+          display: 'none',
+          position: 'fixed',
+          width: 52, height: 52,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.45)',
+          border: '2px solid rgba(255,255,255,0.75)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── FIRE button ── */}
+      <div
+        style={{
+          ...btnBase,
+          bottom: 100, right: 36,
+          background: 'rgba(220,50,0,0.50)',
+          border: '2px solid rgba(255,120,0,0.80)',
+          backdropFilter: 'blur(4px)',
+          pointerEvents: 'auto',
+        }}
+        onTouchStart={onFireStart}
+        onTouchEnd={onFireEnd}
+      >
+        FIRE
+      </div>
+
+      {/* ── Swipe hint label for right zone (fades in on first load) ── */}
       <div style={{
-        position: 'absolute', top: 0, right: 0,
-        width: '50%', height: '100%',
-        pointerEvents: 'auto',
-        touchAction: 'none',
-      }} />
-
-      {/* ── Move joystick visuals ── */}
-      {renderStick(moveStick, MOVE_RADIUS, { bottom: 100, left: 100 })}
-
-      {/* ── Look joystick visuals ── */}
-      {renderStick(lookStick, LOOK_RADIUS, { bottom: 100, right: 100 })}
-
-      {/* ── Action buttons (above right joystick zone, right side) ── */}
-      {btn(
-        'FIRE',
-        {
-          bottom: 220, right: 30,
-          background: 'rgba(255,60,0,0.45)',
-          border: '2px solid rgba(255,100,0,0.75)',
-        },
-        () => { mobileInput.fire = true; mobileInput.fireJustPressed = true; },
-        () => { mobileInput.fire = false; },
-      )}
-      {btn(
-        'JUMP',
-        { bottom: 220, right: 110 },
-        () => { mobileInput.jumpJustPressed = true; mobileInput.boost = true; },
-        () => { mobileInput.boost = false; },
-      )}
+        position: 'absolute',
+        bottom: 90, right: 36,
+        color: 'rgba(255,255,255,0.15)',
+        fontSize: 10,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        fontWeight: 600,
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}>
+        SWIPE TO LOOK
+      </div>
     </div>
   );
 }

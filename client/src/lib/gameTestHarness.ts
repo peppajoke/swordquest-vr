@@ -164,8 +164,18 @@ export function initTestHarness(
       // ── setHealth ──────────────────────────────────────────────────────
       case 'setHealth': {
         const value = (params.value as number) ?? 100;
+        const current = store.health;
+        if (value <= 0) {
+          // Route through takeDamage so death handler fires
+          store.takeDamage(current + 1);
+          return { health: 0, triggered: 'takeDamage' };
+        }
+        if (value < current) {
+          store.takeDamage(current - value);
+          return { health: value, triggered: 'takeDamage' };
+        }
         store.setHealth(value);
-        return { health: value };
+        return { health: value, triggered: 'setHealth' };
       }
 
       // ── resetRoom ──────────────────────────────────────────────────────
@@ -184,6 +194,7 @@ export function initTestHarness(
         const candidates: THREE.Object3D[] = [];
         scene.traverse((obj) => {
           if (!obj.userData.isEnemy || obj.userData.isDead) return;
+          if (obj.parent?.userData?.isEnemy) return; // skip child meshes
           if (targetId && obj.userData.enemyId !== targetId) return;
           candidates.push(obj);
         });
@@ -192,19 +203,21 @@ export function initTestHarness(
           return { error: targetId ? `enemy ${targetId} not found or dead` : 'no alive enemies' };
         }
 
-        // Pick nearest (or specific) target
-        const camPos = camera.position.clone();
+        // Use live.playerPos (XZ at ground level) not camera.position (Y=80 in headless)
+        const playerGroundPos = new THREE.Vector3(live.playerPos.x, 0, live.playerPos.z);
+
+        // Pick nearest (or specific) target using XZ distance
         const target = candidates.reduce((best, e) => {
           const ep = new THREE.Vector3();
           const bp = new THREE.Vector3();
-          e.getWorldPosition(ep);
-          best.getWorldPosition(bp);
-          return ep.distanceTo(camPos) < bp.distanceTo(camPos) ? e : best;
+          e.getWorldPosition(ep); ep.y = 0;
+          best.getWorldPosition(bp); bp.y = 0;
+          return ep.distanceTo(playerGroundPos) < bp.distanceTo(playerGroundPos) ? e : best;
         });
 
         const enemyPos = new THREE.Vector3();
-        target.getWorldPosition(enemyPos);
-        const distance   = camPos.distanceTo(enemyPos);
+        target.getWorldPosition(enemyPos); enemyPos.y = 0;
+        const distance   = playerGroundPos.distanceTo(enemyPos);
         const hitChance  = Math.max(0.05, 1 - distance / 20);
         const hit        = Math.random() < hitChance;
         const weaponDmg  = 25;

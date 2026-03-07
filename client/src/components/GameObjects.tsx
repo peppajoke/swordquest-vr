@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useVRGame } from '../lib/stores/useVRGame';
@@ -6,25 +6,15 @@ import Enemy from './Enemy';
 import CheckpointBeacon from './CheckpointBeacon';
 import enemySpawns from '../data/enemySpawns.json';
 
-const MAX_WAVE = 3;
-
 export default function GameObjects() {
   const { pillars, setRoomCleared } = useVRGame();
 
-  // Wave state
-  const [visibleWave, setVisibleWave] = useState<1 | 2 | 3>(1);
-  const visibleWaveRef = useRef<number>(1);
-  const waveStarted = useRef(false);
-  const waveAdvancing = useRef(false);
-
-  // Filter spawns for current visible wave
-  const currentWaveSpawns = useMemo(
-    () => enemySpawns.spawns.filter((s) => (s as any).wave === visibleWave),
-    [visibleWave]
-  );
+  // All enemies spawn at once — room clears when all are dead
+  const combatStarted  = useRef(false);
+  const roomClearedRef = useRef(false);
 
   useFrame((state) => {
-    if (waveAdvancing.current) return;
+    if (roomClearedRef.current) return; // already cleared, stop checking
 
     // Count living enemies in scene
     let liveCount = 0;
@@ -34,31 +24,11 @@ export default function GameObjects() {
       }
     });
 
-    if (liveCount > 0) {
-      waveStarted.current = true;
-    }
+    if (liveCount > 0) combatStarted.current = true;
 
-    if (waveStarted.current && liveCount === 0) {
-      waveAdvancing.current = true;
-      waveStarted.current = false;
-
-      const currentWave = visibleWaveRef.current;
-
-      if (currentWave >= MAX_WAVE) {
-        // All waves cleared — room cleared!
-        setRoomCleared(true);
-      } else {
-        // Advance to next wave after 3s delay
-        const nextWave = (currentWave + 1) as 1 | 2 | 3;
-        setTimeout(() => {
-          visibleWaveRef.current = nextWave;
-          setVisibleWave(nextWave);
-          // Signal the HUD via store (reuse roomCleared pattern with a wave signal)
-          // We'll dispatch a custom event for the HUD to pick up
-          window.dispatchEvent(new CustomEvent('waveAdvance', { detail: { wave: nextWave } }));
-          waveAdvancing.current = false;
-        }, 3000);
-      }
+    if (combatStarted.current && liveCount === 0) {
+      roomClearedRef.current = true;
+      setRoomCleared(true);
     }
   });
 
@@ -294,11 +264,11 @@ export default function GameObjects() {
       </group>
 
       {/* ════════════════════════════════════
-          ENEMIES — current wave only
+          ENEMIES — all spawn at once
           ════════════════════════════════════ */}
-      {currentWaveSpawns.map((spawn, index) => (
+      {enemySpawns.spawns.map((spawn, index) => (
         <Enemy
-          key={`wave${visibleWave}-${spawn.type}-${index}`}
+          key={`enemy-${spawn.type}-${index}`}
           type={spawn.type as any}
           position={spawn.position as [number, number, number]}
         />
