@@ -1025,71 +1025,67 @@ export default function VRControllers({
     const deltaTime = 1 / 60;
     const currentTime = Date.now();
 
-    // Jetpack always follows where the player is looking (headset/camera forward)
     const allow3DFlight = jetpackEnabled.current;
+
+    // ── Direction: average of both sword controllers when held, else camera ──
     const handDirection = new THREE.Vector3();
-    camera.getWorldDirection(handDirection);
-    if (!allow3DFlight) {
-      handDirection.y = 0;
+    if (leftControllerObj && leftSwordRef.current && rightControllerObj && rightSwordRef.current) {
+      // Both swords held — steer with averaged controller direction
+      const leftDir = new THREE.Vector3();
+      const rightDir = new THREE.Vector3();
+      leftControllerObj.getWorldDirection(leftDir);
+      rightControllerObj.getWorldDirection(rightDir);
+      handDirection.addVectors(leftDir, rightDir).normalize();
+    } else if (leftControllerObj && leftSwordRef.current) {
+      leftControllerObj.getWorldDirection(handDirection);
+    } else if (rightControllerObj && rightSwordRef.current) {
+      rightControllerObj.getWorldDirection(handDirection);
+    } else {
+      camera.getWorldDirection(handDirection);
     }
+    if (!allow3DFlight) handDirection.y = 0;
     handDirection.normalize();
 
-    // Burst speed timing system (only if jetpack is enabled)
-    const currentlyAccelerating =
-      swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current;
+    // ── Turbo: both swords held, controllers close together, in front of face ──
+    let isTurboActive = false;
+    if (swordsHeld === 2 && leftControllerObj && rightControllerObj) {
+      const leftPos = new THREE.Vector3();
+      const rightPos = new THREE.Vector3();
+      leftControllerObj.getWorldPosition(leftPos);
+      rightControllerObj.getWorldPosition(rightPos);
 
-    if (currentlyAccelerating && !wasAcceleratingPreviously.current) {
-      const stopDuration = currentTime - lastStoppedAccelerating.current;
-      if (
-        lastStoppedAccelerating.current > 0 &&
-        stopDuration >= 400 &&
-        stopDuration <= 600
-      ) {
-        const perfectTiming = 500;
-        const timingError = Math.abs(stopDuration - perfectTiming);
-        const maxError = 100;
-        const timingAccuracy = 1.0 - timingError / maxError;
+      const controllerDist = leftPos.distanceTo(rightPos);
 
-        const minBoost = 1.5; // Much lower minimum boost
-        const maxBoost = 3.0; // Much lower maximum boost
-        const boostStrength = minBoost + (maxBoost - minBoost) * timingAccuracy;
+      // "In front of face": both controllers are roughly in front of camera
+      const camFwd = new THREE.Vector3();
+      camera.getWorldDirection(camFwd);
+      const camPos = camera.position.clone();
+      const leftRelative = leftPos.clone().sub(camPos);
+      const rightRelative = rightPos.clone().sub(camPos);
+      const leftInFront = leftRelative.dot(camFwd) > 0.1;
+      const rightInFront = rightRelative.dot(camFwd) > 0.1;
 
-        console.log(
-          `🚀 PERFECT TIMING! ${stopDuration}ms pause = ${boostStrength.toFixed(1)}x BOOST!`,
-        );
-        burstSpeedMultiplier.current = boostStrength;
-        burstSpeedDecay.current = currentTime + 3000;
+      // Turbo when swords crossed/touching (< 0.25m apart) and both in front
+      isTurboActive = controllerDist < 0.25 && leftInFront && rightInFront;
 
-        // Play boost sound
-        import("../lib/stores/useAudio").then(({ useAudio }) => {
-          useAudio.getState().playBoost();
-        });
-
-        const currentSpeed = velocity.current.length();
-        if (currentSpeed > 0) {
-          const newDirection = handDirection; // Always use current direction for steering
-          velocity.current.copy(
-            newDirection.clone().normalize().multiplyScalar(currentSpeed),
-          );
+      if (isTurboActive && burstSpeedMultiplier.current < 2.5) {
+        burstSpeedMultiplier.current = 2.5;
+        if (!wasAcceleratingPreviously.current) {
+          import("../lib/stores/useAudio").then(({ useAudio }) => {
+            useAudio.getState().playBoost();
+          });
         }
       }
-    } else if (!currentlyAccelerating && wasAcceleratingPreviously.current) {
-      lastStoppedAccelerating.current = currentTime;
     }
 
+    if (!isTurboActive && burstSpeedMultiplier.current > 1.0) {
+      // Decay turbo when condition no longer met
+      burstSpeedMultiplier.current = Math.max(1.0, burstSpeedMultiplier.current - deltaTime * 1.5);
+    }
+
+    const currentlyAccelerating =
+      swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current;
     wasAcceleratingPreviously.current = currentlyAccelerating;
-
-    // Update burst speed decay
-    if (burstSpeedDecay.current > 0 && currentTime > burstSpeedDecay.current) {
-      burstSpeedMultiplier.current = 1.0;
-      burstSpeedDecay.current = 0;
-    } else if (burstSpeedDecay.current > 0) {
-      const timeRemaining = burstSpeedDecay.current - currentTime;
-      const decayProgress = timeRemaining / 3000;
-      const originalBoost = burstSpeedMultiplier.current;
-      const decayCurve = Math.sqrt(decayProgress);
-      burstSpeedMultiplier.current = 1.0 + (originalBoost - 1.0) * decayCurve;
-    }
 
     // Update fuel system (only if jetpack enabled)
     if (swordsHeld > 0 && fuel.current > 0 && jetpackEnabled.current) {
@@ -1267,27 +1263,16 @@ export default function VRControllers({
         velocity.current.normalize().multiplyScalar(desiredSpeed);
       }
     } else {
-      // Check if we're in boost timing window
-      const inBoostTimingWindow =
-        lastStoppedAccelerating.current > 0 &&
-        currentTime - lastStoppedAccelerating.current <= 600;
-
-      if (inBoostTimingWindow) {
-        // Maintain velocity during timing window
-      } else {
-        // Apply decay
+      {
+        // Apply velocity decay when not accelerating
         const currentSpeed = velocity.current.length();
         const speedThreshold = 1.0;
 
         if (currentSpeed > speedThreshold) {
-          const highSpeedDecay = 0.98;
-          velocity.current.multiplyScalar(
-            Math.pow(highSpeedDecay, deltaTime * 60),
-          );
+          velocity.current.multiplyScalar(Math.pow(0.98, deltaTime * 60));
         } else {
           const normalizedSpeed = currentSpeed / speedThreshold;
-          const exponentialFactor = Math.pow(normalizedSpeed, 2);
-          const decayRate = 0.1 + 0.9 * exponentialFactor;
+          const decayRate = 0.1 + 0.9 * Math.pow(normalizedSpeed, 2);
           velocity.current.multiplyScalar(Math.pow(decayRate, deltaTime * 60));
         }
 
