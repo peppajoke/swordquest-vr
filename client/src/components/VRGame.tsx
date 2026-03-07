@@ -16,6 +16,10 @@ import { useAudio } from '../lib/stores/useAudio';
 import WeaponPickup from './WeaponPickup';
 import DropOrb from './DropOrb';
 import { registerTestHarness } from '../lib/testHarness';
+import HeadlessMode from './HeadlessMode';
+
+// Headless mode: ?mode=headless in URL → bird's-eye view + programmatic control
+const isHeadless = new URLSearchParams(window.location.search).get('mode') === 'headless';
 
 interface VRGameProps {
   startWeapon?: 'sword' | 'gun';
@@ -195,6 +199,9 @@ export default function VRGame({ startWeapon = 'sword', devMode = false }: VRGam
       ))}
 
       {/* Death is handled by DeathScreen HTML overlay in App.tsx */}
+
+      {/* Headless mode — bird's-eye camera + programmatic control API */}
+      {isHeadless && <HeadlessMode />}
     </>
   );
 }

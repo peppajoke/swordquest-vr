@@ -20,8 +20,11 @@ const store = createXRStore({
 
 type GameMode = 'menu' | 'playing' | 'dev';
 
+// Auto-start in headless mode — skip menu, give weapons, go straight to playing
+const isHeadless = new URLSearchParams(window.location.search).get('mode') === 'headless';
+
 function App() {
-  const [gameMode, setGameMode] = useState<GameMode>('menu');
+  const [gameMode, setGameMode] = useState<GameMode>(isHeadless ? 'dev' : 'menu');
   const isDead = useVRGame((s) => s.isDead);
   const showUpgradeScreen = useVRGame((s) => s.showUpgradeScreen);
   const [isMobile] = useState(() => isTouchDevice());
@@ -89,8 +92,8 @@ function App() {
         </div>
       )}
 
-      {/* Controls Instructions — desktop only (useless on mobile, takes up space) */}
-      {gameMode !== 'menu' && !isMobile && <ControlsInstructions />}
+      {/* Controls Instructions — desktop only, not in headless mode */}
+      {gameMode !== 'menu' && !isMobile && !isHeadless && <ControlsInstructions />}
 
       {/* Main Canvas */}
       <Canvas
@@ -114,8 +117,8 @@ function App() {
         </XR>
       </Canvas>
 
-      {/* Desktop UI Overlay — hidden on mobile */}
-      {!isMobile && (
+      {/* Desktop UI Overlay — hidden on mobile and in headless mode */}
+      {!isMobile && !isHeadless && (
         <DesktopUI
           leftClip={leftClip}
           rightClip={rightClip}
